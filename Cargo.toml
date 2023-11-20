@@ -28,3 +28,7 @@ sdre-rust-logging = "0.1.0"
 [[bin]]
 name = "sdre-rust-adsb-tester"
 path = "src/bin/sdre-rust-adsb-tester.rs"
+
+[features]
+default = ["json"]
+json = []

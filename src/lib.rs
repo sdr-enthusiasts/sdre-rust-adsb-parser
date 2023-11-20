@@ -3,6 +3,7 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
+#[cfg(feature = "json")]
 use crate::json::{AircraftJSON, JSONMessage};
 use serde::{Deserialize, Serialize};
 
@@ -35,6 +36,16 @@ impl DecodeMessage for String {
 impl DecodeMessage for str {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         serde_json::from_str(self)
+    }
+}
+
+/// Provides functionality for decoding a `&[u8]` to `ADSBMessage`.
+///
+/// This does not consume the `&[u8]`.
+impl DecodeMessage for &[u8] {
+    fn decode_message(&self) -> MessageResult<ADSBMessage> {
+        let string = String::from_utf8_lossy(self);
+        serde_json::from_str(&string)
     }
 }
 
@@ -100,7 +111,9 @@ impl ADSBMessage {
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(untagged)]
 pub enum ADSBMessage {
+    #[cfg(feature = "json")]
     JSONMessage(JSONMessage),
+    #[cfg(feature = "json")]
     AircraftJSON(AircraftJSON),
 }
 
