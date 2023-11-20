@@ -79,7 +79,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 async fn process_as_bulk_messages(
     url: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    unimplemented!();
+    loop {
+        let req = Request::get(url);
+        let total_time: String;
+        let planes_procesed: usize;
+
+        let mut resp = req.exec().await?;
+        if resp.status_code() == 200 {
+            let body = resp.text().await?;
+            // for now we'll bust apart the response before parsing
+            let now = Instant::now();
+
+            debug!("Processing: {}", body);
+            let message = body.decode_message()?;
+            debug!("Decoded: {:?}", message);
+            planes_procesed = message.len();
+
+            let elapsed = now.elapsed();
+            total_time = format!("{:.2?}", elapsed);
+        } else {
+            error!("Response status error: {:?}", resp.status());
+            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            continue;
+        }
+        info!("Processed {} planes in {}", planes_procesed, total_time);
+        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+    }
 }
 
 async fn process_as_individual_messages(
@@ -96,10 +121,7 @@ async fn process_as_individual_messages(
             // for now we'll bust apart the response before parsing
             let now = Instant::now();
             for line in body.lines() {
-                if line.starts_with("{")
-                    && line.trim().len() > 0
-                    && !line.starts_with("{ \"now\" : ")
-                {
+                if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
                     let final_message_to_process = line.trim().trim_end_matches(',');
                     debug!("Processing: {}", final_message_to_process);
                     let message = final_message_to_process.decode_message()?;

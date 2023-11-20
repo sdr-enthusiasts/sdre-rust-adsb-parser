@@ -3,7 +3,7 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
-use crate::json::JSONMessage;
+use crate::json::{AircraftJSON, JSONMessage};
 use serde::{Deserialize, Serialize};
 
 pub mod json;
@@ -79,6 +79,17 @@ impl ADSBMessage {
             Ok(string) => Ok(string.into_bytes()),
         }
     }
+
+    /// Returns the number of aircraft in the message.
+    ///
+    /// the output is a `usize`.
+
+    pub fn len(&self) -> usize {
+        match self {
+            ADSBMessage::JSONMessage(_) => 1,
+            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.len(),
+        }
+    }
 }
 
 /// This will automagically serialise to either TODO: Fix the docs here.
@@ -90,6 +101,7 @@ impl ADSBMessage {
 #[serde(untagged)]
 pub enum ADSBMessage {
     JSONMessage(JSONMessage),
+    AircraftJSON(AircraftJSON),
 }
 
 impl Default for ADSBMessage {

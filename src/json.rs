@@ -158,6 +158,13 @@ pub struct JSONMessage {
     pub version: Option<u8>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
+pub struct AircraftJSON {
+    pub now: f32,
+    pub messages: i32,
+    pub aircraft: Vec<JSONMessage>,
+}
+
 #[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
 #[serde(untagged)]
 pub enum CalculatedBestFlightID {
@@ -382,12 +389,32 @@ impl Default for SourceIntegrityLevel {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::fs::{read_dir, File};
+    use crate::DecodeMessage;
+    use std::fs::{read_dir, read_to_string, File};
     use std::io::BufRead;
 
     #[test]
-    fn decode_json_message() {
+    fn decode_json_message_as_aircraft_json() {
+        // open all aircraft_*.json files in test data. convert to JSONMessage and then back to string
+        let test_data = read_dir("test_data").unwrap();
+
+        for entry in test_data {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_file() {
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                if file_name.starts_with("aircraft_") && file_name.ends_with(".json") {
+                    println!("Processing file: {}", file_name);
+                    let file = read_to_string(&path).unwrap();
+                    let result = file.decode_message();
+                    assert!(result.is_ok(), "Failed to decode JSONMessage {:?}", result);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn decode_json_message_individually() {
         // open all json_*.json files in test data. convert to JSONMessage and then back to string
         let test_data = read_dir("test_data").unwrap();
         for entry in test_data {
@@ -416,7 +443,7 @@ mod tests {
                                 "Line {} in file does not end with a curly bracket",
                                 line_number
                             );
-                            let json_message = final_message_to_process.to_json();
+                            let json_message = final_message_to_process.decode_message();
                             println!("JSON Message: {:?}", json_message);
                             assert!(
                                 json_message.is_ok(),
