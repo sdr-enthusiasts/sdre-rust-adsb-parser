@@ -406,8 +406,22 @@ mod tests {
                 if file_name.starts_with("aircraft_") && file_name.ends_with(".json") {
                     println!("Processing file: {}", file_name);
                     let file = read_to_string(&path).unwrap();
+                    // count the number of "hex" fields in the file
+                    let mut hex_count = 0;
+                    file.lines().for_each(|l| {
+                        if l.contains("\"hex\":") {
+                            hex_count += 1;
+                        }
+                    });
                     let result = file.decode_message();
                     assert!(result.is_ok(), "Failed to decode JSONMessage {:?}", result);
+                    let found_count = result.unwrap().len();
+
+                    assert_eq!(
+                        hex_count, found_count,
+                        "Found {} hex fields but {} aircraft",
+                        hex_count, found_count
+                    );
                 }
             }
         }
