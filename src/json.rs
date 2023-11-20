@@ -72,7 +72,7 @@ impl JSONMessage {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
-    pub flight_status_bit_alert: Option<i32>,
+    pub flight_status_bit_alert: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     pub barometric_altitude: Option<Altitude>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_geom")]
@@ -94,7 +94,7 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "gs")]
     pub ground_speed: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
-    pub geometric_verticle_accuracy: Option<i32>,
+    pub geometric_verticle_accuracy: Option<u8>,
     #[serde(rename = "hex")]
     pub transponder_hex: String,
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastPosition")]
@@ -107,9 +107,9 @@ pub struct JSONMessage {
     pub number_of_received_messages: i32,
     pub mlat: Vec<String>, // TODO: Figure out what this is
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
-    pub navigation_accuracy_position: Option<i32>, // TODO: should this be an enum?
+    pub navigation_accuracy_position: Option<u8>, // TODO: should this be an enum?
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_v")]
-    pub navigation_accuracy_velocity: Option<i32>, // TODO: should this be an enum?
+    pub navigation_accuracy_velocity: Option<u8>, // TODO: should this be an enum?
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_mcp")]
     pub autopilot_selected_altitude: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_heading")]
@@ -119,9 +119,9 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_qnh")]
     pub selected_altimeter: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
-    pub naviation_integrity_category: Option<i32>,
+    pub naviation_integrity_category: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
-    pub barometeric_altitude_integrity_category: Option<i32>,
+    pub barometeric_altitude_integrity_category: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "r")]
     pub aircraft_registration_from_database: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "r_dir")]
@@ -138,11 +138,11 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
     pub last_time_seen_alt: Option<f32>, // FIXME: Do we need this? It's the same as last_time_seen maybe?
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
-    pub source_integrity_level: Option<i32>, // TODO: should this be an enum?
+    pub source_integrity_level: Option<u8>, // TODO: should this be an enum?
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sil_type: Option<SourceIntegrityLevel>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
-    pub flight_status_special_position_id_bit: Option<i32>,
+    pub flight_status_special_position_id_bit: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
     pub transponder_squawk_code: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
