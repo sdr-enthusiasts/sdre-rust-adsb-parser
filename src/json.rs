@@ -1,5 +1,6 @@
 use crate::MessageResult;
 use serde::{Deserialize, Serialize};
+use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use std::fmt;
 
 // TODO: Figure out NIC and create enum for it
@@ -87,7 +88,7 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emergency: Option<Emergency>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "flight")]
-    pub calculated_best_flight_id: Option<String>,
+    pub calculated_best_flight_id: Option<CalculatedBestFlightID>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "geom_rate")]
     pub geometric_altitude_rate: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gs")]
@@ -138,7 +139,8 @@ pub struct JSONMessage {
     pub last_time_seen_alt: Option<f32>, // FIXME: Do we need this? It's the same as last_time_seen maybe?
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
     pub source_integrity_level: Option<i32>, // TODO: should this be an enum?
-    pub sil_type: SourceIntegrityLevel,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub sil_type: Option<SourceIntegrityLevel>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
     pub flight_status_special_position_id_bit: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
@@ -153,7 +155,35 @@ pub struct JSONMessage {
     #[serde(rename = "type")]
     pub vehicle_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<ADSBVersion>,
+    pub version: Option<u8>,
+}
+
+#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
+#[serde(untagged)]
+pub enum CalculatedBestFlightID {
+    String(String),
+}
+
+impl Default for CalculatedBestFlightID {
+    fn default() -> Self {
+        Self::String("".to_string())
+    }
+}
+
+impl fmt::Display for CalculatedBestFlightID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CalculatedBestFlightID::String(flight_id) => write!(f, "{}", flight_id.trim()),
+        }
+    }
+}
+
+impl fmt::Debug for CalculatedBestFlightID {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CalculatedBestFlightID::String(flight_id) => fmt::Display::fmt(&flight_id.trim(), f),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
@@ -161,7 +191,7 @@ pub struct JSONMessage {
 #[allow(non_camel_case_types)]
 pub enum Altitude {
     I32(i32),
-    ground,
+    String(String),
 }
 
 impl Default for Altitude {
@@ -174,13 +204,13 @@ impl fmt::Display for Altitude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Altitude::I32(altitude) => write!(f, "{}", altitude),
-            Altitude::ground => write!(f, "Ground"),
+            Altitude::String(_) => write!(f, "Ground"),
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Deserialize_enum_str, Serialize_enum_str)]
+// #[serde(untagged)]
 #[allow(non_camel_case_types)]
 pub enum Emergency {
     none,
@@ -199,25 +229,9 @@ impl Default for Emergency {
     }
 }
 
-impl fmt::Display for Emergency {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Emergency::none => write!(f, "None"),
-            Emergency::general => write!(f, "General"),
-            Emergency::lifeguard => write!(f, "Lifeguard"),
-            Emergency::minfuel => write!(f, "Minimum Fuel"),
-            Emergency::nordo => write!(f, "NORDO"),
-            Emergency::unlawful => write!(f, "Unlawful"),
-            Emergency::downed => write!(f, "Downed"),
-            Emergency::reserved => write!(f, "Reserved"),
-        }
-    }
-}
-
 // emitter category https://www.adsbexchange.com/emitter-category-ads-b-do-260b-2-2-3-2-5-2/
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Deserialize_enum_str, Serialize_enum_str)]
 pub enum EmitterCategory {
     A0,
     A1,
@@ -251,39 +265,6 @@ impl Default for EmitterCategory {
     }
 }
 
-// create human readable names for each emitter type
-
-impl fmt::Display for EmitterCategory {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            EmitterCategory::A0 => write!(f, "A0: No ADS-B emitter category information. Do not use this emitter category. If no emitter category fits your installation, seek guidance from the FAA as appropriate."),
-            EmitterCategory::A1 => write!(f, "A1: Light (< 15500 lbs) – Any airplane with a maximum takeoff weight less than 15,500 pounds. This includes very light aircraft (light sport aircraft) that do not meet the requirements of 14 CFR § 103.1."),
-            EmitterCategory::A2 => write!(f, "A2: Small (15500 to 75000 lbs) – Any airplane with a maximum takeoff weight greater than or equal to15,500 pounds but less than 75,000 pounds."),
-            EmitterCategory::A3 => write!(f, "A3: Large (75000 to 300000 lbs) – Any airplane with a maximum takeoff weight greater than or equal to 75,000 pounds but less than 300,000 pounds that does not qualify for the high vortex category."),
-            EmitterCategory::A4 => write!(f, "A4: High vortex large (aircraft such as B-757) – Any airplane with a maximum takeoff weight greater than or equal to 75,000 pounds but less than 300,000 pounds that has been determined to generate a high wake vortex. Currently, the Boeing 757 is the only example."),
-            EmitterCategory::A5 => write!(f, "A5: Heavy (> 300000 lbs) – Any airplane with a maximum takeoff weight equal to or above 300,000 pounds."),
-            EmitterCategory::A6 => write!(f, "A6: High performance (> 5g acceleration and 400 kts) – Any airplane, regardless of weight, which can maneuver in excess of 5 G’s and maintain true airspeed above 400 knots."),
-            EmitterCategory::A7 => write!(f, "A7: Rotorcraft – Any rotorcraft regardless of weight."),
-            EmitterCategory::B0 => write!(f, "B0: No ADS-B emitter category information"),
-            EmitterCategory::B1 => write!(f, "B1: Glider / sailplane – Any glider or sailplane regardless of weight."),
-            EmitterCategory::B2 => write!(f, "B2: Lighter-than-air – Any lighter than air (airship or balloon) regardless of weight."),
-            EmitterCategory::B3 => write!(f, "B3: Parachutist / skydiver"),
-            EmitterCategory::B4 => write!(f, "B4: Ultralight / hang-glider / paraglider – A vehicle that meets the requirements of 14 CFR § 103.1. Light sport aircraft should not use the ultralight emitter category unless they meet 14 CFR § 103.1."),
-            EmitterCategory::B5 => write!(f, "B5: Reserved"),
-            EmitterCategory::B6 => write!(f, "B6: Unmanned aerial vehicle – Any unmanned aerial vehicle or unmanned aircraft system regardless of weight."),
-            EmitterCategory::B7 => write!(f, "Space / trans-atmospheric vehicle"),
-            EmitterCategory::C0 => write!(f, "C0: No ADS-B emitter category information"),
-            EmitterCategory::C1 => write!(f, "C1: Surface vehicle – emergency vehicle"),
-            EmitterCategory::C2 => write!(f, "C2: Surface vehicle – service vehicle"),
-            EmitterCategory::C3 => write!(f, "C3: Point obstacle (includes tethered balloons)"),
-            EmitterCategory::C4 => write!(f, "C4: Cluster obstacle"),
-            EmitterCategory::C5 => write!(f, "C5: Line obstacle"),
-            EmitterCategory::C6 => write!(f, "C6: Reserved"),
-            EmitterCategory::C7 => write!(f, "C7: Reserved"),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 pub struct LastKnownPosition {
     // lat, lon, nic, rc, seen_pos
@@ -311,11 +292,9 @@ impl Default for LastKnownPosition {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
+#[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
 #[allow(non_camel_case_types)]
 pub enum NavigationModes {
-    // 'autopilot', 'vnav', 'althold', 'approach', 'lnav', 'tcas'
     autopilot,
     vnav,
     althold,
@@ -331,22 +310,7 @@ impl Default for NavigationModes {
     }
 }
 
-impl fmt::Display for NavigationModes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            NavigationModes::autopilot => write!(f, "Autopilot"),
-            NavigationModes::vnav => write!(f, "Vertical Navigation"),
-            NavigationModes::althold => write!(f, "Altitude Hold"),
-            NavigationModes::approach => write!(f, "Approach"),
-            NavigationModes::lnav => write!(f, "Lateral Navigation"),
-            NavigationModes::tcas => write!(f, "Traffic Collision Avoidance System"),
-            NavigationModes::none => write!(f, "None"),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
+#[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
 #[allow(non_camel_case_types)]
 pub enum SourceIntegrityLevel {
     unknown,
@@ -360,15 +324,6 @@ impl Default for SourceIntegrityLevel {
     }
 }
 
-impl fmt::Display for SourceIntegrityLevel {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            SourceIntegrityLevel::unknown => write!(f, "Unknown"),
-            SourceIntegrityLevel::persample => write!(f, "Per Sample"),
-            SourceIntegrityLevel::perhour => write!(f, "Per Hour"),
-        }
-    }
-}
 // #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 // pub struct SquawkCode {
 //     digit_1: u8,
@@ -407,38 +362,23 @@ impl fmt::Display for SourceIntegrityLevel {
 //     }
 // }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-pub enum ADSBVersion {
-    Version0 = 0,
-    Version1 = 1,
-    Version2 = 2,
-    Version3 = 3,
-    Version4 = 4,
-    Version5 = 5,
-    Version6 = 6,
-    Version7 = 7,
-}
+// #[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
+// pub enum ADSBVersion {
+//     Version0 = 0,
+//     Version1 = 1,
+//     Version2 = 2,
+//     Version3 = 3,
+//     Version4 = 4,
+//     Version5 = 5,
+//     Version6 = 6,
+//     Version7 = 7,
+// }
 
-impl Default for ADSBVersion {
-    fn default() -> Self {
-        Self::Version0
-    }
-}
-
-impl fmt::Display for ADSBVersion {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            ADSBVersion::Version0 => write!(f, "ADSB Version 0"),
-            ADSBVersion::Version1 => write!(f, "ADSB Version 1"),
-            ADSBVersion::Version2 => write!(f, "ADSB Version 2"),
-            ADSBVersion::Version3 => write!(f, "ADSB Version 3 (Reserved)"),
-            ADSBVersion::Version4 => write!(f, "ADSB Version 4 (Reserved)"),
-            ADSBVersion::Version5 => write!(f, "ADSB Version 5 (Reserved)"),
-            ADSBVersion::Version6 => write!(f, "ADSB Version 6 (Reserved)"),
-            ADSBVersion::Version7 => write!(f, "ADSB Version 7 (Reserved)"),
-        }
-    }
-}
+// impl Default for ADSBVersion {
+//     fn default() -> Self {
+//         Self::Version0
+//     }
+// }
 
 #[cfg(test)]
 mod tests {
@@ -454,8 +394,10 @@ mod tests {
             let entry = entry.unwrap();
             let path = entry.path();
             if path.is_file() {
+                let mut line_number = 1;
                 let file_name = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
+                    println!("Processing file: {}", file_name);
                     let file = File::open(path).unwrap();
                     let reader = std::io::BufReader::new(file);
 
@@ -465,15 +407,24 @@ mod tests {
                         line = l.unwrap();
 
                         // if the line starts with anything but a {, skip it
-                        if line.starts_with("{") {
+                        if line.starts_with("{") && line.trim().len() > 0 {
                             // encode the line as JSONMessage
-                            let json_message = line.to_json();
+                            // remove the trailing newline and any other characters after the '}'
+                            let final_message_to_process = line.trim().trim_end_matches(',');
+                            assert!(
+                                final_message_to_process.ends_with("}"),
+                                "Line {} in file does not end with a curly bracket",
+                                line_number
+                            );
+                            let json_message = final_message_to_process.to_json();
+                            println!("JSON Message: {:?}", json_message);
                             assert!(
                                 json_message.is_ok(),
                                 "Failed to decode JSONMessage {:?}",
                                 json_message
                             );
                         }
+                        line_number += 1;
                     });
                 }
             }
