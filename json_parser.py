@@ -24,9 +24,24 @@ for aircraft in data["aircraft"]:
         field_type = type(aircraft[field])
         fields.add((field, str(field_type)))
 
+# sort the fields alphabetically
+fields = sorted(fields, key=lambda x: x[0])
+
 with open("fields.txt", "w") as f:
     for field, type_of_field in fields:
-        f.write(field + " " + type_of_field)
+        type_string = type_of_field.split("'")[1]
+        if type_string == "str":
+            type_of_field = "String"
+        elif type_string == "int":
+            type_of_field = "i32"
+        elif type_string == "float":
+            type_of_field = "f32"
+        elif type_string == "dict":
+            type_of_field = "Vec<String>"
+        elif type_string == "list":
+            type_of_field = "Vec<String>"
         if field in fields_unique:
-            f.write(" (Optional)")
-        f.write("\n")
+            f.write('#[serde(skip_serializing_if = "Option::is_none")]\n')
+            f.write("pub " + field + ": Option<" + type_of_field + ">,\n")
+        else:
+            f.write("pub " + field + ": " + type_of_field + ",\n")
