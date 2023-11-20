@@ -104,53 +104,56 @@ pub struct JSONMessage {
     pub longitude: Option<f32>,
     #[serde(rename = "messages")]
     pub number_of_received_messages: i32,
-    pub mlat: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nac_p: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nac_v: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nav_altitude_mcp: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nav_heading: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nav_modes: Option<Vec<String>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nav_qnh: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nic: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub nic_baro: Option<i32>,
-    pub r: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r_dir: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub r_dst: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub rc: Option<i32>,
+    pub mlat: Vec<String>, // TODO: Figure out what this is
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
+    pub navigation_accuracy_position: Option<i32>, // TODO: should this be an enum?
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nac_v")]
+    pub navigation_accuracy_velocity: Option<i32>, // TODO: should this be an enum?
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_mcp")]
+    pub autopilot_selected_altitude: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nav_heading")]
+    pub autopilot_selected_heading: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nav_modes")]
+    pub autopilot_modes: Option<Vec<NavigationModes>>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nav_qnh")]
+    pub selected_altimeter: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
+    pub naviation_integrity_category: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
+    pub barometeric_altitude_integrity_category: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "r")]
+    pub aircraft_registration_from_database: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "r_dir")]
+    pub aircraft_direction_from_receiving_station: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "r_dst")]
+    pub aircract_distance_from_receiving_station: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "rc")]
+    pub radius_of_containment: Option<i32>,
     pub rssi: f32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sda: Option<i32>,
-    pub seen: f32,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub seen_pos: Option<f32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sil: Option<i32>,
-    pub sil_type: String,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub spi: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub squawk: Option<String>,
-    pub t: String,
-    pub tisb: Vec<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub track: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
+    pub system_design_assurance: Option<i32>, // TODO: should this be an enum?
+    #[serde(rename = "seen")]
+    pub last_time_seen: f32,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
+    pub last_time_seen_alt: Option<f32>, // FIXME: Do we need this? It's the same as last_time_seen maybe?
+    #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
+    pub source_integrity_level: Option<i32>, // TODO: should this be an enum?
+    pub sil_type: SourceIntegrityLevel,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
+    pub flight_status_special_position_id_bit: Option<i32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
+    pub transponder_squawk_code: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
+    pub aircraft_type_from_database: Option<String>,
+    pub tisb: Vec<String>, // TODO: this should def be an enum
+    #[serde(skip_serializing_if = "Option::is_none", rename = "track")]
+    pub true_track_over_ground: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub true_heading: Option<f32>,
     #[serde(rename = "type")]
     pub vehicle_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<i32>,
+    pub version: Option<ADSBVersion>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
@@ -294,4 +297,186 @@ pub struct LastKnownPosition {
     radius_of_containment: i32,
     #[serde(rename = "seen_pos")]
     last_time_seen: f32,
+}
+
+impl Default for LastKnownPosition {
+    fn default() -> Self {
+        Self {
+            latitude: 0.0,
+            longitude: 0.0,
+            naviation_integrity_category: 0,
+            radius_of_containment: 0,
+            last_time_seen: 0.0,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[serde(untagged)]
+#[allow(non_camel_case_types)]
+pub enum NavigationModes {
+    // 'autopilot', 'vnav', 'althold', 'approach', 'lnav', 'tcas'
+    autopilot,
+    vnav,
+    althold,
+    approach,
+    lnav,
+    tcas,
+    none,
+}
+
+impl Default for NavigationModes {
+    fn default() -> Self {
+        Self::none
+    }
+}
+
+impl fmt::Display for NavigationModes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            NavigationModes::autopilot => write!(f, "Autopilot"),
+            NavigationModes::vnav => write!(f, "Vertical Navigation"),
+            NavigationModes::althold => write!(f, "Altitude Hold"),
+            NavigationModes::approach => write!(f, "Approach"),
+            NavigationModes::lnav => write!(f, "Lateral Navigation"),
+            NavigationModes::tcas => write!(f, "Traffic Collision Avoidance System"),
+            NavigationModes::none => write!(f, "None"),
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[serde(untagged)]
+#[allow(non_camel_case_types)]
+pub enum SourceIntegrityLevel {
+    unknown,
+    persample,
+    perhour,
+}
+
+impl Default for SourceIntegrityLevel {
+    fn default() -> Self {
+        Self::unknown
+    }
+}
+
+impl fmt::Display for SourceIntegrityLevel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            SourceIntegrityLevel::unknown => write!(f, "Unknown"),
+            SourceIntegrityLevel::persample => write!(f, "Per Sample"),
+            SourceIntegrityLevel::perhour => write!(f, "Per Hour"),
+        }
+    }
+}
+// #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+// pub struct SquawkCode {
+//     digit_1: u8,
+//     digit_2: u8,
+//     digit_3: u8,
+//     digit_4: u8,
+// }
+
+// impl SquawkCode {
+//     pub fn new(code: String) -> Self {
+//         let mut squawk_code = Self {
+//             digit_1: 0,
+//             digit_2: 0,
+//             digit_3: 0,
+//             digit_4: 0,
+//         };
+
+//         let mut chars = code.chars();
+//         // FIXME: should this validate we're in the range 0 - 8?
+//         squawk_code.digit_1 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
+//         squawk_code.digit_2 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
+//         squawk_code.digit_3 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
+//         squawk_code.digit_4 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
+
+//         squawk_code
+//     }
+// }
+
+// impl fmt::Display for SquawkCode {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(
+//             f,
+//             "{}{}{}{}",
+//             self.digit_1, self.digit_2, self.digit_3, self.digit_4
+//         )
+//     }
+// }
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+pub enum ADSBVersion {
+    Version0 = 0,
+    Version1 = 1,
+    Version2 = 2,
+    Version3 = 3,
+    Version4 = 4,
+    Version5 = 5,
+    Version6 = 6,
+    Version7 = 7,
+}
+
+impl Default for ADSBVersion {
+    fn default() -> Self {
+        Self::Version0
+    }
+}
+
+impl fmt::Display for ADSBVersion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            ADSBVersion::Version0 => write!(f, "ADSB Version 0"),
+            ADSBVersion::Version1 => write!(f, "ADSB Version 1"),
+            ADSBVersion::Version2 => write!(f, "ADSB Version 2"),
+            ADSBVersion::Version3 => write!(f, "ADSB Version 3 (Reserved)"),
+            ADSBVersion::Version4 => write!(f, "ADSB Version 4 (Reserved)"),
+            ADSBVersion::Version5 => write!(f, "ADSB Version 5 (Reserved)"),
+            ADSBVersion::Version6 => write!(f, "ADSB Version 6 (Reserved)"),
+            ADSBVersion::Version7 => write!(f, "ADSB Version 7 (Reserved)"),
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::fs::{read_dir, File};
+    use std::io::BufRead;
+
+    #[test]
+    fn decode_json_message() {
+        // open all json_*.json files in test data. convert to JSONMessage and then back to string
+        let test_data = read_dir("test_data").unwrap();
+        for entry in test_data {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            if path.is_file() {
+                let file_name = path.file_name().unwrap().to_str().unwrap();
+                if file_name.starts_with("json_") && file_name.ends_with(".json") {
+                    let file = File::open(path).unwrap();
+                    let reader = std::io::BufReader::new(file);
+
+                    // read in a line
+                    let mut line = String::new();
+                    reader.lines().for_each(|l| {
+                        line = l.unwrap();
+
+                        // if the line starts with anything but a {, skip it
+                        if line.starts_with("{") {
+                            // encode the line as JSONMessage
+                            let json_message = line.to_json();
+                            assert!(
+                                json_message.is_ok(),
+                                "Failed to decode JSONMessage {:?}",
+                                json_message
+                            );
+                        }
+                    });
+                }
+            }
+        }
+    }
 }
