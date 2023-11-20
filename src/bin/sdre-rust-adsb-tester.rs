@@ -11,30 +11,36 @@ use sdre_rust_logging::SetupLogging;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let mut mode = 0;
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: sdre-rust-adsb-tester <url>");
         process::exit(1);
     }
 
-    if args.len() == 3 {
+    if args.len() >= 3 {
+        println!("Setting mode to {}", &args[3]);
+        mode = args[3].parse::<i32>().unwrap();
+    }
+
+    if args.len() == 4 {
         let log_level = &args[2];
 
         // match the input string to the log level
         match log_level.as_str() {
-            "trace" => {
+            "trace" | "5" => {
                 3.enable_logging();
             }
-            "debug" => {
+            "debug" | "4" => {
                 2.enable_logging();
             }
-            "info" => {
+            "info" | "0" => {
                 0.enable_logging();
             }
-            "warn" => {
+            "warn" | "1" => {
                 0.enable_logging();
             }
-            "error" => {
+            "error" | "3" => {
                 3.enable_logging();
             }
             _ => {
@@ -49,8 +55,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // loop and connect to the URL given
     let url_input = &args[1];
 
+    match mode {
+        0 => {
+            info!(
+                "Connecting to {}. Processing as individual messages",
+                url_input
+            );
+            process_as_individual_messages(url_input).await?;
+        }
+        1 => {
+            info!("Connecting to {}. Processing as bulk messages", url_input);
+            process_as_bulk_messages(url_input).await?;
+        }
+        _ => {
+            eprintln!("Invalid mode: {}", mode);
+            process::exit(1);
+        }
+    }
+
+    Ok(())
+}
+
+async fn process_as_bulk_messages(
+    url: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    unimplemented!();
+}
+
+async fn process_as_individual_messages(
+    url: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
-        let req = Request::get(url_input);
+        let req = Request::get(url);
         let mut planes_procesed = 0;
         let total_time: String;
 
