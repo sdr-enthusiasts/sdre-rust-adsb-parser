@@ -97,7 +97,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 }
 
 async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    info!("entered");
     // open a TCP connection to ip. Grab the frames and process them as raw
     let stream = TcpStream::connect(ip).await?;
     info!("Connected to {:?}", stream);
@@ -127,8 +126,6 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
             }
         }
     }
-    // info!("exiting");
-    // Ok(())
 }
 
 async fn process_as_bulk_messages(
