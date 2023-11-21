@@ -118,8 +118,8 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
             for frame in frames {
                 debug!("Frame: {:?}", frame);
                 let message = frame.decode_message();
-                if let Ok(message) = message {
-                    debug!("Decoded: {}", message);
+                if let Ok(message_done) = message {
+                    debug!("Decoded: {}", message_done);
                 } else {
                     error!("Error decoding: {:?}", message);
                 }
@@ -145,7 +145,7 @@ async fn process_as_bulk_messages(
             debug!("Processing: {}", body);
             let message = body.decode_message();
             if let Ok(message) = message {
-                debug!("Decoded: {:?}", message);
+                debug!("Decoded: {}", message);
                 planes_procesed = message.len();
             } else {
                 error!("Error decoding: {:?}", message);

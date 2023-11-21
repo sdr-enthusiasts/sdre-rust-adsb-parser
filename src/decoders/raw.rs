@@ -87,22 +87,68 @@ impl fmt::Display for AdsbRawMessage {
         // display the ICAO field
         match self {
             AdsbRawMessage { df, crc } => {
-                // print DF as string
-                // loop through all of the fields of the DF
                 match df {
-                    DF::ADSB(adsb) => match adsb {
-                        Adsb {
-                            capability,
-                            icao,
-                            me,
-                            pi,
-                        } => {
-                            write!(f, " ICAO: {}", icao)
-                        }
-                    },
-
-                    _ => write!(f, ""),
+                    DF::ADSB(adsb) => {
+                        // print the ICAO field
+                        write!(f, "{}", adsb)
+                    }
+                    _ => {
+                        // print the ICAO field
+                        write!(f, "N/A")
+                    }
                 }
+
+                // match df {
+                //     // match the ME field
+                //     DF::ADSB(adsb) => {
+                //         // print the ICAO field
+                //         write!(f, "{}", adsb.icao)
+                //     }
+                //     DF::AllCallReply { icao, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", icao)
+                //     }
+                //     DF::ShortAirAirSurveillance { parity, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", parity)
+                //     }
+                //     // DF::SurveillanceAltitudeReply { parity, .. } => {
+                //     //     // print the ICAO field
+                //     //     write!(f, "{}", parity)
+                //     // }
+                //     // DF::SurveillanceIdentityReply { parity, .. } => {
+                //     //     // print the ICAO field
+                //     //     write!(f, "{}", parity)
+                //     // }
+                //     DF::LongAirAir { parity, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", parity)
+                //     }
+                //     DF::TisB { pi, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", pi)
+                //     }
+                //     DF::ExtendedQuitterMilitaryApplication { .. } => {
+                //         // print the ICAO field
+                //         write!(f, "N/A")
+                //     }
+                //     DF::CommBAltitudeReply { parity, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", parity)
+                //     }
+                //     DF::CommBIdentityReply { parity, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", parity)
+                //     }
+                //     DF::CommDExtendedLengthMessage { parity, .. } => {
+                //         // print the ICAO field
+                //         write!(f, "{}", parity)
+                //     }
+                //     _ => {
+                //         // print the ICAO field
+                //         write!(f, "N/A")
+                //     }
+                // }
             }
         }
     }
@@ -330,6 +376,16 @@ pub struct Adsb {
     pub me: ME,
     // // Parity/Interrogator ID
     pub pi: ICAO,
+}
+
+impl fmt::Display for Adsb {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{:?}",
+            self.me.to_string(self.icao, "ADS-B", self.capability, true)
+        )
+    }
 }
 
 /// ICAO Address; Mode S transponder code
@@ -634,6 +690,14 @@ pub struct GroundSpeedDecoding {
     pub ns_vel: u16,
 }
 
+impl fmt::Display for GroundSpeedDecoding {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  EW velocity:    {}{} kt", self.ew_sign, self.ew_vel)?;
+        writeln!(f, "  NS velocity:    {}{} kt", self.ns_sign, self.ns_vel)?;
+        Ok(())
+    }
+}
+
 /// [`ME::AirborneVelocity`] && [`AirborneVelocitySubType::AirspeedDecoding`]
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct AirspeedDecoding {
@@ -651,6 +715,17 @@ pub struct AirspeedDecoding {
     pub airspeed: u16,
 }
 
+impl fmt::Display for AirspeedDecoding {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.airspeed_type == 0 {
+            write!(f, "  IAS:           {} kt", self.airspeed)?;
+        } else {
+            write!(f, "  TAS:           {} kt", self.airspeed)?;
+        }
+        Ok(())
+    }
+}
+
 /// Aircraft Operational Status Subtype
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "3")]
@@ -663,6 +738,22 @@ pub enum OperationStatus {
 
     #[deku(id_pat = "2..=7")]
     Reserved(#[deku(bits = "5")] u8, [u8; 5]),
+}
+
+impl fmt::Display for OperationStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            OperationStatus::Airborne(opstatus_airborne) => {
+                write!(f, "{}", opstatus_airborne)
+            }
+            OperationStatus::Surface(opstatus_surface) => {
+                write!(f, "{}", opstatus_surface)
+            }
+            OperationStatus::Reserved(..) => {
+                write!(f, "Reserved")
+            }
+        }
+    }
 }
 
 /// [`ME::AircraftOperationStatus`] && [`OperationStatus`] == 0
@@ -1062,6 +1153,15 @@ pub struct AircraftStatus {
     pub squawk: u32,
 }
 
+impl fmt::Display for AircraftStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  Subtype:        {}", self.sub_type)?;
+        writeln!(f, "  Emergency:      {}", self.emergency_state)?;
+        writeln!(f, "  Squawk:         {squawk:x?}", squawk = self.squawk)?;
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "3")]
 pub enum AircraftStatusType {
@@ -1073,6 +1173,17 @@ pub enum AircraftStatusType {
     ACASRaBroadcast,
     #[deku(id_pat = "_")]
     Reserved,
+}
+
+impl fmt::Display for AircraftStatusType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::NoInformation => write!(f, "no information"),
+            Self::EmergencyPriorityStatus => write!(f, "emergency/priority status"),
+            Self::ACASRaBroadcast => write!(f, "ACAS RA broadcast"),
+            Self::Reserved => write!(f, "reserved"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -1116,6 +1227,24 @@ pub struct OperationCodeSurface {
     pub lw: u8,
 }
 
+impl fmt::Display for OperationCodeSurface {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if self.poe.eq(&1) {
+            write!(f, " POE")?;
+        }
+        if self.cdti.eq(&1) {
+            write!(f, " CDTI")?;
+        }
+        if self.b2_low.eq(&1) {
+            write!(f, " B2_LOW")?;
+        }
+        if self.lw != 0 {
+            write!(f, " L/W={}", self.lw)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq)]
 pub struct Identification {
     pub tc: TypeCoding,
@@ -1126,6 +1255,14 @@ pub struct Identification {
     /// N-Number / Tail Number
     #[deku(reader = "aircraft_identification_read(deku::rest)")]
     pub cn: String,
+}
+
+impl fmt::Display for Identification {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  Type code:      {}{}", self.tc, self.ca)?;
+        writeln!(f, "  Callsign:       {}", self.cn)?;
+        Ok(())
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -1145,6 +1282,39 @@ impl fmt::Display for TypeCoding {
             Self::B => write!(f, "B"),
             Self::A => write!(f, "A"),
         }
+    }
+}
+
+impl fmt::Display for TargetStateAndStatusInformation {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "    Target altitude:   MCP, {} ft", self.altitude)?;
+        writeln!(f, "    Altimeter setting: {} millibars", self.qnh)?;
+        if self.is_heading {
+            writeln!(f, "    Target heading:    {}", self.heading)?;
+        }
+        if self.tcas {
+            write!(f, "    ACAS:              operational ")?;
+            if self.autopilot {
+                write!(f, "autopilot ")?;
+            }
+            if self.vnac {
+                write!(f, "vnav ")?;
+            }
+            if self.alt_hold {
+                write!(f, "altitude-hold ")?;
+            }
+            if self.approach {
+                write!(f, " approach")?;
+            }
+            writeln!(f)?;
+        } else {
+            writeln!(f, "    ACAS:              NOT operational")?;
+        }
+        writeln!(f, "    NACp:              {}", self.nacp)?;
+        writeln!(f, "    NICbaro:           {}", self.nicbaro)?;
+        writeln!(f, "    SIL:               {} (per sample)", self.sil)?;
+        writeln!(f, "    QNH:               {} millibars", self.qnh)?;
+        Ok(())
     }
 }
 
@@ -1225,6 +1395,18 @@ pub struct AirborneVelocity {
     pub gnss_baro_diff: u16,
 }
 
+impl fmt::Display for AirborneVelocity {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        let (heading, ground_speed, vertical_rate) = self.calculate().unwrap_or((0.0, 0.0, 0));
+
+        write!(f, "  Heading:       {}", heading)?;
+        write!(f, "  Speed:         {} kt groundspeed", ground_speed)?;
+        write!(f, "  Vertical rate: {} ft/min", vertical_rate)?;
+
+        Ok(())
+    }
+}
+
 impl AirborneVelocity {
     /// Return effective (`heading`, `ground_speed`, `vertical_rate`) for groundspeed
     #[must_use]
@@ -1266,11 +1448,36 @@ pub enum AirborneVelocitySubType {
     Reserved1(#[deku(bits = "22")] u32),
 }
 
+impl fmt::Display for AirborneVelocitySubType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            AirborneVelocitySubType::Reserved0(_) | AirborneVelocitySubType::Reserved1(_) => {
+                write!(f, "reserved")
+            }
+            AirborneVelocitySubType::GroundSpeedDecoding(ground_speed) => {
+                write!(f, "ground speed decoding")
+            }
+            AirborneVelocitySubType::AirspeedDecoding(airspeed) => {
+                write!(f, "airspeed decoding")
+            }
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "3")]
 pub enum AirborneVelocityType {
     Subsonic = 1,
     Supersonic = 3,
+}
+
+impl fmt::Display for AirborneVelocityType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            AirborneVelocityType::Subsonic => write!(f, "subsonic"),
+            AirborneVelocityType::Supersonic => write!(f, "supersonic"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -1282,6 +1489,13 @@ pub struct AirborneVelocitySubFields {
     pub dns: DirectionNS,
     #[deku(reader = "Self::read_v(deku::rest, t)")]
     pub vns: u16,
+}
+
+impl fmt::Display for AirborneVelocitySubFields {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "EW: {} {} kt", self.dew, self.vew)?;
+        write!(f, "NS: {} {} kt", self.dns, self.vns)
+    }
 }
 
 impl AirborneVelocitySubFields {
@@ -1309,11 +1523,29 @@ pub enum DirectionEW {
     EastToWest = 1,
 }
 
+impl fmt::Display for DirectionEW {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DirectionEW::WestToEast => write!(f, "west to east"),
+            DirectionEW::EastToWest => write!(f, "east to west"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "1")]
 pub enum DirectionNS {
     SouthToNorth = 0,
     NorthToSouth = 1,
+}
+
+impl fmt::Display for DirectionNS {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DirectionNS::SouthToNorth => write!(f, "south to north"),
+            DirectionNS::NorthToSouth => write!(f, "north to south"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -1323,6 +1555,15 @@ pub enum SourceBitVerticalRate {
     Barometer = 1,
 }
 
+impl fmt::Display for SourceBitVerticalRate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            SourceBitVerticalRate::GNSS => write!(f, "GNSS"),
+            SourceBitVerticalRate::Barometer => write!(f, "barometer"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "1")]
 pub enum SignBitVerticalRate {
@@ -1330,11 +1571,29 @@ pub enum SignBitVerticalRate {
     Down = 1,
 }
 
+impl fmt::Display for SignBitVerticalRate {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            SignBitVerticalRate::Up => write!(f, "up"),
+            SignBitVerticalRate::Down => write!(f, "down"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "1")]
 pub enum SignBitGNSSBaroAltitudesDiff {
     Above = 0,
     Below = 1,
+}
+
+impl fmt::Display for SignBitGNSSBaroAltitudesDiff {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            SignBitGNSSBaroAltitudesDiff::Above => write!(f, "above"),
+            SignBitGNSSBaroAltitudesDiff::Below => write!(f, "below"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -1369,11 +1628,37 @@ pub struct SurfacePosition {
     pub lon_cpr: u32,
 }
 
+impl fmt::Display for SurfacePosition {
+    // TODO: decode lat/lon?
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        // let lat: f64 = decode_cpr_latitude(self.lat_cpr, self.f);
+        // let lon: f64 = decode_cpr_longitude(self.lon_cpr, self.f, lat);
+        writeln!(f, "  Latitude:      {}", self.lat_cpr)?;
+        writeln!(f, "  Longitude:     {}", self.lon_cpr)?;
+        writeln!(f, "  CPR type:      Surface")?;
+        writeln!(f, "  CPR odd flag:  {}", self.f)?;
+        writeln!(f, "  Ground track:  {}", self.trk)?;
+        writeln!(f, "  Ground speed:  {}", self.mov)?;
+        writeln!(f, "  UTC sync:      {}", self.t)?;
+        writeln!(f, "  Status:        {}", self.s)?;
+        Ok(())
+    }
+}
+
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "1")]
 pub enum StatusForGroundTrack {
     Invalid = 0,
     Valid = 1,
+}
+
+impl fmt::Display for StatusForGroundTrack {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            StatusForGroundTrack::Invalid => write!(f, "invalid"),
+            StatusForGroundTrack::Valid => write!(f, "valid"),
+        }
+    }
 }
 
 /// Transponder level and additional information (3.1.2.5.2.2.1)
@@ -1527,6 +1812,17 @@ pub enum SurveillanceStatus {
     PermanentAlert = 1,
     TemporaryAlert = 2,
     SPICondition = 3,
+}
+
+impl fmt::Display for SurveillanceStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            SurveillanceStatus::NoCondition => write!(f, "no condition"),
+            SurveillanceStatus::PermanentAlert => write!(f, "permanent alert"),
+            SurveillanceStatus::TemporaryAlert => write!(f, "temporary alert"),
+            SurveillanceStatus::SPICondition => write!(f, "SPI condition"),
+        }
+    }
 }
 
 pub(crate) fn decode_id13_field(id13_field: u32) -> u32 {
@@ -1749,9 +2045,28 @@ pub enum DownlinkRequest {
     Unknown,
 }
 
+impl fmt::Display for DownlinkRequest {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            DownlinkRequest::None => write!(f, "none"),
+            DownlinkRequest::RequestSendCommB => write!(f, "request send Comm-B"),
+            DownlinkRequest::CommBBroadcastMsg1 => write!(f, "Comm-B broadcast message 1"),
+            DownlinkRequest::CommBBroadcastMsg2 => write!(f, "Comm-B broadcast message 2"),
+            DownlinkRequest::Unknown => write!(f, "unknown"),
+        }
+    }
+}
+
 /// 13 bit encoded altitude
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct AC13Field(#[deku(reader = "Self::read(deku::rest)")] pub u16);
+
+impl fmt::Display for AC13Field {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  AC13:          {}", self.0)?;
+        Ok(())
+    }
+}
 
 impl AC13Field {
     // TODO Add unit
@@ -1791,6 +2106,14 @@ pub struct UtilityMessage {
     pub ids: UtilityMessageType,
 }
 
+impl fmt::Display for UtilityMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  IIS:           {}", self.iis)?;
+        writeln!(f, "  IDS:           {}", self.ids)?;
+        Ok(())
+    }
+}
+
 /// Message Type
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "2")]
@@ -1801,12 +2124,32 @@ pub enum UtilityMessageType {
     CommD = 0b11,
 }
 
+impl fmt::Display for UtilityMessageType {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            UtilityMessageType::NoInformation => write!(f, "no information"),
+            UtilityMessageType::CommB => write!(f, "Comm-B"),
+            UtilityMessageType::CommC => write!(f, "Comm-C"),
+            UtilityMessageType::CommD => write!(f, "Comm-D"),
+        }
+    }
+}
+
 /// Uplink / Downlink
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(type = "u8", bits = "1")]
 pub enum KE {
     DownlinkELMTx = 0,
     UplinkELMAck = 1,
+}
+
+impl fmt::Display for KE {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            KE::DownlinkELMTx => write!(f, "downlink ELM transmission"),
+            KE::UplinkELMAck => write!(f, "uplink ELM acknowledgement"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq)]
@@ -1880,6 +2223,58 @@ pub struct DataLinkCapability {
     #[deku(bits = "4")]
     pub reserved_acas: u8,
     pub bit_array: u16,
+}
+
+impl fmt::Display for DataLinkCapability {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        writeln!(f, "  Continuation:  {}", self.continuation_flag)?;
+        writeln!(f, "  Overlay:       {}", self.overlay_command_capability)?;
+        writeln!(f, "  ACAS:          {}", self.acas)?;
+        writeln!(
+            f,
+            "  Mode S subnetwork version number: {}",
+            self.mode_s_subnetwork_version_number
+        )?;
+        writeln!(
+            f,
+            "  Transponder enhanced protocol indicator: {}",
+            self.transponder_enhanced_protocol_indicator
+        )?;
+        writeln!(
+            f,
+            "  Mode S specific services capability: {}",
+            self.mode_s_specific_services_capability
+        )?;
+        writeln!(
+            f,
+            "  Uplink ELM average throughput capability: {}",
+            self.uplink_elm_average_throughput_capability
+        )?;
+        writeln!(f, "  Downlink ELM:  {}", self.downlink_elm)?;
+        writeln!(
+            f,
+            "  Aircraft identification capability: {}",
+            self.aircraft_identification_capability
+        )?;
+        writeln!(
+            f,
+            "  Squitter capability subfield: {}",
+            self.squitter_capability_subfield
+        )?;
+        writeln!(
+            f,
+            "  Surveillance identifier code: {}",
+            self.surveillance_identifier_code
+        )?;
+        writeln!(
+            f,
+            "  Common usage GICB capability report: {}",
+            self.common_usage_gicb_capability_report
+        )?;
+        writeln!(f, "  Reserved ACAS: {}", self.reserved_acas)?;
+        writeln!(f, "  Bit array:     {:16b}", self.bit_array)?;
+        Ok(())
+    }
 }
 
 /// 13 bit identity code
