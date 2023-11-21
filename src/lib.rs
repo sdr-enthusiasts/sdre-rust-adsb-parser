@@ -3,6 +3,8 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
+use core::fmt;
+
 use error_handling::deserialization_error::DeserializationError;
 
 #[cfg(feature = "json")]
@@ -85,6 +87,16 @@ impl DecodeMessage for Vec<u8> {
         match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => Err(e.into()),
+        }
+    }
+}
+
+impl fmt::Display for ADSBMessage {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ADSBMessage::JSONMessage(json_message) => write!(f, "{}", json_message),
+            ADSBMessage::AircraftJSON(aircraft_json) => write!(f, "{}", aircraft_json),
+            ADSBMessage::AdsbRawMessage(adsb_raw_message) => write!(f, "{}", adsb_raw_message),
         }
     }
 }

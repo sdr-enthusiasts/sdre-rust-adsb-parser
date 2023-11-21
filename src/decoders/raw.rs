@@ -82,6 +82,32 @@ pub struct AdsbRawMessage {
     pub crc: u32,
 }
 
+impl fmt::Display for AdsbRawMessage {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        // display the ICAO field
+        match self {
+            AdsbRawMessage { df, crc } => {
+                // print DF as string
+                // loop through all of the fields of the DF
+                match df {
+                    DF::ADSB(adsb) => match adsb {
+                        Adsb {
+                            capability,
+                            icao,
+                            me,
+                            pi,
+                        } => {
+                            write!(f, " ICAO: {}", icao)
+                        }
+                    },
+
+                    _ => write!(f, ""),
+                }
+            }
+        }
+    }
+}
+
 impl AdsbRawMessage {
     /// Read rest as CRC bits
     fn read_crc<'b>(

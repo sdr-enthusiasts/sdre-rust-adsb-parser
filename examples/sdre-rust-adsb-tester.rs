@@ -119,7 +119,7 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
                 debug!("Frame: {:?}", frame);
                 let message = frame.decode_message();
                 if let Ok(message) = message {
-                    debug!("Decoded: {:?}", message);
+                    debug!("Decoded: {}", message);
                 } else {
                     error!("Error decoding: {:?}", message);
                 }

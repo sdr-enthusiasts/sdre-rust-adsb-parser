@@ -38,6 +38,12 @@ impl NewJSONMessage for str {
     }
 }
 
+impl fmt::Display for JSONMessage {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.transponder_hex)
+    }
+}
+
 impl JSONMessage {
     /// Converts `JSONMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
@@ -79,6 +85,7 @@ impl JSONMessage {
 // https://github.com/wiedehopf/readsb/blob/dev/README-json.md
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
+#[serde(deny_unknown_fields)]
 pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status_bit_alert: Option<u8>,
@@ -123,6 +130,8 @@ pub struct JSONMessage {
     pub autopilot_selected_altitude: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_heading")]
     pub autopilot_selected_heading: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_fms")]
+    pub flight_management_system_selected_altitude: Option<i32>, // TODO: this naming convention for autopilot and fms stuff kinda sux
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_modes")]
     pub autopilot_modes: Option<Vec<NavigationModes>>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_qnh")]
@@ -172,6 +181,12 @@ pub struct AircraftJSON {
     pub now: f32,
     pub messages: i32,
     pub aircraft: Vec<JSONMessage>,
+}
+
+impl fmt::Display for AircraftJSON {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.aircraft.len())
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
@@ -467,11 +482,11 @@ mod tests {
                                 line_number
                             );
                             let json_message = final_message_to_process.decode_message();
-                            println!("JSON Message: {:?}", json_message);
+
                             assert!(
                                 json_message.is_ok(),
                                 "Failed to decode JSONMessage {:?}",
-                                json_message
+                                final_message_to_process
                             );
                         }
                         line_number += 1;
