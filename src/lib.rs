@@ -9,6 +9,7 @@ use error_handling::deserialization_error::DeserializationError;
 use decoders::json::{AircraftJSON, JSONMessage};
 #[cfg(feature = "raw")]
 use decoders::raw::AdsbRawMessage;
+use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 pub mod decoders {
     #[cfg(feature = "json")]
@@ -62,14 +63,27 @@ impl DecodeMessage for str {
     }
 }
 
+// FIXME: Right now this thing only can decode raw frames if it's passed in as a Vec<u8> or &[u8]
+// Ideally, this should be totally transparent to the user what the input is, and it should just work.
+// That said, the user should know their input type I suppose, so strings are always going to be JSON
+// And raw (and beast?) frames are always going to be bytes.
+
 /// Provides functionality for decoding a `&[u8]` to `ADSBMessage`.
 ///
 /// This does not consume the `&[u8]`.
 impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        let string = String::from_utf8_lossy(self);
-        match serde_json::from_str(&string) {
-            Ok(v) => Ok(v),
+        match AdsbRawMessage::from_bytes((&self, 0)) {
+            Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+impl DecodeMessage for Vec<u8> {
+    fn decode_message(&self) -> MessageResult<ADSBMessage> {
+        match AdsbRawMessage::from_bytes((&self, 0)) {
+            Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => Err(e.into()),
         }
     }
@@ -133,7 +147,8 @@ impl ADSBMessage {
     }
 }
 
-/// This will automagically serialise to either TODO: Fix the docs here.
+//TODO: Fix the docs here.
+/// This will automagically serialise to either
 ///
 /// This simplifies the handling of messaging by not needing to identify it first.
 /// It handles identification by looking at the provided data and seeing which format matches it best.

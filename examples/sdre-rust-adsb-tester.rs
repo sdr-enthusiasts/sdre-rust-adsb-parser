@@ -2,12 +2,14 @@
 #[macro_use]
 extern crate log;
 use generic_async_http_client::Request;
+use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
 use sdre_rust_adsb_parser::DecodeMessage;
+use sdre_rust_logging::SetupLogging;
+use serde::de;
 use std::env;
 use std::process;
 use std::time::Instant;
-
-use sdre_rust_logging::SetupLogging;
+use tokio::net::TcpStream;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
@@ -57,6 +59,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             1 => {
                 info!("Setting mode to aircraft.json JSON message processing")
             }
+            2 => {
+                info!("Setting mode to raw message processing")
+            }
             _ => {
                 error!("Invalid mode");
                 process::exit(1);
@@ -78,6 +83,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             info!("Connecting to {}. Processing as bulk messages", url_input);
             process_as_bulk_messages(url_input).await?;
         }
+        2 => {
+            info!("Connecting to {}. Processing as raw frames", url_input);
+            process_raw_frames(url_input).await?;
+        }
         _ => {
             eprintln!("Invalid mode: {}", mode);
             process::exit(1);
@@ -85,6 +94,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     }
 
     Ok(())
+}
+
+async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    info!("entered");
+    // open a TCP connection to ip. Grab the frames and process them as raw
+    let stream = TcpStream::connect(ip).await?;
+    info!("Connected to {:?}", stream);
+    let mut buffer = Vec::with_capacity(1024);
+
+    loop {
+        while let Ok(n) = stream.try_read_buf(&mut buffer) {
+            if n == 0 {
+                error!("No data read");
+                continue;
+            }
+            let raw_frame = &buffer[0..n];
+
+            debug!("Raw frame: {:?}", raw_frame);
+
+            let frames = format_adsb_raw_frames_from_bytes(raw_frame);
+            info!("Frames found: {:?}", frames.len());
+
+            for frame in frames {
+                debug!("Frame: {:?}", frame);
+                let message = frame.decode_message();
+                if let Ok(message) = message {
+                    debug!("Decoded: {:?}", message);
+                } else {
+                    error!("Error decoding: {:?}", message);
+                }
+            }
+        }
+    }
+    // info!("exiting");
+    // Ok(())
 }
 
 async fn process_as_bulk_messages(

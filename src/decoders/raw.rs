@@ -51,7 +51,7 @@ impl NewAdsbRawMessage for str {
 /// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
 /// This does not consume the `Vec<u8>`.
 /// The expected input is a a Vec<u8> of *bytes*.
-impl NewAdsbRawMessage for Vec<u8> {
+impl NewAdsbRawMessage for &Vec<u8> {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
             Ok((_, v)) => Ok(v),
@@ -63,7 +63,7 @@ impl NewAdsbRawMessage for Vec<u8> {
 /// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
 /// This does not consume the `[u8]`.
 /// The expected input is a a [u8] of *bytes*.
-impl NewAdsbRawMessage for [u8] {
+impl NewAdsbRawMessage for &[u8] {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
             Ok((_, v)) => Ok(v),
