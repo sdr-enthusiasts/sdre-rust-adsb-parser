@@ -5,7 +5,6 @@ use generic_async_http_client::Request;
 use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
-use serde::de;
 use std::env;
 use std::process;
 use std::time::Instant;

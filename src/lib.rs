@@ -157,6 +157,14 @@ impl ADSBMessage {
             ADSBMessage::AdsbRawMessage(_) => 1, // FIXME: this ain't right
         }
     }
+
+    pub fn is_empty(&self) -> bool {
+        match self {
+            ADSBMessage::JSONMessage(_) => false,
+            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.is_empty(),
+            ADSBMessage::AdsbRawMessage(_) => false,
+        }
+    }
 }
 
 //TODO: Fix the docs here.

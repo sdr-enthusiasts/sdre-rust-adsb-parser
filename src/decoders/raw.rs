@@ -85,70 +85,17 @@ pub struct AdsbRawMessage {
 impl fmt::Display for AdsbRawMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // display the ICAO field
-        match self {
-            AdsbRawMessage { df, crc } => {
-                match df {
-                    DF::ADSB(adsb) => {
-                        // print the ICAO field
-                        write!(f, "{}", adsb)
-                    }
-                    _ => {
-                        // print the ICAO field
-                        write!(f, "N/A")
-                    }
-                }
 
-                // match df {
-                //     // match the ME field
-                //     DF::ADSB(adsb) => {
-                //         // print the ICAO field
-                //         write!(f, "{}", adsb.icao)
-                //     }
-                //     DF::AllCallReply { icao, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", icao)
-                //     }
-                //     DF::ShortAirAirSurveillance { parity, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", parity)
-                //     }
-                //     // DF::SurveillanceAltitudeReply { parity, .. } => {
-                //     //     // print the ICAO field
-                //     //     write!(f, "{}", parity)
-                //     // }
-                //     // DF::SurveillanceIdentityReply { parity, .. } => {
-                //     //     // print the ICAO field
-                //     //     write!(f, "{}", parity)
-                //     // }
-                //     DF::LongAirAir { parity, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", parity)
-                //     }
-                //     DF::TisB { pi, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", pi)
-                //     }
-                //     DF::ExtendedQuitterMilitaryApplication { .. } => {
-                //         // print the ICAO field
-                //         write!(f, "N/A")
-                //     }
-                //     DF::CommBAltitudeReply { parity, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", parity)
-                //     }
-                //     DF::CommBIdentityReply { parity, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", parity)
-                //     }
-                //     DF::CommDExtendedLengthMessage { parity, .. } => {
-                //         // print the ICAO field
-                //         write!(f, "{}", parity)
-                //     }
-                //     _ => {
-                //         // print the ICAO field
-                //         write!(f, "N/A")
-                //     }
-                // }
+        let AdsbRawMessage { df, crc: _ } = self;
+
+        match df {
+            DF::ADSB(adsb) => {
+                // print the ICAO field
+                write!(f, "{}", adsb.icao)
+            }
+            _ => {
+                // print the ICAO field
+                write!(f, "N/A")
             }
         }
     }
@@ -1454,10 +1401,10 @@ impl fmt::Display for AirborneVelocitySubType {
             AirborneVelocitySubType::Reserved0(_) | AirborneVelocitySubType::Reserved1(_) => {
                 write!(f, "reserved")
             }
-            AirborneVelocitySubType::GroundSpeedDecoding(ground_speed) => {
+            AirborneVelocitySubType::GroundSpeedDecoding(_ground_speed) => {
                 write!(f, "ground speed decoding")
             }
-            AirborneVelocitySubType::AirspeedDecoding(airspeed) => {
+            AirborneVelocitySubType::AirspeedDecoding(_airspeed) => {
                 write!(f, "airspeed decoding")
             }
         }
