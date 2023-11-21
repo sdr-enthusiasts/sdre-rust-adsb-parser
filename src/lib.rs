@@ -3,16 +3,33 @@ extern crate serde_json;
 #[macro_use]
 extern crate log;
 
-#[cfg(feature = "json")]
-use crate::json::{AircraftJSON, JSONMessage};
-use serde::{Deserialize, Serialize};
+use error_handling::deserialization_error::DeserializationError;
 
-pub mod json;
+#[cfg(feature = "json")]
+use decoders::json::{AircraftJSON, JSONMessage};
+#[cfg(feature = "raw")]
+use decoders::raw::AdsbRawMessage;
+use serde::{Deserialize, Serialize};
+pub mod decoders {
+    #[cfg(feature = "json")]
+    pub mod json;
+    #[cfg(feature = "raw")]
+    pub mod raw;
+}
+
+pub mod error_handling {
+    pub mod adsb_raw_error;
+    pub mod deserialization_error;
+}
+
+pub mod helpers {
+    pub mod encode_adsb_raw_input;
+}
 
 /// Common return type for all serialisation/deserialisation functions.
 ///
 /// This serves as a wrapper for `serde_json::Error` as the Error type.
-pub type MessageResult<T> = Result<T, serde_json::Error>;
+pub type MessageResult<T> = Result<T, DeserializationError>;
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
@@ -26,7 +43,10 @@ pub trait DecodeMessage {
 /// This does not consume the `String`.
 impl DecodeMessage for String {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        serde_json::from_str(self)
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
@@ -35,7 +55,10 @@ impl DecodeMessage for String {
 /// This does not consume the `str`.
 impl DecodeMessage for str {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        serde_json::from_str(self)
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
@@ -45,7 +68,10 @@ impl DecodeMessage for str {
 impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         let string = String::from_utf8_lossy(self);
-        serde_json::from_str(&string)
+        match serde_json::from_str(&string) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
@@ -54,14 +80,17 @@ impl ADSBMessage {
     /// Converts `ADSBMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
         trace!("Converting {:?} to a string", &self);
-        serde_json::to_string(self)
+        match serde_json::to_string(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Converts `ADSBMessage` to `String` and appends a `\n` to the end.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         trace!("Converting {:?} to a string and appending a newline", &self);
         match serde_json::to_string(self) {
-            Err(to_string_error) => Err(to_string_error),
+            Err(to_string_error) => Err(to_string_error.into()),
             Ok(string) => Ok(format!("{}\n", string)),
         }
     }
@@ -99,6 +128,7 @@ impl ADSBMessage {
         match self {
             ADSBMessage::JSONMessage(_) => 1,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.len(),
+            ADSBMessage::AdsbRawMessage(_) => 1, // FIXME: this ain't right
         }
     }
 }
@@ -115,6 +145,8 @@ pub enum ADSBMessage {
     JSONMessage(JSONMessage),
     #[cfg(feature = "json")]
     AircraftJSON(AircraftJSON),
+    #[cfg(feature = "raw")]
+    AdsbRawMessage(AdsbRawMessage),
 }
 
 impl Default for ADSBMessage {

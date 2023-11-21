@@ -19,7 +19,10 @@ pub trait NewJSONMessage {
 /// This does not consume the `String`.
 impl NewJSONMessage for String {
     fn to_json(&self) -> MessageResult<JSONMessage> {
-        serde_json::from_str(self)
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
@@ -28,20 +31,26 @@ impl NewJSONMessage for String {
 /// This does not consume the `str`.
 impl NewJSONMessage for str {
     fn to_json(&self) -> MessageResult<JSONMessage> {
-        serde_json::from_str(self)
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 }
 
 impl JSONMessage {
     /// Converts `JSONMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
-        serde_json::to_string(self)
+        match serde_json::to_string(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Converts `JSONMessage` to `String` and appends a `\n` to the end.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
-            Err(to_string_error) => Err(to_string_error),
+            Err(to_string_error) => Err(to_string_error.into()),
             Ok(string) => Ok(format!("{}\n", string)),
         }
     }

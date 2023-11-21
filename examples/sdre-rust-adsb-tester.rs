@@ -18,11 +18,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         process::exit(1);
     }
 
-    if args.len() >= 3 {
-        println!("Setting mode to {}", &args[3]);
-        mode = args[3].parse::<i32>().unwrap();
-    }
-
     if args.len() == 4 {
         let log_level = &args[2];
 
@@ -52,6 +47,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         0.enable_logging();
     }
 
+    if args.len() >= 3 {
+        mode = args[3].parse::<i32>().unwrap();
+
+        match mode {
+            0 => {
+                info!("Setting mode to individual JSON message processing")
+            }
+            1 => {
+                info!("Setting mode to aircraft.json JSON message processing")
+            }
+            _ => {
+                error!("Invalid mode");
+                process::exit(1);
+            }
+        }
+    }
     // loop and connect to the URL given
     let url_input = &args[1];
 
@@ -82,7 +93,7 @@ async fn process_as_bulk_messages(
     loop {
         let req = Request::get(url);
         let total_time: String;
-        let planes_procesed: usize;
+        let mut planes_procesed: usize = 0;
 
         let mut resp = req.exec().await?;
         if resp.status_code() == 200 {
@@ -91,9 +102,13 @@ async fn process_as_bulk_messages(
             let now = Instant::now();
 
             debug!("Processing: {}", body);
-            let message = body.decode_message()?;
-            debug!("Decoded: {:?}", message);
-            planes_procesed = message.len();
+            let message = body.decode_message();
+            if let Ok(message) = message {
+                debug!("Decoded: {:?}", message);
+                planes_procesed = message.len();
+            } else {
+                error!("Error decoding: {:?}", message);
+            }
 
             let elapsed = now.elapsed();
             total_time = format!("{:.2?}", elapsed);
@@ -124,9 +139,14 @@ async fn process_as_individual_messages(
                 if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
                     let final_message_to_process = line.trim().trim_end_matches(',');
                     debug!("Processing: {}", final_message_to_process);
-                    let message = final_message_to_process.decode_message()?;
-                    debug!("Decoded: {:?}", message);
-                    planes_procesed += 1;
+                    let message = final_message_to_process.decode_message();
+
+                    if let Ok(message) = message {
+                        debug!("Decoded: {:?}", message);
+                        planes_procesed += 1;
+                    } else {
+                        error!("Error decoding: {:?}", message);
+                    }
                 }
             }
             let elapsed = now.elapsed();
