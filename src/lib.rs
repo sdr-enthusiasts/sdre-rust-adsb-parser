@@ -48,7 +48,14 @@ impl DecodeMessage for String {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         match serde_json::from_str(self) {
             Ok(v) => Ok(v),
-            Err(e) => Err(e.into()),
+            Err(e) => {
+                let bytes = hex::decode(self)?;
+                // try to decode it as a raw frame
+                match AdsbRawMessage::from_bytes((&bytes, 0)) {
+                    Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
+                    Err(_) => Err(e.into()),
+                }
+            }
         }
     }
 }
@@ -60,7 +67,14 @@ impl DecodeMessage for str {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         match serde_json::from_str(self) {
             Ok(v) => Ok(v),
-            Err(e) => Err(e.into()),
+            Err(e) => {
+                let bytes = hex::decode(self)?;
+                // try to decode it as a raw frame
+                match AdsbRawMessage::from_bytes((&bytes, 0)) {
+                    Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
+                    Err(_) => Err(e.into()),
+                }
+            }
         }
     }
 }

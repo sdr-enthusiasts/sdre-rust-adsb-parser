@@ -8,6 +8,7 @@ use sdre_rust_logging::SetupLogging;
 use std::env;
 use std::process;
 use std::time::Instant;
+use tokio::io::{AsyncReadExt, BufReader};
 use tokio::net::TcpStream;
 
 #[tokio::main]
@@ -97,34 +98,41 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
-    let stream = TcpStream::connect(ip).await?;
+    let mut stream = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
-    let mut buffer = Vec::with_capacity(1024);
+    let mut buffer = [0u8; 1024];
 
-    loop {
-        while let Ok(n) = stream.try_read_buf(&mut buffer) {
-            if n == 0 {
-                error!("No data read");
-                continue;
-            }
-            let raw_frame = &buffer[0..n];
+    while let Ok(n) = stream.read(&mut buffer).await {
+        if n == 0 {
+            error!("No data read");
+            continue;
+        }
+        debug!(
+            "Raw frame: {:?}",
+            String::from_utf8(buffer[0..n].to_vec()).unwrap()
+        );
 
-            debug!("Raw frame: {:?}", raw_frame);
+        let frames = format_adsb_raw_frames_from_bytes(&buffer[0..n]);
 
-            let frames = format_adsb_raw_frames_from_bytes(raw_frame);
-            info!("Frames found: {:?}", frames.len());
+        debug!("Pre-processed: {:?}", frames.frames);
+        info!("Frames found: {:?}", frames.len());
 
-            for frame in frames {
-                debug!("Frame: {:?}", frame);
-                let message = frame.decode_message();
-                if let Ok(message_done) = message {
-                    debug!("Decoded: {}", message_done);
-                } else {
-                    error!("Error decoding: {:?}", message);
-                }
+        for frame in frames.frames {
+            let message = frame.decode_message();
+            if let Ok(message_done) = message {
+                debug!("Decoded {:?}: {}", frame, message_done);
+            } else {
+                error!("Error decoding: {:?}", message);
             }
         }
+        if frames.left_over.len() > 0 {
+            debug!(
+                "Left over: {:?}",
+                String::from_utf8_lossy(&frames.left_over)
+            );
+        }
     }
+    Ok(())
 }
 
 async fn process_as_bulk_messages(

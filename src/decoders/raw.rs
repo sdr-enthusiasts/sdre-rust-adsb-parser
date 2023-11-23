@@ -26,6 +26,7 @@ pub trait NewAdsbRawMessage {
 /// The expected input is a hexadecimal string.
 impl NewAdsbRawMessage for String {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
+        info!("here!");
         let bytes = hex::decode(self)?;
         match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, v)) => Ok(v),
@@ -84,19 +85,131 @@ pub struct AdsbRawMessage {
 
 impl fmt::Display for AdsbRawMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        // display the ICAO field
-
         let AdsbRawMessage { df, crc: _ } = self;
 
-        match df {
-            DF::ADSB(adsb) => {
-                // print the ICAO field
-                write!(f, "{}", adsb.icao)
+        if let DF::ADSB(adsb) = df {
+            match &adsb.me {
+                ME::AircraftIdentification(identification) => {
+                    write!(f, "Identification {} {}", adsb.icao, identification)
+                }
+                ME::AirborneVelocity(vel) => write!(f, "Velocity: {} {}", adsb.icao, vel),
+                ME::AirbornePositionGNSSAltitude(altitude)
+                | ME::AirbornePositionBaroAltitude(altitude) => {
+                    write!(f, "Altitude {} {}", adsb.icao, altitude)
+                }
+                ME::SurfacePosition(surface_position) => {
+                    write!(f, "Surface position {} {}", adsb.icao, surface_position)
+                }
+                ME::AircraftStatus(status) => write!(f, "Status {} {}", adsb.icao, status),
+                ME::TargetStateAndStatusInformation(target_info) => {
+                    write!(f, "Target info {} {}", adsb.icao, target_info)
+                }
+                ME::AircraftOperationStatus(opstatus) => {
+                    write!(f, "Operation status {} {}", adsb.icao, opstatus)
+                }
+                ME::NoPosition(position) => write!(f, "No position {} {:?}", adsb.icao, position),
+                ME::Reserved0(reserved) => write!(f, "Reserved {} {:?}", adsb.icao, reserved),
+                ME::Reserved1(reserved) => write!(f, "Reserved {} {:?}", adsb.icao, reserved),
+                ME::SurfaceSystemStatus(status) => {
+                    write!(f, "Surface system status {} {:?}", adsb.icao, status)
+                }
+                ME::AircraftOperationalCoordination(coordination) => {
+                    write!(
+                        f,
+                        "Aircraft operational coordination {} {:?}",
+                        adsb.icao, coordination
+                    )
+                }
             }
-            _ => {
-                // print the ICAO field
-                write!(f, "N/A")
-            }
+        }
+        // log out AllCallReply and others
+        else if let DF::AllCallReply {
+            capability,
+            icao,
+            p_icao,
+        } = df
+        {
+            write!(f, "AllCallReply {} {} {}", capability, icao, p_icao)
+        } else if let DF::ShortAirAirSurveillance {
+            vs,
+            cc,
+            unused,
+            sl,
+            unused1,
+            ri,
+            unused2,
+            altitude,
+            parity,
+        } = df
+        {
+            write!(
+                f,
+                "ShortAirAirSurveillance {} {} {} {} {} {} {} {} {}",
+                vs, cc, unused, sl, unused1, ri, unused2, altitude, parity
+            )
+        } else if let DF::SurveillanceAltitudeReply { fs, dr, um, ac, ap } = df {
+            write!(
+                f,
+                "SurveillanceAltitudeReply {} {} {} {} {}",
+                fs, dr, um, ac, ap
+            )
+        } else if let DF::SurveillanceIdentityReply { fs, dr, um, id, ap } = df {
+            write!(
+                f,
+                "SurveillanceIdentityReply {} {} {} {} {}",
+                fs, dr, um, id, ap
+            )
+        } else if let DF::LongAirAir {
+            vs,
+            spare1,
+            sl,
+            spare2,
+            ri,
+            spare3,
+            altitude,
+            mv,
+            parity,
+        } = df
+        {
+            write!(
+                f,
+                "LongAirAir {} {} {} {} {} {} {} {:?} {}",
+                vs, spare1, sl, spare2, ri, spare3, altitude, mv, parity
+            )
+        } else if let DF::TisB { cf, pi } = df {
+            write!(f, "TisB {} {}", cf, pi)
+        } else if let DF::ExtendedQuitterMilitaryApplication { af } = df {
+            write!(f, "ExtendedQuitterMilitaryApplication {}", af)
+        } else if let DF::CommBAltitudeReply {
+            flight_status,
+            dr,
+            um,
+            alt,
+            bds,
+            parity,
+        } = df
+        {
+            write!(
+                f,
+                "CommBAltitudeReply {} {} {} {} {} {}",
+                flight_status, dr, um, alt, bds, parity
+            )
+        } else if let DF::CommBIdentityReply {
+            fs,
+            dr,
+            um,
+            id,
+            bds,
+            parity,
+        } = df
+        {
+            write!(
+                f,
+                "CommBIdentityReply {} {} {} {} {} {}",
+                fs, dr, um, id, bds, parity
+            )
+        } else {
+            write!(f, "{:?}", df)
         }
     }
 }
@@ -2252,6 +2365,13 @@ impl IdentityCode {
 
         let num: u16 = (a << 12 | b << 8 | c << 4 | d) as u16;
         Ok((rest, num))
+    }
+}
+
+impl fmt::Display for IdentityCode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "  Ident:         {}", self.0)?;
+        Ok(())
     }
 }
 
