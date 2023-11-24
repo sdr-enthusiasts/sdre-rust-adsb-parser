@@ -14,6 +14,57 @@ use decoders::raw::AdsbRawMessage;
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 pub mod decoders {
+    #[cfg(feature = "raw")]
+    pub mod raw_helpers {
+        pub mod ac13field;
+        pub mod adsb;
+        pub mod adsbversion;
+        pub mod airbornevelocity;
+        pub mod airbornevelocitysubfields;
+        pub mod airbornevelocitysubtype;
+        pub mod airbornevelocitytype;
+        pub mod aircraftstatus;
+        pub mod aircraftstatustype;
+        pub mod airspeeddecoding;
+        pub mod altitude;
+        pub mod bds;
+        pub mod capability;
+        pub mod capabilityclassairborne;
+        pub mod capabilityclasssurface;
+        pub mod controlfield;
+        pub mod controlfieldtype;
+        pub mod cprheaders;
+        pub mod datalinkcapability;
+        pub mod df;
+        pub mod direction_nsew;
+        pub mod downlinkrequest;
+        pub mod emergencystate;
+        pub mod flightstatus;
+        pub mod groundspeeddecoding;
+        pub mod helper_functions;
+        pub mod icao;
+        pub mod identification;
+        pub mod identitycode;
+        pub mod ke;
+        pub mod me;
+        pub mod operationalmode;
+        pub mod operationcodesurface;
+        pub mod operationstatus;
+        pub mod operationstatusairborne;
+        pub mod operationstatussurface;
+        pub mod sign;
+        pub mod signbitgnssbaroaltitudesdiff;
+        pub mod signbitverticalrate;
+        pub mod sourcebitverticalrate;
+        pub mod statusforgroundtrack;
+        pub mod surfaceposition;
+        pub mod surveillancestatus;
+        pub mod targetstateandstatusinformation;
+        pub mod typecoding;
+        pub mod utilitymessage;
+        pub mod utilitymessagetype;
+        pub mod verticleratesource;
+    }
     #[cfg(feature = "json")]
     pub mod json;
     #[cfg(feature = "raw")]

@@ -1,6 +1,6 @@
 [package]
 name = "sdre-rust-adsb-parser"
-version = "0.2.0"
+version = "0.1.0"
 edition = "2021"
 authors = ["Fred Clausen"]
 documentation = "https://github.com/sdr-enthusiasts/sdre-rust-adsb-parser"
@@ -29,6 +29,7 @@ libm = { version = "0.2.8", optional = true }
 generic-async-http-client = { version = "0.4.0", features = ["use_hyper"] }
 
 [features]
-default = ["json", "raw"]
+default = ["json", "raw", "beast"]
 json = ["dep:serde-enum-str"]
 raw = ["dep:deku", "dep:hex", "dep:libm"]
+beast = ["raw"]
