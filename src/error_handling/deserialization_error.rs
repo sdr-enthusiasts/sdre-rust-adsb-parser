@@ -1,8 +1,14 @@
+use custom_error::custom_error;
+
 use crate::error_handling::adsb_raw_error::ADSBRawError;
 use deku::error::DekuError;
 use hex::FromHexError;
 use serde_json::Error as SerdeError;
 use std::error::Error;
+
+custom_error! {pub WrongType
+    WrongTypeForAircraft{message: String} = "Wrong type: {message}",
+}
 
 #[derive(Debug)]
 pub enum DeserializationError {
@@ -11,6 +17,7 @@ pub enum DeserializationError {
     HexError(FromHexError),
     ADSBRawError(ADSBRawError),
     StardardError(Box<dyn Error + Send + Sync>),
+    WrongType(WrongType),
 }
 
 impl std::fmt::Display for DeserializationError {
@@ -21,6 +28,7 @@ impl std::fmt::Display for DeserializationError {
             DeserializationError::HexError(e) => write!(f, "Hex error: {}", e),
             DeserializationError::ADSBRawError(e) => write!(f, "ADSB Raw error: {}", e),
             DeserializationError::StardardError(e) => write!(f, "Standard error: {}", e),
+            DeserializationError::WrongType(e) => write!(f, "Wrong type error: {}", e),
         }
     }
 }
@@ -52,5 +60,11 @@ impl From<ADSBRawError> for DeserializationError {
 impl From<Box<dyn Error + Send + Sync>> for DeserializationError {
     fn from(value: Box<dyn Error + Send + Sync>) -> Self {
         DeserializationError::StardardError(value)
+    }
+}
+
+impl From<WrongType> for DeserializationError {
+    fn from(value: WrongType) -> Self {
+        DeserializationError::WrongType(value)
     }
 }

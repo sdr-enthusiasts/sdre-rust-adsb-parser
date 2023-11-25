@@ -5,7 +5,7 @@ extern crate log;
 
 use core::fmt;
 
-use error_handling::deserialization_error::DeserializationError;
+use error_handling::deserialization_error::{DeserializationError, WrongType};
 
 #[cfg(feature = "json")]
 use decoders::json::{AircraftJSON, JSONMessage};
@@ -65,6 +65,8 @@ pub mod decoders {
         pub mod utilitymessagetype;
         pub mod verticleratesource;
     }
+    #[cfg(feature = "beast")]
+    pub mod beast;
     #[cfg(feature = "json")]
     pub mod json;
     #[cfg(feature = "raw")]
@@ -80,6 +82,10 @@ pub mod helpers {
     pub mod encode_adsb_raw_input;
 }
 
+pub mod data_structures {
+    pub mod airplane;
+}
+
 /// Common return type for all serialisation/deserialisation functions.
 ///
 /// This serves as a wrapper for `serde_json::Error` as the Error type.
@@ -90,6 +96,18 @@ pub type MessageResult<T> = Result<T, DeserializationError>;
 /// The originating data must be in JSON format and have support for providing a `str`, and will not consume the source.
 pub trait DecodeMessage {
     fn decode_message(&self) -> MessageResult<ADSBMessage>;
+    fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
+        match self.decode_message()? {
+            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
+            _ => {
+                let error = WrongType::WrongTypeForAircraft {
+                    message: "The message is not an aircraft".to_string(),
+                };
+
+                Err(error.into())
+            }
+        }
+    }
 }
 
 /// Provides functionality for decoding a `String` to `ADSBMessage`.
@@ -106,6 +124,19 @@ impl DecodeMessage for String {
                     Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
                     Err(_) => Err(e.into()),
                 }
+            }
+        }
+    }
+
+    fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
+        match self.decode_message()? {
+            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
+            _ => {
+                let error = WrongType::WrongTypeForAircraft {
+                    message: "The message is not an aircraft".to_string(),
+                };
+
+                Err(error.into())
             }
         }
     }
@@ -128,6 +159,19 @@ impl DecodeMessage for str {
             }
         }
     }
+
+    fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
+        match self.decode_message()? {
+            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
+            _ => {
+                let error = WrongType::WrongTypeForAircraft {
+                    message: "The message is not an aircraft".to_string(),
+                };
+
+                Err(error.into())
+            }
+        }
+    }
 }
 
 // FIXME: Right now this thing only can decode raw frames if it's passed in as a Vec<u8> or &[u8]
@@ -145,6 +189,19 @@ impl DecodeMessage for &[u8] {
             Err(e) => Err(e.into()),
         }
     }
+
+    fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
+        match self.decode_message()? {
+            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
+            _ => {
+                let error = WrongType::WrongTypeForAircraft {
+                    message: "The message is not an aircraft".to_string(),
+                };
+
+                Err(error.into())
+            }
+        }
+    }
 }
 
 impl DecodeMessage for Vec<u8> {
@@ -152,6 +209,19 @@ impl DecodeMessage for Vec<u8> {
         match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => Err(e.into()),
+        }
+    }
+
+    fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
+        match self.decode_message()? {
+            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
+            _ => {
+                let error = WrongType::WrongTypeForAircraft {
+                    message: "The message is not an aircraft".to_string(),
+                };
+
+                Err(error.into())
+            }
         }
     }
 }
