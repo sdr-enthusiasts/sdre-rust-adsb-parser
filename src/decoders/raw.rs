@@ -7,7 +7,7 @@ use hex;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
-use super::raw_helpers::{df::DF, helper_functions::modes_checksum, me::ME};
+use super::raw_helpers::{df::DF, helper_functions::modes_checksum};
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
@@ -83,132 +83,12 @@ pub struct AdsbRawMessage {
 
 impl fmt::Display for AdsbRawMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let AdsbRawMessage { df, crc: _ } = self;
-
-        if let DF::ADSB(adsb) = df {
-            match &adsb.me {
-                ME::AircraftIdentification(identification) => {
-                    write!(f, "Identification {} {}", adsb.icao, identification)
-                }
-                ME::AirborneVelocity(vel) => write!(f, "Velocity: {} {}", adsb.icao, vel),
-                ME::AirbornePositionGNSSAltitude(altitude)
-                | ME::AirbornePositionBaroAltitude(altitude) => {
-                    write!(f, "Altitude {} {}", adsb.icao, altitude)
-                }
-                ME::SurfacePosition(surface_position) => {
-                    write!(f, "Surface position {} {}", adsb.icao, surface_position)
-                }
-                ME::AircraftStatus(status) => write!(f, "Status {} {}", adsb.icao, status),
-                ME::TargetStateAndStatusInformation(target_info) => {
-                    write!(f, "Target info {} {}", adsb.icao, target_info)
-                }
-                ME::AircraftOperationStatus(opstatus) => {
-                    write!(f, "Operation status {} {}", adsb.icao, opstatus)
-                }
-                ME::NoPosition(position) => write!(f, "No position {} {:?}", adsb.icao, position),
-                ME::Reserved0(reserved) => write!(f, "Reserved {} {:?}", adsb.icao, reserved),
-                ME::Reserved1(reserved) => write!(f, "Reserved {} {:?}", adsb.icao, reserved),
-                ME::SurfaceSystemStatus(status) => {
-                    write!(f, "Surface system status {} {:?}", adsb.icao, status)
-                }
-                ME::AircraftOperationalCoordination(coordination) => {
-                    write!(
-                        f,
-                        "Aircraft operational coordination {} {:?}",
-                        adsb.icao, coordination
-                    )
-                }
-            }
-        }
-        // log out AllCallReply and others
-        else if let DF::AllCallReply {
-            capability,
-            icao,
-            p_icao,
-        } = df
-        {
-            write!(f, "AllCallReply {} {} {}", capability, icao, p_icao)
-        } else if let DF::ShortAirAirSurveillance {
-            vs,
-            cc,
-            unused,
-            sl,
-            unused1,
-            ri,
-            unused2,
-            altitude,
-            parity,
-        } = df
-        {
-            write!(
-                f,
-                "ShortAirAirSurveillance {} {} {} {} {} {} {} {} {}",
-                vs, cc, unused, sl, unused1, ri, unused2, altitude, parity
-            )
-        } else if let DF::SurveillanceAltitudeReply { fs, dr, um, ac, ap } = df {
-            write!(
-                f,
-                "SurveillanceAltitudeReply {} {} {} {} {}",
-                fs, dr, um, ac, ap
-            )
-        } else if let DF::SurveillanceIdentityReply { fs, dr, um, id, ap } = df {
-            write!(
-                f,
-                "SurveillanceIdentityReply {} {} {} {} {}",
-                fs, dr, um, id, ap
-            )
-        } else if let DF::LongAirAir {
-            vs,
-            spare1,
-            sl,
-            spare2,
-            ri,
-            spare3,
-            altitude,
-            mv,
-            parity,
-        } = df
-        {
-            write!(
-                f,
-                "LongAirAir {} {} {} {} {} {} {} {:?} {}",
-                vs, spare1, sl, spare2, ri, spare3, altitude, mv, parity
-            )
-        } else if let DF::TisB { cf, pi } = df {
-            write!(f, "TisB {} {}", cf, pi)
-        } else if let DF::ExtendedQuitterMilitaryApplication { af } = df {
-            write!(f, "ExtendedQuitterMilitaryApplication {}", af)
-        } else if let DF::CommBAltitudeReply {
-            flight_status,
-            dr,
-            um,
-            alt,
-            bds,
-            parity,
-        } = df
-        {
-            write!(
-                f,
-                "CommBAltitudeReply {} {} {} {} {} {}",
-                flight_status, dr, um, alt, bds, parity
-            )
-        } else if let DF::CommBIdentityReply {
-            fs,
-            dr,
-            um,
-            id,
-            bds,
-            parity,
-        } = df
-        {
-            write!(
-                f,
-                "CommBIdentityReply {} {} {} {} {} {}",
-                fs, dr, um, id, bds, parity
-            )
-        } else {
-            write!(f, "{:?}", df)
-        }
+        write!(
+            f,
+            "{}",
+            self.to_string()
+                .unwrap_or("Failed to convert to string".to_string())
+        )
     }
 }
 
