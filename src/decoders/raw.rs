@@ -24,7 +24,6 @@ pub trait NewAdsbRawMessage {
 /// The expected input is a hexadecimal string.
 impl NewAdsbRawMessage for String {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
-        info!("here!");
         let bytes = hex::decode(self)?;
         match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, v)) => Ok(v),
