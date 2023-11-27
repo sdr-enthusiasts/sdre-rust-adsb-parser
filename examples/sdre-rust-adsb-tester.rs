@@ -4,7 +4,37 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-// A small binary to read in a file of ADS-B messages and print them out from an inputted URL
+/// A small binary to read in a file of ADS-B messages and print them out from an inputted URL
+///
+/// # Examples
+/// This example program shows how to use the library to read in a file of ADS-B messages and print them out
+/// To run this example to process tar1090 aircraft.json file individually, run the following command:
+/// ```bash
+/// cargo run --example sdre-rust-adsb-tester -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlindividual
+/// ```
+///
+/// To run this example to process readsb JSON, run the following command:
+/// ```bash
+/// cargo run --example sdre-rust-adsb-tester -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlbulk
+/// ```
+///
+/// To run this example to process readsb JSON from a TCP connection, run the following command:
+/// ```bash
+/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30047 --mode jsonfromtcp
+/// ```
+///
+/// To run this example to process raw frames from a TCP connection, run the following command:
+/// ```bash
+/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30002 --mode raw
+/// ```
+///
+/// To run this example to process beast frames from a TCP connection, run the following command:
+/// ```bash
+/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30005 --mode beast
+/// ```
+///
+/// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
+
 #[macro_use]
 extern crate log;
 use core::fmt;
@@ -34,6 +64,12 @@ enum Modes {
     JSONFromTCP,
     Raw,
     Beast,
+}
+
+impl Default for Modes {
+    fn default() -> Self {
+        Modes::JSONFromURLIndividual
+    }
 }
 
 impl FromStr for Modes {
@@ -125,7 +161,7 @@ impl Args {
         let mode: Modes = if let Some(mode) = mode {
             mode.parse::<Modes>().unwrap()
         } else {
-            Modes::JSONFromURLIndividual
+            Modes::default()
         };
 
         Ok(Args {
