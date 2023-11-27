@@ -88,9 +88,9 @@ impl JSONMessage {
     }
 }
 
-fn get_timestamp() -> f32 {
+fn get_timestamp() -> f64 {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
-        Ok(n) => n.as_secs_f32(),
+        Ok(n) => n.as_secs_f64(),
         Err(_) => 0.0,
     }
 }
@@ -101,7 +101,7 @@ fn get_timestamp() -> f32 {
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
     #[serde(rename = "now", default = "get_timestamp")]
-    pub timestamp: f32,
+    pub timestamp: f64,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status_bit_alert: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
