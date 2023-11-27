@@ -6,10 +6,13 @@
 
 use crate::MessageResult;
 use serde::{Deserialize, Serialize};
-use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
 use std::{fmt, time::SystemTime};
 
-// TODO: Figure out NIC and create enum for it
+use super::json_types::{
+    altitude::Altitude, calculatedbestflightid::CalculatedBestFlightID, emergency::Emergency,
+    emmittercategory::EmitterCategory, lastknownposition::LastKnownPosition,
+    navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevel,
+};
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
@@ -100,6 +103,7 @@ fn get_timestamp() -> f64 {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
+    /// The timestamp of the message in seconds since the epoch.
     #[serde(rename = "now", default = "get_timestamp")]
     pub timestamp: f64,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
@@ -201,172 +205,6 @@ pub struct AircraftJSON {
 impl fmt::Display for AircraftJSON {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.aircraft.len())
-    }
-}
-
-#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
-pub enum CalculatedBestFlightID {
-    String(String),
-}
-
-impl Default for CalculatedBestFlightID {
-    fn default() -> Self {
-        Self::String("".to_string())
-    }
-}
-
-impl fmt::Display for CalculatedBestFlightID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CalculatedBestFlightID::String(flight_id) => write!(f, "{}", flight_id.trim()),
-        }
-    }
-}
-
-impl fmt::Debug for CalculatedBestFlightID {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            CalculatedBestFlightID::String(flight_id) => fmt::Display::fmt(&flight_id.trim(), f),
-        }
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
-#[allow(non_camel_case_types)]
-pub enum Altitude {
-    I32(i32),
-    String(String),
-}
-
-impl Default for Altitude {
-    fn default() -> Self {
-        Self::I32(0)
-    }
-}
-
-impl fmt::Display for Altitude {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Altitude::I32(altitude) => write!(f, "{}", altitude),
-            Altitude::String(_) => write!(f, "Ground"),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Deserialize_enum_str, Serialize_enum_str)]
-// #[serde(untagged)]
-#[allow(non_camel_case_types)]
-pub enum Emergency {
-    none,
-    general,
-    lifeguard,
-    minfuel,
-    nordo,
-    unlawful,
-    downed,
-    reserved,
-}
-
-impl Default for Emergency {
-    fn default() -> Self {
-        Self::none
-    }
-}
-
-// emitter category https://www.adsbexchange.com/emitter-category-ads-b-do-260b-2-2-3-2-5-2/
-
-#[derive(Debug, Clone, PartialEq, PartialOrd, Deserialize_enum_str, Serialize_enum_str)]
-pub enum EmitterCategory {
-    A0,
-    A1,
-    A2,
-    A3,
-    A4,
-    A5,
-    A6,
-    A7,
-    B0,
-    B1,
-    B2,
-    B3,
-    B4,
-    B5,
-    B6,
-    B7,
-    C0,
-    C1,
-    C2,
-    C3,
-    C4,
-    C5,
-    C6,
-    C7,
-}
-
-impl Default for EmitterCategory {
-    fn default() -> Self {
-        Self::A0
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-pub struct LastKnownPosition {
-    // lat, lon, nic, rc, seen_pos
-    #[serde(rename = "lat")]
-    latitude: f32,
-    #[serde(rename = "lon")]
-    longitude: f32,
-    #[serde(rename = "nic")]
-    naviation_integrity_category: i32,
-    #[serde(rename = "rc")]
-    radius_of_containment: i32,
-    #[serde(rename = "seen_pos")]
-    last_time_seen: f32,
-}
-
-impl Default for LastKnownPosition {
-    fn default() -> Self {
-        Self {
-            latitude: 0.0,
-            longitude: 0.0,
-            naviation_integrity_category: 0,
-            radius_of_containment: 0,
-            last_time_seen: 0.0,
-        }
-    }
-}
-
-#[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
-#[allow(non_camel_case_types)]
-pub enum NavigationModes {
-    autopilot,
-    vnav,
-    althold,
-    approach,
-    lnav,
-    tcas,
-    none,
-}
-
-impl Default for NavigationModes {
-    fn default() -> Self {
-        Self::none
-    }
-}
-
-#[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
-#[allow(non_camel_case_types)]
-pub enum SourceIntegrityLevel {
-    unknown,
-    persample,
-    perhour,
-}
-
-impl Default for SourceIntegrityLevel {
-    fn default() -> Self {
-        Self::unknown
     }
 }
 

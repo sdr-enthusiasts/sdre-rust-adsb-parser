@@ -80,6 +80,16 @@ pub mod decoders {
     }
     #[cfg(feature = "json")]
     pub mod json;
+    #[cfg(feature = "json")]
+    pub mod json_types {
+        pub mod altitude;
+        pub mod calculatedbestflightid;
+        pub mod emergency;
+        pub mod emmittercategory;
+        pub mod lastknownposition;
+        pub mod navigationmodes;
+        pub mod sourceintegritylevel;
+    }
     #[cfg(feature = "raw")]
     pub mod raw;
 }
