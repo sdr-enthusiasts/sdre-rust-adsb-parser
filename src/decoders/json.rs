@@ -46,7 +46,7 @@ impl NewJSONMessage for str {
 
 impl fmt::Display for JSONMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.transponder_hex)
+        write!(f, "{}", self.to_string().unwrap())
     }
 }
 
@@ -93,6 +93,8 @@ impl JSONMessage {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
+    #[serde(skip_serializing_if = "Option::is_none", rename = "now")]
+    pub timestamp: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status_bit_alert: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
