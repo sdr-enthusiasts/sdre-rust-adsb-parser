@@ -230,7 +230,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
             if let Ok(message_done) = message {
                 debug!("Decoded {}: {}", frame, message_done);
             } else {
-                error!("Error decoding: {:?}", message);
+                error!("Error decoding: {}", message.unwrap_err());
             }
         }
     }
@@ -256,7 +256,7 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
             if let Ok(message_done) = message {
                 debug!("Decoded {:x?}: {}", frame, message_done);
             } else {
-                error!("Error decoding: {:?}", message);
+                error!("Error decoding: {}", message.unwrap_err());
             }
         }
     }
@@ -286,7 +286,7 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
             if let Ok(message_done) = message {
                 debug!("Decoded {:?}: {}", frame, message_done);
             } else {
-                error!("Error decoding: {:?}", message);
+                error!("Error decoding: {}", message.unwrap_err());
             }
         }
         if frames.left_over.len() > 0 {
@@ -319,13 +319,13 @@ async fn process_as_bulk_messages(
                 debug!("Decoded: {}", message);
                 planes_procesed = message.len();
             } else {
-                error!("Error decoding: {:?}", message);
+                error!("Error decoding: {}", message.unwrap_err());
             }
 
             let elapsed: Duration = now.elapsed();
             total_time = format!("{:.2?}", elapsed);
         } else {
-            error!("Response status error: {:?}", resp.status());
+            error!("Response status error: {}", resp.status());
             sleep(Duration::from_secs(10)).await;
             continue;
         }
@@ -358,14 +358,14 @@ async fn process_as_individual_messages(
                         debug!("Decoded: {:?}", message);
                         planes_procesed += 1;
                     } else {
-                        error!("Error decoding: {:?}", message);
+                        error!("Error decoding: {}", message.unwrap_err());
                     }
                 }
             }
             let elapsed: Duration = now.elapsed();
             total_time = format!("{:.2?}", elapsed);
         } else {
-            error!("Response status error: {:?}", resp.status());
+            error!("Response status error: {}", resp.status());
             sleep(Duration::from_secs(10)).await;
             continue;
         }
