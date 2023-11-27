@@ -1,3 +1,9 @@
+// Copyright 2023 Frederick Clausen II
+
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file or at
+// https://opensource.org/licenses/MIT.
+
 // A small binary to read in a file of ADS-B messages and print them out from an inputted URL
 #[macro_use]
 extern crate log;

@@ -1,3 +1,9 @@
+// Copyright 2023 Frederick Clausen II
+
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file or at
+// https://opensource.org/licenses/MIT.
+
 use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
 use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;

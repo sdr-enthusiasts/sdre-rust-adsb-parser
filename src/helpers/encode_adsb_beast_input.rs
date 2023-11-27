@@ -1,3 +1,9 @@
+// Copyright 2023 Frederick Clausen II
+
+// Use of this source code is governed by an MIT-style
+// license that can be found in the LICENSE file or at
+// https://opensource.org/licenses/MIT.
+
 const ADSB_BEAST_START_CHARACTER: u8 = 0x1a; // The adsb beast end character sequence is is a '0x3b0a', start is '0x2a'
 const ADSB_BEAST_LONG_FRAME_START_CHARACTER: u8 = 0x33;
 const ADSB_BEAST_SHORT_FRAME_START_CHARACTER: u8 = 0x32;
