@@ -13,6 +13,7 @@ use generic_async_http_client::Response;
 use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::ADSBBeastFrames;
+use sdre_rust_adsb_parser::helpers::encode_adsb_json_input::format_adsb_json_frames_from_string;
 use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
 use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
 use sdre_rust_adsb_parser::ADSBMessage;
@@ -200,6 +201,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
     let mut buffer: [u8; 8000] = [0u8; 8000];
+    let mut left_over = String::new();
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -208,14 +210,28 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
         }
         debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
         // convert the bytes to a string
-        let json_string: String = String::from_utf8_lossy(&buffer[0..n]).to_string();
+        let mut json_string: String = String::from_utf8_lossy(&buffer[0..n]).to_string();
         debug!("Pre-processed: {}", json_string);
-        let message: Result<ADSBMessage, DeserializationError> = json_string.decode_message();
 
-        if let Ok(message_done) = message {
-            debug!("Decoded: {}", message_done);
-        } else {
-            error!("Error decoding: {:?}", message);
+        // if we have a left over string, prepend it to the json_string
+        if !left_over.is_empty() {
+            json_string = format!("{}{}", left_over, json_string);
+        }
+
+        let frames = format_adsb_json_frames_from_string(&json_string);
+
+        debug!("Pre-processed with left overs: {:?}", frames.frames);
+
+        left_over = frames.left_over;
+
+        for frame in frames.frames {
+            debug!("Decoding: {}", frame);
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            if let Ok(message_done) = message {
+                debug!("Decoded {}: {}", frame, message_done);
+            } else {
+                error!("Error decoding: {:?}", message);
+            }
         }
     }
     Ok(())

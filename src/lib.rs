@@ -87,12 +87,14 @@ pub mod decoders {
 
 pub mod error_handling {
     pub mod adsb_beast_error;
+    pub mod adsb_json_error;
     pub mod adsb_raw_error;
     pub mod deserialization_error;
 }
 
 pub mod helpers {
     pub mod encode_adsb_beast_input;
+    pub mod encode_adsb_json_input;
     pub mod encode_adsb_raw_input;
 }
 
@@ -132,12 +134,13 @@ impl DecodeMessage for String {
         match serde_json::from_str(self) {
             Ok(v) => Ok(v),
             Err(e) => {
-                let bytes = hex::decode(self)?;
-                // try to decode it as a raw frame
-                match AdsbRawMessage::from_bytes((&bytes, 0)) {
-                    Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
-                    Err(_) => Err(e.into()),
-                }
+                Err(e.into())
+                // let bytes = hex::decode(self)?;
+                // // try to decode it as a raw frame
+                // match AdsbRawMessage::from_bytes((&bytes, 0)) {
+                //     Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
+                //     Err(_) => Err(e.into()),
+                // }
             }
         }
     }
