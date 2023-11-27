@@ -27,6 +27,7 @@ pub enum DeserializationError {
     ADSBBeastError(ADSBBeastError),
     StardardError(Box<dyn Error + Send + Sync>),
     WrongType(WrongType),
+    CombinedError(Vec<DeserializationError>),
 }
 
 impl std::fmt::Display for DeserializationError {
@@ -39,6 +40,12 @@ impl std::fmt::Display for DeserializationError {
             DeserializationError::ADSBBeastError(e) => write!(f, "ADSB Beast error: {}", e),
             DeserializationError::StardardError(e) => write!(f, "Standard error: {}", e),
             DeserializationError::WrongType(e) => write!(f, "Wrong type error: {}", e),
+            DeserializationError::CombinedError(e) => {
+                for error in e {
+                    writeln!(f, "{}", error)?;
+                }
+                Ok(())
+            }
         }
     }
 }
