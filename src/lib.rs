@@ -70,7 +70,6 @@ pub mod decoders {
     pub mod beast;
     #[cfg(feature = "beast")]
     pub mod beast_helpers {
-        pub mod beast_mlat;
         pub mod messagetype;
     }
 
