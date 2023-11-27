@@ -7,7 +7,7 @@
 use crate::MessageResult;
 use serde::{Deserialize, Serialize};
 use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
-use std::fmt;
+use std::{fmt, time::SystemTime};
 
 // TODO: Figure out NIC and create enum for it
 
@@ -88,13 +88,20 @@ impl JSONMessage {
     }
 }
 
+fn get_timestamp() -> f32 {
+    match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+        Ok(n) => n.as_secs_f32(),
+        Err(_) => 0.0,
+    }
+}
+
 // https://github.com/wiedehopf/readsb/blob/dev/README-json.md
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
-    #[serde(skip_serializing_if = "Option::is_none", rename = "now")]
-    pub timestamp: Option<f32>,
+    #[serde(rename = "now", default = "get_timestamp")]
+    pub timestamp: f32,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status_bit_alert: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
