@@ -5,6 +5,7 @@ extern crate log;
 
 use core::fmt;
 
+use decoders::beast::AdsbBeastMessage;
 use error_handling::deserialization_error::{DeserializationError, WrongType};
 
 #[cfg(feature = "json")]
@@ -67,6 +68,12 @@ pub mod decoders {
     }
     #[cfg(feature = "beast")]
     pub mod beast;
+    #[cfg(feature = "beast")]
+    pub mod beast_helpers {
+        pub mod beast_mlat;
+        pub mod messagetype;
+    }
+
     #[cfg(feature = "json")]
     pub mod json;
     #[cfg(feature = "raw")]
@@ -74,11 +81,13 @@ pub mod decoders {
 }
 
 pub mod error_handling {
+    pub mod adsb_beast_error;
     pub mod adsb_raw_error;
     pub mod deserialization_error;
 }
 
 pub mod helpers {
+    pub mod encode_adsb_beast_input;
     pub mod encode_adsb_raw_input;
 }
 
@@ -186,7 +195,10 @@ impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
-            Err(e) => Err(e.into()),
+            Err(e) => match AdsbBeastMessage::from_bytes((&self, 0)) {
+                Ok((_, body)) => Ok(ADSBMessage::AdsbBeastMessage(body)),
+                Err(_) => Err(e.into()),
+            },
         }
     }
 
@@ -208,7 +220,10 @@ impl DecodeMessage for Vec<u8> {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
         match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
-            Err(e) => Err(e.into()),
+            Err(e) => match AdsbBeastMessage::from_bytes((&self, 0)) {
+                Ok((_, body)) => Ok(ADSBMessage::AdsbBeastMessage(body)),
+                Err(_) => Err(e.into()),
+            },
         }
     }
 
@@ -232,6 +247,9 @@ impl fmt::Display for ADSBMessage {
             ADSBMessage::JSONMessage(json_message) => write!(f, "{}", json_message),
             ADSBMessage::AircraftJSON(aircraft_json) => write!(f, "{}", aircraft_json),
             ADSBMessage::AdsbRawMessage(adsb_raw_message) => write!(f, "{}", adsb_raw_message),
+            ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
+                write!(f, "{}", adsb_beast_message)
+            }
         }
     }
 }
@@ -290,6 +308,7 @@ impl ADSBMessage {
             ADSBMessage::JSONMessage(_) => 1,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.len(),
             ADSBMessage::AdsbRawMessage(_) => 1, // FIXME: this ain't right
+            ADSBMessage::AdsbBeastMessage(_) => 1, // FIXME: this ain't right
         }
     }
 
@@ -298,6 +317,7 @@ impl ADSBMessage {
             ADSBMessage::JSONMessage(_) => false,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.is_empty(),
             ADSBMessage::AdsbRawMessage(_) => false,
+            ADSBMessage::AdsbBeastMessage(_) => false,
         }
     }
 }
@@ -317,6 +337,8 @@ pub enum ADSBMessage {
     AircraftJSON(AircraftJSON),
     #[cfg(feature = "raw")]
     AdsbRawMessage(AdsbRawMessage),
+    #[cfg(feature = "beast")]
+    AdsbBeastMessage(AdsbBeastMessage),
 }
 
 impl Default for ADSBMessage {

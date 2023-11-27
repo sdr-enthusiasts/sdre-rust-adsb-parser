@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate log;
 use generic_async_http_client::Request;
+use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
 use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
@@ -62,6 +63,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             2 => {
                 info!("Setting mode to raw message processing")
             }
+            3 => {
+                info!("Setting mode to beast message processing")
+            }
             _ => {
                 error!("Invalid mode");
                 process::exit(1);
@@ -87,12 +91,42 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             info!("Connecting to {}. Processing as raw frames", url_input);
             process_raw_frames(url_input).await?;
         }
+        3 => {
+            info!("Connecting to {}. Processing as beast frames", url_input);
+            process_beast_frames(url_input).await?;
+        }
         _ => {
             eprintln!("Invalid mode: {}", mode);
             process::exit(1);
         }
     }
 
+    Ok(())
+}
+
+async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // open a TCP connection to ip. Grab the frames and process them as raw
+    let mut stream = BufReader::new(TcpStream::connect(ip).await?);
+    info!("Connected to {:?}", stream);
+    let mut buffer = [0u8; 1024];
+
+    while let Ok(n) = stream.read(&mut buffer).await {
+        if n == 0 {
+            error!("No data read");
+            continue;
+        }
+        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        let frames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
+        debug!("Pre-processed: {:x?}", frames.frames);
+        for frame in frames.frames {
+            let message = frame.decode_message();
+            if let Ok(message_done) = message {
+                debug!("Decoded {:x?}: {}", frame, message_done);
+            } else {
+                error!("Error decoding: {:?}", message);
+            }
+        }
+    }
     Ok(())
 }
 
