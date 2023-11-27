@@ -208,10 +208,10 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
             error!("No data read");
             continue;
         }
-        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
         // convert the bytes to a string
         let mut json_string: String = String::from_utf8_lossy(&buffer[0..n]).to_string();
-        debug!("Pre-processed: {}", json_string);
+        trace!("Pre-processed: {}", json_string);
 
         // if we have a left over string, prepend it to the json_string
         if !left_over.is_empty() {
@@ -220,7 +220,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
 
         let frames = format_adsb_json_frames_from_string(&json_string);
 
-        debug!("Pre-processed with left overs: {:?}", frames.frames);
+        trace!("Pre-processed with left overs: {:?}", frames.frames);
 
         left_over = frames.left_over;
 
@@ -228,7 +228,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
             debug!("Decoding: {}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
-                debug!("Decoded {}: {}", frame, message_done);
+                info!("Decoded: {:?}", message_done);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -248,13 +248,14 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
             error!("No data read");
             continue;
         }
-        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
-        debug!("Pre-processed: {:x?}", frames.frames);
+        trace!("Pre-processed: {:x?}", frames.frames);
         for frame in frames.frames {
+            debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
-                debug!("Decoded {:x?}: {}", frame, message_done);
+                info!("Decoded {:x?}: {}", frame, message_done);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -274,26 +275,20 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
             error!("No data read");
             continue;
         }
-        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
 
         let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&buffer[0..n]);
 
-        debug!("Pre-processed: {:?}", frames.frames);
-        info!("Frames found: {:?}", frames.len());
+        trace!("Pre-processed: {:?}", frames.frames);
 
         for frame in frames.frames {
+            debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
-                debug!("Decoded {:?}: {}", frame, message_done);
+                info!("Decoded {:?}: {}", frame, message_done);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
-        }
-        if frames.left_over.len() > 0 {
-            debug!(
-                "Left over: {:?}",
-                String::from_utf8_lossy(&frames.left_over)
-            );
         }
     }
     Ok(())
@@ -313,10 +308,10 @@ async fn process_as_bulk_messages(
             // for now we'll bust apart the response before parsing
             let now: Instant = Instant::now();
 
-            debug!("Processing: {}", body);
+            trace!("Processing: {}", body);
             let message: Result<ADSBMessage, DeserializationError> = body.decode_message();
             if let Ok(message) = message {
-                debug!("Decoded: {}", message);
+                info!("Decoded: {}", message);
                 planes_procesed = message.len();
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
@@ -350,12 +345,12 @@ async fn process_as_individual_messages(
             for line in body.lines() {
                 if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
                     let final_message_to_process: &str = line.trim().trim_end_matches(',');
-                    debug!("Processing: {}", final_message_to_process);
+                    debug!("Decoding: {}", final_message_to_process);
                     let message: Result<ADSBMessage, DeserializationError> =
                         final_message_to_process.decode_message();
 
                     if let Ok(message) = message {
-                        debug!("Decoded: {:?}", message);
+                        info!("Decoded: {:?}", message);
                         planes_procesed += 1;
                     } else {
                         error!("Error decoding: {}", message.unwrap_err());
