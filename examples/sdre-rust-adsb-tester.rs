@@ -7,114 +7,199 @@
 // A small binary to read in a file of ADS-B messages and print them out from an inputted URL
 #[macro_use]
 extern crate log;
+use core::fmt;
 use generic_async_http_client::Request;
+use generic_async_http_client::Response;
+use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
+use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::ADSBBeastFrames;
 use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
+use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
+use sdre_rust_adsb_parser::ADSBMessage;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
-use std::env;
-use std::process;
+use std::process::exit;
+use std::str::FromStr;
+use std::time::Duration;
 use std::time::Instant;
 use tokio::io::{AsyncReadExt, BufReader};
 use tokio::net::TcpStream;
+use tokio::time::sleep;
+
+#[derive(Debug)]
+enum Modes {
+    JSONFromURLIndividual,
+    JSONFromUrlBulk,
+    JSONFromTCP,
+    Raw,
+    Beast,
+}
+
+impl FromStr for Modes {
+    type Err = ArgParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "jsonfromurlindividual" => Ok(Modes::JSONFromURLIndividual),
+            "jsonfromurlbulk" => Ok(Modes::JSONFromUrlBulk),
+            "jsonfromtcp" => Ok(Modes::JSONFromTCP),
+            "raw" => Ok(Modes::Raw),
+            "beast" => Ok(Modes::Beast),
+            _ => Err(ArgParseError::InvalidMode),
+        }
+    }
+}
+
+impl fmt::Display for Modes {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Modes::JSONFromURLIndividual => write!(f, "JSON from URL, individual"),
+            Modes::JSONFromUrlBulk => write!(f, "JSON from URL, bulk"),
+            Modes::JSONFromTCP => write!(f, "JSON from tcp"),
+            Modes::Raw => write!(f, "raw"),
+            Modes::Beast => write!(f, "beast"),
+        }
+    }
+}
+
+#[derive(Debug)]
+enum ArgParseError {
+    UrlMissing,
+    InvalidMode,
+}
+
+struct Args {
+    url: String,
+    log_verbosity: u8,
+    mode: Modes,
+}
+
+impl Args {
+    fn try_parse<It: Iterator<Item = String>>(mut arg_it: It) -> Result<Args, ArgParseError> {
+        // Skip program name
+        let _ = arg_it.next();
+
+        let mut url: Option<String> = None;
+        let mut log_verbosity_temp: Option<String> = None;
+        let mut mode: Option<String> = None;
+
+        while let Some(arg) = arg_it.next() {
+            match arg.as_str() {
+                "--url" => {
+                    url = arg_it.next().map(Into::into);
+                }
+                "--log-verbosity" => {
+                    log_verbosity_temp = arg_it.next().map(Into::into);
+                }
+                "--mode" => {
+                    mode = arg_it.next().map(Into::into);
+                }
+                "--help" => {
+                    println!("{}", Args::help());
+                    exit(0);
+                }
+                s => {
+                    println!("Invalid argument: {s}");
+                    println!("{}", Args::help());
+                    exit(1);
+                }
+            }
+        }
+
+        let url: String = url.ok_or(ArgParseError::UrlMissing)?;
+
+        let log_verbosity: u8 = if let Some(log_verbosity_temp) = log_verbosity_temp {
+            match log_verbosity_temp.parse::<u8>() {
+                Ok(v) => v,
+                Err(e) => {
+                    println!("Invalid log verbosity: {e:?}");
+                    println!("Defaulting to 0");
+                    0
+                }
+            }
+        } else {
+            0
+        };
+
+        let mode: Modes = if let Some(mode) = mode {
+            mode.parse::<Modes>().unwrap()
+        } else {
+            Modes::JSONFromURLIndividual
+        };
+
+        Ok(Args {
+            url: url,
+            log_verbosity: log_verbosity,
+            mode: mode,
+        })
+    }
+
+    fn parse<It: Iterator<Item = String>>(arg_it: It) -> Args {
+        match Self::try_parse(arg_it) {
+            Ok(v) => v,
+            Err(e) => {
+                println!("Argument parsing failed: {e:?}");
+                println!("{}", Args::help());
+                exit(1);
+            }
+        }
+    }
+
+    fn help() -> String {
+        "\n\
+            sdre-rust-adsb-tester: Decodes readsb JSON, readsb airplanes.json, ADSB Raw or ADSB packets and prints the results to stdout\n\
+\n\
+            Args:\n\
+            --url [url:[port]]: URL and optional port to get ADSB data from\n\
+            --log-verbosity [0-5]: Set the log verbosity\n\
+            --mode [jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast]: Set the mode to use\n\
+            --help: Show this help and exit\n\
+        "
+        .to_string()
+    }
+}
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut mode = 0;
-    let args: Vec<String> = env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: sdre-rust-adsb-tester <url>");
-        process::exit(1);
-    }
+    let args: Args = Args::parse(std::env::args());
 
-    if args.len() == 4 {
-        let log_level = &args[2];
+    args.log_verbosity.enable_logging();
 
-        // match the input string to the log level
-        match log_level.as_str() {
-            "trace" | "5" => {
-                3.enable_logging();
-            }
-            "debug" | "4" => {
-                2.enable_logging();
-            }
-            "info" | "0" => {
-                0.enable_logging();
-            }
-            "warn" | "1" => {
-                0.enable_logging();
-            }
-            "error" | "3" => {
-                3.enable_logging();
-            }
-            _ => {
-                eprintln!("Invalid log level: {}. Setting to INFO", log_level);
-                0.enable_logging();
-            }
-        }
-    } else {
-        0.enable_logging();
-    }
-
-    if args.len() >= 3 {
-        mode = args[3].parse::<i32>().unwrap();
-
-        match mode {
-            0 => {
-                info!("Setting mode to individual JSON message processing")
-            }
-            1 => {
-                info!("Setting mode to aircraft.json JSON message processing")
-            }
-            2 => {
-                info!("Setting mode to raw message processing")
-            }
-            3 => {
-                info!("Setting mode to beast message processing")
-            }
-            _ => {
-                error!("Invalid mode");
-                process::exit(1);
-            }
-        }
-    }
     // loop and connect to the URL given
-    let url_input = &args[1];
+    let url_input: &String = &args.url;
+    let mode: &Modes = &args.mode;
 
     match mode {
-        0 => {
-            info!(
-                "Connecting to {}. Processing as individual messages",
-                url_input
-            );
+        Modes::JSONFromURLIndividual => {
+            info!("Processing as individual messages");
             process_as_individual_messages(url_input).await?;
         }
-        1 => {
-            info!("Connecting to {}. Processing as bulk messages", url_input);
+        Modes::JSONFromUrlBulk => {
+            info!("Processing as bulk messages");
             process_as_bulk_messages(url_input).await?;
         }
-        2 => {
-            info!("Connecting to {}. Processing as raw frames", url_input);
+        Modes::JSONFromTCP => {
+            info!("Processing as JSON from TCP");
+            process_json_from_tcp(url_input).await?;
+        }
+        Modes::Raw => {
+            info!("Processing as raw frames");
             process_raw_frames(url_input).await?;
         }
-        3 => {
-            info!("Connecting to {}. Processing as beast frames", url_input);
+        Modes::Beast => {
+            info!("Processing as beast frames");
             process_beast_frames(url_input).await?;
-        }
-        _ => {
-            eprintln!("Invalid mode: {}", mode);
-            process::exit(1);
         }
     }
 
     Ok(())
 }
 
-async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // open a TCP connection to ip. Grab the frames and process them as raw
-    let mut stream = BufReader::new(TcpStream::connect(ip).await?);
+async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // open a TCP connection to ip. Grab the frames and process them as JSON
+    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
-    let mut buffer = [0u8; 1024];
+    let mut buffer: [u8; 8000] = [0u8; 8000];
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -122,10 +207,36 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
             continue;
         }
         debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
-        let frames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
+        // convert the bytes to a string
+        let json_string: String = String::from_utf8_lossy(&buffer[0..n]).to_string();
+        debug!("Pre-processed: {}", json_string);
+        let message: Result<ADSBMessage, DeserializationError> = json_string.decode_message();
+
+        if let Ok(message_done) = message {
+            debug!("Decoded: {}", message_done);
+        } else {
+            error!("Error decoding: {:?}", message);
+        }
+    }
+    Ok(())
+}
+
+async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // open a TCP connection to ip. Grab the frames and process them as raw
+    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
+    info!("Connected to {:?}", stream);
+    let mut buffer: [u8; 1024] = [0u8; 1024];
+
+    while let Ok(n) = stream.read(&mut buffer).await {
+        if n == 0 {
+            error!("No data read");
+            continue;
+        }
+        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
         debug!("Pre-processed: {:x?}", frames.frames);
         for frame in frames.frames {
-            let message = frame.decode_message();
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
                 debug!("Decoded {:x?}: {}", frame, message_done);
             } else {
@@ -138,27 +249,24 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
 
 async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
-    let mut stream = BufReader::new(TcpStream::connect(ip).await?);
+    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
-    let mut buffer = [0u8; 1024];
+    let mut buffer: [u8; 1024] = [0u8; 1024];
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
             error!("No data read");
             continue;
         }
-        debug!(
-            "Raw frame: {:?}",
-            String::from_utf8(buffer[0..n].to_vec()).unwrap()
-        );
+        debug!("Raw frame: {:x?}", buffer[0..n].to_vec());
 
-        let frames = format_adsb_raw_frames_from_bytes(&buffer[0..n]);
+        let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&buffer[0..n]);
 
         debug!("Pre-processed: {:?}", frames.frames);
         info!("Frames found: {:?}", frames.len());
 
         for frame in frames.frames {
-            let message = frame.decode_message();
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
                 debug!("Decoded {:?}: {}", frame, message_done);
             } else {
@@ -179,18 +287,18 @@ async fn process_as_bulk_messages(
     url: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
-        let req = Request::get(url);
+        let req: Request = Request::get(url);
         let total_time: String;
         let mut planes_procesed: usize = 0;
 
-        let mut resp = req.exec().await?;
+        let mut resp: Response = req.exec().await?;
         if resp.status_code() == 200 {
-            let body = resp.text().await?;
+            let body: String = resp.text().await?;
             // for now we'll bust apart the response before parsing
-            let now = Instant::now();
+            let now: Instant = Instant::now();
 
             debug!("Processing: {}", body);
-            let message = body.decode_message();
+            let message: Result<ADSBMessage, DeserializationError> = body.decode_message();
             if let Ok(message) = message {
                 debug!("Decoded: {}", message);
                 planes_procesed = message.len();
@@ -198,15 +306,15 @@ async fn process_as_bulk_messages(
                 error!("Error decoding: {:?}", message);
             }
 
-            let elapsed = now.elapsed();
+            let elapsed: Duration = now.elapsed();
             total_time = format!("{:.2?}", elapsed);
         } else {
             error!("Response status error: {:?}", resp.status());
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            sleep(Duration::from_secs(10)).await;
             continue;
         }
         info!("Processed {} planes in {}", planes_procesed, total_time);
-        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+        sleep(Duration::from_secs(10)).await;
     }
 }
 
@@ -214,20 +322,21 @@ async fn process_as_individual_messages(
     url: &str,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
-        let req = Request::get(url);
+        let req: Request = Request::get(url);
         let mut planes_procesed = 0;
         let total_time: String;
 
-        let mut resp = req.exec().await?;
+        let mut resp: Response = req.exec().await?;
         if resp.status_code() == 200 {
-            let body = resp.text().await?;
+            let body: String = resp.text().await?;
             // for now we'll bust apart the response before parsing
-            let now = Instant::now();
+            let now: Instant = Instant::now();
             for line in body.lines() {
                 if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
-                    let final_message_to_process = line.trim().trim_end_matches(',');
+                    let final_message_to_process: &str = line.trim().trim_end_matches(',');
                     debug!("Processing: {}", final_message_to_process);
-                    let message = final_message_to_process.decode_message();
+                    let message: Result<ADSBMessage, DeserializationError> =
+                        final_message_to_process.decode_message();
 
                     if let Ok(message) = message {
                         debug!("Decoded: {:?}", message);
@@ -237,14 +346,14 @@ async fn process_as_individual_messages(
                     }
                 }
             }
-            let elapsed = now.elapsed();
+            let elapsed: Duration = now.elapsed();
             total_time = format!("{:.2?}", elapsed);
         } else {
             error!("Response status error: {:?}", resp.status());
-            tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+            sleep(Duration::from_secs(10)).await;
             continue;
         }
         info!("Processed {} planes in {}", planes_procesed, total_time);
-        tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
+        sleep(Duration::from_secs(10)).await;
     }
 }
