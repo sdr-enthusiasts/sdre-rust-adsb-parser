@@ -21,7 +21,6 @@ pub struct SurfacePosition {
 }
 
 impl fmt::Display for SurfacePosition {
-    // TODO: decode lat/lon?
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         // let lat: f64 = decode_cpr_latitude(self.lat_cpr, self.f);
         // let lon: f64 = decode_cpr_longitude(self.lon_cpr, self.f, lat);

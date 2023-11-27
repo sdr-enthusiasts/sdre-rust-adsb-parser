@@ -79,6 +79,7 @@ impl fmt::Display for AdsbBeastMessage {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct AdsbBeastMessage {
     /// 1: Message Type
     message_type: MessageType,
