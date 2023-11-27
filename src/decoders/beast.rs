@@ -11,7 +11,7 @@ use hex;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
-use super::{beast_helpers::messagetype::MessageType, raw_helpers::df::DF};
+use super::{beast_types::messagetype::MessageType, raw_helpers::df::DF};
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///

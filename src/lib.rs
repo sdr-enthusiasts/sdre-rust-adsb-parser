@@ -75,10 +75,9 @@ pub mod decoders {
     #[cfg(feature = "beast")]
     pub mod beast;
     #[cfg(feature = "beast")]
-    pub mod beast_helpers {
+    pub mod beast_types {
         pub mod messagetype;
     }
-
     #[cfg(feature = "json")]
     pub mod json;
     #[cfg(feature = "raw")]
