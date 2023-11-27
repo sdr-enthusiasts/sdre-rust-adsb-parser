@@ -8,7 +8,7 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
-use crate::decoders::raw_helpers::capability::Capability;
+use crate::decoders::raw_types::capability::Capability;
 
 use super::{controlfieldtype::ControlFieldType, icao::ICAO, me::ME};
 

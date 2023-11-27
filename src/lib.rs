@@ -22,7 +22,7 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 pub mod decoders {
     #[cfg(feature = "raw")]
-    pub mod raw_helpers {
+    pub mod raw_types {
         pub mod ac13field;
         pub mod adsb;
         pub mod adsbversion;

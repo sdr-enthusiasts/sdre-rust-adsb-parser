@@ -13,7 +13,7 @@ use hex;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
-use super::raw_helpers::{df::DF, helper_functions::modes_checksum};
+use super::raw_types::{df::DF, helper_functions::modes_checksum};
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
