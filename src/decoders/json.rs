@@ -161,11 +161,16 @@ pub struct JSONMessage {
     #[serde(skip_serializing, rename = "dbFlags")]
     pub db_flags: Option<DBFlags>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    /// ADS-B emergency/priority status, a superset of the 7x00 squawks (2.2.3.2.7.8.1.1)
+    /// (none, general, lifeguard, minfuel, nordo, unlawful, downed, reserved)
     pub emergency: Option<Emergency>,
+    /// The aircraft callsign, Flight Name, or Tail Number. Most likely the id used by air traffic control.
+    /// to interact with the flight. (2.2.8.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "flight")]
     pub calculated_best_flight_id: Option<CalculatedBestFlightID>,
+    /// Rate of change of geometric (GNSS / INS) altitude, feet/minute
     #[serde(skip_serializing_if = "Option::is_none", rename = "geom_rate")]
-    pub geometric_altitude_rate: Option<i32>,
+    pub geometric_altitude_rate: Option<BaroRate>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gs")]
     pub ground_speed: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
