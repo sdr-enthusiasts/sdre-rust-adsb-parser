@@ -10,7 +10,7 @@ use std::{fmt, time::SystemTime};
 
 use super::json_types::{
     adsbversion::ADSBVersion, altitude::Altitude, barorate::BaroRate,
-    calculatedbestflightid::CalculatedBestFlightID, emergency::Emergency,
+    calculatedbestflightid::CalculatedBestFlightID, dbflags::DBFlags, emergency::Emergency,
     emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
     lastknownposition::LastKnownPosition, nacp::NavigationIntegrityCategory,
     navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevelType,
@@ -153,10 +153,13 @@ pub struct JSONMessage {
     /// Rate of change in the barometric altitude in feet per minute.
     #[serde(skip_serializing_if = "Option::is_none", rename = "baro_rate")]
     pub barometric_altitude_rate: Option<BaroRate>,
+    /// Emitter category to identify the aircraft or vehicle class. 2.2.3.2.5.2
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<EmitterCategory>,
+    /// Wiedehopf's aircraft.json indicator for interesting aircraft.
+    /// Possible Values are military, interesting, PIA and LADD.
     #[serde(skip_serializing, rename = "dbFlags")]
-    pub db_flags: Option<i32>,
+    pub db_flags: Option<DBFlags>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub emergency: Option<Emergency>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "flight")]

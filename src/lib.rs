@@ -86,6 +86,7 @@ pub mod decoders {
         pub mod altitude;
         pub mod barorate;
         pub mod calculatedbestflightid;
+        pub mod dbflags;
         pub mod emergency;
         pub mod emmittercategory;
         pub mod flightstatus;
