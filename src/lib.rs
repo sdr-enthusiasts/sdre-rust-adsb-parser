@@ -120,7 +120,7 @@ pub type MessageResult<T> = Result<T, DeserializationError>;
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
-/// The originating data must be in JSON format and have support for providing a `str`, and will not consume the source.
+/// The originating data must be in JSON, Beast or Raw format. Vectors of bytes are also supported.
 pub trait DecodeMessage {
     fn decode_message(&self) -> MessageResult<ADSBMessage>;
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
@@ -239,23 +239,42 @@ impl DecodeMessage for str {
     }
 }
 
-// FIXME: Right now this thing only can decode raw frames if it's passed in as a Vec<u8> or &[u8]
-// Ideally, this should be totally transparent to the user what the input is, and it should just work.
-// That said, the user should know their input type I suppose, so strings are always going to be JSON
-// And raw (and beast?) frames are always going to be bytes.
-
 /// Provides functionality for decoding a `&[u8]` to `ADSBMessage`.
 ///
 /// This does not consume the `&[u8]`.
 impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        match AdsbRawMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
-            Err(e) => match AdsbBeastMessage::from_bytes((&self, 0)) {
-                Ok((_, body)) => Ok(ADSBMessage::AdsbBeastMessage(body)),
-                Err(_) => Err(e.into()),
-            },
-        }
+        // FIXME: we should probably do serde last, as it's the least likely candidate for this input
+        let error_serde: DeserializationError = match serde_json::from_slice(self) {
+            Ok(v) => return Ok(v),
+            Err(e) => e.into(),
+        };
+
+        let bytes = match hex::decode(self) {
+            Ok(v) => v,
+            Err(e) => {
+                // return e and serde error
+                // we can't attempt to use the other decoders here, because we didn't get sane bytes
+                return Err(DeserializationError::CombinedError(vec![
+                    error_serde,
+                    e.into(),
+                ]));
+            }
+        };
+        // try to decode it as a raw frame
+        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+            Err(e) => e.into(),
+        };
+
+        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+            Err(e) => e.into(),
+        };
+
+        // create a combined error
+        let errors = vec![error_serde, error_raw, error_beast];
+        Err(DeserializationError::CombinedError(errors))
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
@@ -274,13 +293,37 @@ impl DecodeMessage for &[u8] {
 
 impl DecodeMessage for Vec<u8> {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        match AdsbRawMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => Ok(ADSBMessage::AdsbRawMessage(body)),
-            Err(e) => match AdsbBeastMessage::from_bytes((&self, 0)) {
-                Ok((_, body)) => Ok(ADSBMessage::AdsbBeastMessage(body)),
-                Err(_) => Err(e.into()),
-            },
-        }
+        // FIXME: we should probably do serde last, as it's the least likely candidate for this input
+        let error_serde: DeserializationError = match serde_json::from_slice(self) {
+            Ok(v) => return Ok(v),
+            Err(e) => e.into(),
+        };
+
+        let bytes = match hex::decode(self) {
+            Ok(v) => v,
+            Err(e) => {
+                // return e and serde error
+                // we can't attempt to use the other decoders here, because we didn't get sane bytes
+                return Err(DeserializationError::CombinedError(vec![
+                    error_serde,
+                    e.into(),
+                ]));
+            }
+        };
+        // try to decode it as a raw frame
+        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+            Err(e) => e.into(),
+        };
+
+        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+            Err(e) => e.into(),
+        };
+
+        // create a combined error
+        let errors = vec![error_serde, error_raw, error_beast];
+        Err(DeserializationError::CombinedError(errors))
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
