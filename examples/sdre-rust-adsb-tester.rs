@@ -264,7 +264,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
             debug!("Decoding: {}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message_done) = message {
-                info!("Decoded: {:?}", message_done);
+                info!("Decoded: {}", message_done);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }

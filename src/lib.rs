@@ -91,9 +91,13 @@ pub mod decoders {
         pub mod emmittercategory;
         pub mod flightstatus;
         pub mod lastknownposition;
+        pub mod latitude;
+        pub mod longitude;
         pub mod nacp;
+        pub mod nacv;
         pub mod navigationmodes;
         pub mod sourceintegritylevel;
+        pub mod speed;
     }
     #[cfg(feature = "raw")]
     pub mod raw;

@@ -23,7 +23,7 @@ impl Default for Altitude {
 impl fmt::Display for Altitude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Altitude::I32(altitude) => write!(f, "{}", altitude),
+            Altitude::I32(altitude) => write!(f, "{} ft", altitude),
             Altitude::String(_) => write!(f, "Ground"),
         }
     }
