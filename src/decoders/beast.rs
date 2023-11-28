@@ -43,7 +43,7 @@ pub trait NewAdsbBeastMessage {
 /// Rust strings are utf-8, and thus cannot contain those characters.
 impl NewAdsbBeastMessage for String {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
-        let bytes = hex::decode(self)?;
+        let bytes: Vec<u8> = hex::decode(self)?;
         match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, v)) => Ok(v),
             Err(e) => Err(e.into()),
@@ -61,7 +61,7 @@ impl NewAdsbBeastMessage for String {
 /// Rust strings are utf-8, and thus cannot contain those characters.
 impl NewAdsbBeastMessage for str {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
-        let bytes = hex::decode(self)?;
+        let bytes: Vec<u8> = hex::decode(self)?;
         match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, v)) => Ok(v),
             Err(e) => Err(e.into()),
