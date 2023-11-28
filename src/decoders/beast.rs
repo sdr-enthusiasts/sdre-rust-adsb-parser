@@ -13,6 +13,17 @@ use std::fmt::{self, Formatter};
 
 use super::{beast_types::messagetype::MessageType, raw_types::df::DF};
 
+// Beast format sources:
+// https://wiki.jetvision.de/wiki/Mode-S_Beast:Data_Output_Formats
+// https://github.com/firestuff/adsb-tools/blob/master/protocols/beast.md#examples
+
+// <esc> "1" : 6 byte MLAT timestamp, 1 byte signal level, 2 byte Mode-AC
+// <esc> "2" : 6 byte MLAT timestamp, 1 byte signal level, 7 byte Mode-S short frame
+// <esc> "3" : 6 byte MLAT timestamp, 1 byte signal level, 14 byte Mode-S long frame
+// <esc> "4" : 6 byte MLAT timestamp, 1 byte unused, DIP switch configuration settings, time stamp error ticks as int8_t (1 tick is 15ns) (message "4" not on Mode-S Beast classic)
+// <esc><esc>: true 0x1a
+// <esc> is 0x1a, and "1", "2" and "3" are 0x31, 0x32 and 0x33
+
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
 ///
 /// The originating data must be in beast format and have support for providing a `str`, and will not consume the source.
@@ -26,6 +37,10 @@ pub trait NewAdsbBeastMessage {
 ///
 /// This does not consume the `String`.
 /// The expected input is a hexadecimal string.
+///
+/// Expecting to be able to use this method will likely fail. Most of the beast
+/// Input contains non-ascii characters (technically, those from 0x80 to 0xff).
+/// Rust strings are utf-8, and thus cannot contain those characters.
 impl NewAdsbBeastMessage for String {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         let bytes = hex::decode(self)?;
@@ -36,10 +51,14 @@ impl NewAdsbBeastMessage for String {
     }
 }
 
-/// Supporting `.to_adsb_raw()` for the type `str`.
+/// Supporting `.to_adsb_beast()` for the type `str`.
 ///
 /// This does not consume the `str`.
 /// The expected input is a hexadecimal string.
+///
+/// Expecting to be able to use this method will likely fail. Most of the beast
+/// Input contains non-ascii characters (technically, those from 0x80 to 0xff).
+/// Rust strings are utf-8, and thus cannot contain those characters.
 impl NewAdsbBeastMessage for str {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         let bytes = hex::decode(self)?;
@@ -50,9 +69,15 @@ impl NewAdsbBeastMessage for str {
     }
 }
 
-/// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
+/// Supporting `.to_adsb_beast()` for the type `Vec<u8>`.
 /// This does not consume the `Vec<u8>`.
 /// The expected input is a a Vec<u8> of *bytes*.
+///
+/// Please note that in order for beast to be decoded, the message should NOT be escaped, meaning the leading 0x1a should be removed.
+///
+/// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
+/// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
+/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
 impl NewAdsbBeastMessage for &Vec<u8> {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         match AdsbBeastMessage::from_bytes((self, 0)) {
@@ -62,9 +87,15 @@ impl NewAdsbBeastMessage for &Vec<u8> {
     }
 }
 
-/// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
+/// Supporting `.to_adsb_beast()` for the type `Vec<u8>`.
 /// This does not consume the `[u8]`.
 /// The expected input is a a [u8] of *bytes*.
+///
+/// Please note that in order for beast to be decoded, the message should NOT be escaped, meaning the leading 0x1a should be removed.
+///
+/// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
+/// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
+/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
 impl NewAdsbBeastMessage for &[u8] {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         match AdsbBeastMessage::from_bytes((self, 0)) {
@@ -84,6 +115,12 @@ impl fmt::Display for AdsbBeastMessage {
     }
 }
 
+/// The struct containing the decoded ADSB Beast message.
+/// In order for beast to be decoded, the message should NOT be escaped, meaning the leading 0x1a should be removed.
+///
+/// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
+/// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
+/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AdsbBeastMessage {
