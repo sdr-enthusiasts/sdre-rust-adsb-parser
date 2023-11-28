@@ -19,12 +19,12 @@ use super::json_types::{
 ///
 /// The originating data must be in JSON format and have support for providing a `str`, and will not consume the source.
 ///
-/// This is intended for specifically decoding to `AcarsMessage`.
+/// This is intended for specifically decoding to `JSONMessage`.
 pub trait NewJSONMessage {
     fn to_json(&self) -> MessageResult<JSONMessage>;
 }
 
-/// Implementing `.to_acars()` for the type `String`.
+/// Implementing `.to_json()` for the type `String`.
 ///
 /// This does not consume the `String`.
 impl NewJSONMessage for String {
@@ -36,12 +36,38 @@ impl NewJSONMessage for String {
     }
 }
 
-/// Supporting `.to_acars()` for the type `str`.
+/// Supporting `.to_json()` for the type `str`.
 ///
 /// This does not consume the `str`.
 impl NewJSONMessage for str {
     fn to_json(&self) -> MessageResult<JSONMessage> {
         match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+/// Supporting `.to_json()` for the type `[u8]`.
+///
+/// This does not consume the `[u8]`.
+
+impl NewJSONMessage for [u8] {
+    fn to_json(&self) -> MessageResult<JSONMessage> {
+        match serde_json::from_slice(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+/// Supporting `.to_json()` for the type `Vec<u8>`.
+///
+/// This does not consume the `Vec<u8>`.
+
+impl NewJSONMessage for Vec<u8> {
+    fn to_json(&self) -> MessageResult<JSONMessage> {
+        match serde_json::from_slice(self) {
             Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
@@ -92,6 +118,7 @@ impl JSONMessage {
     }
 }
 
+// Not all messages have a timestamp, so we'll use the current time if one isn't provided.
 fn get_timestamp() -> f64 {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => n.as_secs_f64(),
@@ -101,6 +128,8 @@ fn get_timestamp() -> f64 {
 
 // https://github.com/wiedehopf/readsb/blob/dev/README-json.md
 
+/// The JSON message format.
+/// This is for a single aircraft of JSON data.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
@@ -111,7 +140,9 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status: Option<FlightStatusAlertBit>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
+    /// Aircraft altitude reported from the barometric altimeter.
     pub barometric_altitude: Option<Altitude>,
+
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_geom")]
     pub geometric_altitude: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "baro_rate")]
@@ -197,6 +228,12 @@ pub struct JSONMessage {
     pub version: Option<u8>,
 }
 
+/// The JSON message readsb provided aircraft.json format.
+/// This file is a list of JSONMessage with some additional metadata provided.
+
+// TODO: When deserializing no planes in this format will include a timestamp field.
+// However, AircraftJSON provides it. We should inject that timestamp field in to the
+// JSONMessage before deserializing it.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 pub struct AircraftJSON {
     pub now: f32,
