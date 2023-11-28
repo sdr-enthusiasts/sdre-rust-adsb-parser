@@ -135,3 +135,38 @@ pub struct AdsbBeastMessage {
     /// 4: Message
     message: DF,
 }
+
+impl AdsbBeastMessage {
+    /// Converts `AdsbBeastMessage` to `String`.
+    pub fn to_string(&self) -> MessageResult<String> {
+        Ok(serde_json::to_string(self)?)
+    }
+
+    /// Converts `AdsbBeastMessage` to `String` and appends a `\n` to the end.
+    pub fn to_string_newline(&self) -> MessageResult<String> {
+        match serde_json::to_string(self) {
+            Err(to_string_error) => Err(to_string_error.into()),
+            Ok(string) => Ok(format!("{}\n", string)),
+        }
+    }
+
+    /// Converts `AdsbBeastMessage` to a `String` encoded as bytes.
+    ///
+    /// The output is returned as a `Vec<u8>`.
+    pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
+        match self.to_string() {
+            Err(conversion_failed) => Err(conversion_failed),
+            Ok(string) => Ok(string.into_bytes()),
+        }
+    }
+
+    /// Converts `AdsbBeastMessage` to a `String` terminated with a `\n` and encoded as bytes.
+    ///
+    /// The output is returned as a `Vec<u8>`.
+    pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
+        match self.to_string_newline() {
+            Err(conversion_failed) => Err(conversion_failed),
+            Ok(string) => Ok(string.into_bytes()),
+        }
+    }
+}
