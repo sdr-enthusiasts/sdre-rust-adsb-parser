@@ -10,8 +10,9 @@ use std::{fmt, time::SystemTime};
 
 use super::json_types::{
     altitude::Altitude, calculatedbestflightid::CalculatedBestFlightID, emergency::Emergency,
-    emmittercategory::EmitterCategory, lastknownposition::LastKnownPosition,
-    navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevel,
+    emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
+    lastknownposition::LastKnownPosition, nacp::NavigationIntegrityCategory,
+    navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevelType,
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -106,8 +107,9 @@ pub struct JSONMessage {
     /// The timestamp of the message in seconds since the epoch.
     #[serde(rename = "now", default = "get_timestamp")]
     pub timestamp: f64,
+    /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
-    pub flight_status_bit_alert: Option<u8>,
+    pub flight_status: Option<FlightStatusAlertBit>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     pub barometric_altitude: Option<Altitude>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_geom")]
@@ -142,7 +144,7 @@ pub struct JSONMessage {
     pub number_of_received_messages: i32,
     pub mlat: Vec<String>, // TODO: Figure out what this is
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
-    pub navigation_accuracy_position: Option<u8>, // TODO: should this be an enum?
+    pub navigation_accuracy_position: Option<NavigationIntegrityCategory>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_v")]
     pub navigation_accuracy_velocity: Option<u8>, // TODO: should this be an enum?
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_mcp")]
@@ -177,7 +179,7 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
     pub source_integrity_level: Option<u8>, // TODO: should this be an enum?
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sil_type: Option<SourceIntegrityLevel>,
+    pub sil_type: Option<SourceIntegrityLevelType>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
     pub flight_status_special_position_id_bit: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]

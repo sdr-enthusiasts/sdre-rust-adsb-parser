@@ -4,18 +4,34 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use serde_enum_str::{Deserialize_enum_str, Serialize_enum_str};
+use serde::{Deserialize, Serialize};
+use std::fmt;
 
-#[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
-#[allow(non_camel_case_types)]
-pub enum SourceIntegrityLevel {
-    unknown,
-    persample,
-    perhour,
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[serde(from = "String")]
+pub enum SourceIntegrityLevelType {
+    #[default]
+    Unknown,
+    PerSample,
+    PerHour,
 }
 
-impl Default for SourceIntegrityLevel {
-    fn default() -> Self {
-        Self::unknown
+impl From<String> for SourceIntegrityLevelType {
+    fn from(source_integrity_level: String) -> Self {
+        match source_integrity_level.as_str() {
+            "persample" => SourceIntegrityLevelType::PerSample,
+            "perhour" => SourceIntegrityLevelType::PerHour,
+            _ => SourceIntegrityLevelType::Unknown,
+        }
+    }
+}
+
+impl fmt::Display for SourceIntegrityLevelType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            SourceIntegrityLevelType::PerSample => write!(f, "Per Sample"),
+            SourceIntegrityLevelType::PerHour => write!(f, "Per Hour"),
+            SourceIntegrityLevelType::Unknown => write!(f, "Unknown"),
+        }
     }
 }

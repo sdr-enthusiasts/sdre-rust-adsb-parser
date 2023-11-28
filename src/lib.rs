@@ -86,7 +86,9 @@ pub mod decoders {
         pub mod calculatedbestflightid;
         pub mod emergency;
         pub mod emmittercategory;
+        pub mod flightstatus;
         pub mod lastknownposition;
+        pub mod nacp;
         pub mod navigationmodes;
         pub mod sourceintegritylevel;
     }
