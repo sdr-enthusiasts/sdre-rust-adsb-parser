@@ -28,6 +28,9 @@ pub trait NewAdsbRawMessage {
 ///
 /// This does not consume the `String`.
 /// The expected input is a hexadecimal string.
+///
+/// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
+/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
 impl NewAdsbRawMessage for String {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
@@ -42,6 +45,9 @@ impl NewAdsbRawMessage for String {
 ///
 /// This does not consume the `str`.
 /// The expected input is a hexadecimal string.
+/// ///
+/// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
+/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
 impl NewAdsbRawMessage for str {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
@@ -55,6 +61,9 @@ impl NewAdsbRawMessage for str {
 /// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
 /// This does not consume the `Vec<u8>`.
 /// The expected input is a a Vec<u8> of *bytes*.
+///
+/// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
+/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
 impl NewAdsbRawMessage for &Vec<u8> {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
@@ -67,6 +76,9 @@ impl NewAdsbRawMessage for &Vec<u8> {
 /// Supporting `.to_adsb_raw()` for the type `Vec<u8>`.
 /// This does not consume the `[u8]`.
 /// The expected input is a a [u8] of *bytes*.
+///
+/// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
+/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
 impl NewAdsbRawMessage for &[u8] {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
@@ -97,6 +109,11 @@ impl fmt::Display for AdsbRawMessage {
     }
 }
 
+/// Struct for holding a raw ADS-B message
+/// This is the raw message that is received from the SDR.
+///
+/// The input used for deserializing in to this struct should not contain the adsb raw control characters `*` or `;` or `\n`
+/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
 impl AdsbRawMessage {
     /// Read rest as CRC bits
     fn read_crc<'b>(
@@ -122,7 +139,7 @@ impl AdsbRawMessage {
         Ok((rest, crc))
     }
 
-    /// Converts `ADSBsMessage` to `String`.
+    /// Converts `AdsbRawMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Ok(v) => Ok(v),
@@ -130,7 +147,7 @@ impl AdsbRawMessage {
         }
     }
 
-    /// Converts `ADSBJsonMessage` to `String` and appends a `\n` to the end.
+    /// Converts `AdsbRawMessage` to `String` and appends a `\n` to the end.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
@@ -138,7 +155,7 @@ impl AdsbRawMessage {
         }
     }
 
-    /// Converts `ADSBJsonMessage` to a `String` encoded as bytes.
+    /// Converts `ADSBRawMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
@@ -148,7 +165,7 @@ impl AdsbRawMessage {
         }
     }
 
-    /// Converts `ADSBJsonMessage` to a `String` terminated with a `\n` and encoded as bytes.
+    /// Converts `ADSBRawMessage` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {

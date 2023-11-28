@@ -260,26 +260,26 @@ mod tests {
     #[test]
     fn decode_json_message_as_aircraft_json() {
         // open all aircraft_*.json files in test data. convert to JSONMessage and then back to string
-        let test_data = read_dir("test_data").unwrap();
+        let test_data: std::fs::ReadDir = read_dir("test_data").unwrap();
 
         for entry in test_data {
-            let entry = entry.unwrap();
-            let path = entry.path();
+            let entry: std::fs::DirEntry = entry.unwrap();
+            let path: std::path::PathBuf = entry.path();
             if path.is_file() {
-                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("aircraft_") && file_name.ends_with(".json") {
                     println!("Processing file: {}", file_name);
-                    let file = read_to_string(&path).unwrap();
+                    let file: String = read_to_string(&path).unwrap();
                     // count the number of "hex" fields in the file
-                    let mut hex_count = 0;
-                    file.lines().for_each(|l| {
+                    let mut hex_count: usize = 0;
+                    file.lines().for_each(|l: &str| {
                         if l.contains("\"hex\":") {
                             hex_count += 1;
                         }
                     });
                     let result = file.decode_message();
                     assert!(result.is_ok(), "Failed to decode JSONMessage {:?}", result);
-                    let found_count = result.unwrap().len();
+                    let found_count: usize = result.unwrap().len();
 
                     assert_eq!(
                         hex_count, found_count,
@@ -294,43 +294,45 @@ mod tests {
     #[test]
     fn decode_json_message_individually() {
         // open all json_*.json files in test data. convert to JSONMessage and then back to string
-        let test_data = read_dir("test_data").unwrap();
+        let test_data: std::fs::ReadDir = read_dir("test_data").unwrap();
         for entry in test_data {
-            let entry = entry.unwrap();
-            let path = entry.path();
+            let entry: std::fs::DirEntry = entry.unwrap();
+            let path: std::path::PathBuf = entry.path();
             if path.is_file() {
-                let mut line_number = 1;
-                let file_name = path.file_name().unwrap().to_str().unwrap();
+                let mut line_number: i32 = 1;
+                let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
                     println!("Processing file: {}", file_name);
-                    let file = File::open(path).unwrap();
-                    let reader = std::io::BufReader::new(file);
+                    let file: File = File::open(path).unwrap();
+                    let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 
                     // read in a line
                     let mut line = String::new();
-                    reader.lines().for_each(|l| {
-                        line = l.unwrap();
+                    reader
+                        .lines()
+                        .for_each(|l: Result<String, std::io::Error>| {
+                            line = l.unwrap();
 
-                        // if the line starts with anything but a {, skip it
-                        if line.starts_with("{") && line.trim().len() > 0 {
-                            // encode the line as JSONMessage
-                            // remove the trailing newline and any other characters after the '}'
-                            let final_message_to_process = line.trim().trim_end_matches(',');
-                            assert!(
-                                final_message_to_process.ends_with("}"),
-                                "Line {} in file does not end with a curly bracket",
-                                line_number
-                            );
-                            let json_message = final_message_to_process.decode_message();
+                            // if the line starts with anything but a {, skip it
+                            if line.starts_with("{") && line.trim().len() > 0 {
+                                // encode the line as JSONMessage
+                                // remove the trailing newline and any other characters after the '}'
+                                let final_message_to_process = line.trim().trim_end_matches(',');
+                                assert!(
+                                    final_message_to_process.ends_with("}"),
+                                    "Line {} in file does not end with a curly bracket",
+                                    line_number
+                                );
+                                let json_message = final_message_to_process.decode_message();
 
-                            assert!(
-                                json_message.is_ok(),
-                                "Failed to decode JSONMessage {:?}",
-                                final_message_to_process
-                            );
-                        }
-                        line_number += 1;
-                    });
+                                assert!(
+                                    json_message.is_ok(),
+                                    "Failed to decode JSONMessage {:?}",
+                                    final_message_to_process
+                                );
+                            }
+                            line_number += 1;
+                        });
                 }
             }
         }
