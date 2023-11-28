@@ -37,10 +37,9 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
     let mut formatted_frames: Vec<Vec<u8>> = Vec::new();
     let mut current_frame: Vec<u8> = Vec::new();
     let mut errors_found: Vec<DeserializationError> = Vec::new();
-    let mut entry = 0;
 
     for (position, byte) in bytes.iter().enumerate() {
-        if byte == &ADSB_RAW_END_SEQUENCE_INIT_CHARACTER && entry != 0 {
+        if byte == &ADSB_RAW_END_SEQUENCE_INIT_CHARACTER && position != 0 {
             match current_frame.len() {
                 ADSB_RAW_MODEAC_FRAME => {
                     // this is a valid frame size, but it's NOT one we want to decode
@@ -70,7 +69,6 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
                 }
             }
         } else if byte == &ADSB_RAW_START_CHARACTER {
-            entry += 1;
             current_frame = Vec::new();
         } else if byte != &ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER
             && byte != &ADSB_RAW_END_SEQUENCE_INIT_CHARACTER
