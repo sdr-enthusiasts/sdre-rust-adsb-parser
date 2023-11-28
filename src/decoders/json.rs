@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::json_types::{
-    adsbversion::ADSBVersion, altitude::Altitude, calculatedbestflightid::CalculatedBestFlightID,
-    emergency::Emergency, emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
+    adsbversion::ADSBVersion, altitude::Altitude, barorate::BaroRate,
+    calculatedbestflightid::CalculatedBestFlightID, emergency::Emergency,
+    emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
     lastknownposition::LastKnownPosition, nacp::NavigationIntegrityCategory,
     navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevelType,
 };
@@ -146,13 +147,12 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     /// Aircraft altitude reported from the barometric altimeter.
     pub barometric_altitude: Option<Altitude>,
-
+    /// Aircraft altitude reported from the GNSS/INS system on the aircraft
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_geom")]
     pub geometric_altitude: Option<i32>,
+    /// Rate of change in the barometric altitude in feet per minute.
     #[serde(skip_serializing_if = "Option::is_none", rename = "baro_rate")]
-    pub barometric_altitude_rate: Option<i32>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub calc_track: Option<i32>,
+    pub barometric_altitude_rate: Option<BaroRate>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub category: Option<EmitterCategory>,
     #[serde(skip_serializing, rename = "dbFlags")]

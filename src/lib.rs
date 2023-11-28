@@ -84,6 +84,7 @@ pub mod decoders {
     pub mod json_types {
         pub mod adsbversion;
         pub mod altitude;
+        pub mod barorate;
         pub mod calculatedbestflightid;
         pub mod emergency;
         pub mod emmittercategory;
