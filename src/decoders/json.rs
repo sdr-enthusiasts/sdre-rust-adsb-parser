@@ -9,8 +9,8 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::json_types::{
-    altitude::Altitude, calculatedbestflightid::CalculatedBestFlightID, emergency::Emergency,
-    emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
+    adsbversion::ADSBVersion, altitude::Altitude, calculatedbestflightid::CalculatedBestFlightID,
+    emergency::Emergency, emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
     lastknownposition::LastKnownPosition, nacp::NavigationIntegrityCategory,
     navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevelType,
 };
@@ -130,6 +130,10 @@ fn get_timestamp() -> f64 {
 
 /// The JSON message format.
 /// This is for a single aircraft of JSON data.
+/// TODO: There is a metric load of "Option" types here. 99.9% of the time they are present in
+/// the payload. It may be well worth it to remove the Option types and just use the default,
+/// or see if the message structure is consistent if certain fields are missing and create a different
+/// struct for those messages.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
@@ -225,7 +229,7 @@ pub struct JSONMessage {
     #[serde(rename = "type")]
     pub vehicle_type: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub version: Option<u8>,
+    pub version: Option<ADSBVersion>,
 }
 
 /// The JSON message readsb provided aircraft.json format.
@@ -246,62 +250,6 @@ impl fmt::Display for AircraftJSON {
         write!(f, "{}", self.aircraft.len())
     }
 }
-
-// #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-// pub struct SquawkCode {
-//     digit_1: u8,
-//     digit_2: u8,
-//     digit_3: u8,
-//     digit_4: u8,
-// }
-
-// impl SquawkCode {
-//     pub fn new(code: String) -> Self {
-//         let mut squawk_code = Self {
-//             digit_1: 0,
-//             digit_2: 0,
-//             digit_3: 0,
-//             digit_4: 0,
-//         };
-
-//         let mut chars = code.chars();
-//         // FIXME: should this validate we're in the range 0 - 8?
-//         squawk_code.digit_1 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
-//         squawk_code.digit_2 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
-//         squawk_code.digit_3 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
-//         squawk_code.digit_4 = chars.next().unwrap_or('0').to_digit(10).unwrap_or(0) as u8;
-
-//         squawk_code
-//     }
-// }
-
-// impl fmt::Display for SquawkCode {
-//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-//         write!(
-//             f,
-//             "{}{}{}{}",
-//             self.digit_1, self.digit_2, self.digit_3, self.digit_4
-//         )
-//     }
-// }
-
-// #[derive(Deserialize_enum_str, Serialize_enum_str, Debug, Clone, PartialEq, PartialOrd)]
-// pub enum ADSBVersion {
-//     Version0 = 0,
-//     Version1 = 1,
-//     Version2 = 2,
-//     Version3 = 3,
-//     Version4 = 4,
-//     Version5 = 5,
-//     Version6 = 6,
-//     Version7 = 7,
-// }
-
-// impl Default for ADSBVersion {
-//     fn default() -> Self {
-//         Self::Version0
-//     }
-// }
 
 #[cfg(test)]
 mod tests {

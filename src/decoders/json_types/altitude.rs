@@ -9,7 +9,6 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(untagged)]
-#[allow(non_camel_case_types)]
 pub enum Altitude {
     I32(i32),
     String(String),
