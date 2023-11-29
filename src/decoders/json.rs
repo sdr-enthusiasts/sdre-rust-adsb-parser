@@ -25,6 +25,7 @@ use super::json_types::{
     nacp::NavigationIntegrityCategory,
     nacv::NavigationAccuracyVelocity,
     navigationmodes::NavigationModes,
+    signalpower::SignalPower,
     sourceintegritylevel::SourceIntegrityLevelType,
     speed::Speed,
 };
@@ -248,7 +249,8 @@ pub struct JSONMessage {
     /// Radius of Containment, meters; a measure of position integrity derived from NIC & supplementary bits. (2.2.3.2.7.2.6, Table 2-69)
     #[serde(skip_serializing_if = "Option::is_none", rename = "rc")]
     pub radius_of_containment: Option<Meters>,
-    pub rssi: f32,
+    /// recent average RSSI (signal power), in dbFS; this will always be negative.
+    pub rssi: SignalPower,
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
     pub system_design_assurance: Option<i32>, // TODO: should this be an enum?
     #[serde(rename = "seen")]

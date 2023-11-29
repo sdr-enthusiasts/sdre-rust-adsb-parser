@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd)]
-#[serde(untagged)]
+#[serde(from = "String")]
 pub enum CalculatedBestFlightID {
     String(String),
 }
@@ -19,10 +19,16 @@ impl Default for CalculatedBestFlightID {
     }
 }
 
+impl From<String> for CalculatedBestFlightID {
+    fn from(flight_id: String) -> Self {
+        Self::String(flight_id.trim().to_string())
+    }
+}
+
 impl fmt::Display for CalculatedBestFlightID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CalculatedBestFlightID::String(flight_id) => write!(f, "{}", flight_id.trim()),
+            CalculatedBestFlightID::String(flight_id) => write!(f, "{}", flight_id),
         }
     }
 }
@@ -30,7 +36,7 @@ impl fmt::Display for CalculatedBestFlightID {
 impl fmt::Debug for CalculatedBestFlightID {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CalculatedBestFlightID::String(flight_id) => fmt::Display::fmt(&flight_id.trim(), f),
+            CalculatedBestFlightID::String(flight_id) => fmt::Display::fmt(&flight_id, f),
         }
     }
 }
