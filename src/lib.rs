@@ -90,9 +90,11 @@ pub mod decoders {
         pub mod emergency;
         pub mod emmittercategory;
         pub mod flightstatus;
+        pub mod heading;
         pub mod lastknownposition;
         pub mod latitude;
         pub mod longitude;
+        pub mod meters;
         pub mod nacp;
         pub mod nacv;
         pub mod navigationmodes;

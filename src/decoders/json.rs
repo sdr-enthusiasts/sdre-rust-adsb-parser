@@ -9,12 +9,24 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::json_types::{
-    adsbversion::ADSBVersion, altitude::Altitude, barorate::BaroRate,
-    calculatedbestflightid::CalculatedBestFlightID, dbflags::DBFlags, emergency::Emergency,
-    emmittercategory::EmitterCategory, flightstatus::FlightStatusAlertBit,
-    lastknownposition::LastKnownPosition, latitude::Latitude, longitude::Longitude,
-    nacp::NavigationIntegrityCategory, nacv::NavigationAccuracyVelocity,
-    navigationmodes::NavigationModes, sourceintegritylevel::SourceIntegrityLevelType, speed::Speed,
+    adsbversion::ADSBVersion,
+    altitude::Altitude,
+    barorate::BaroRate,
+    calculatedbestflightid::CalculatedBestFlightID,
+    dbflags::DBFlags,
+    emergency::Emergency,
+    emmittercategory::EmitterCategory,
+    flightstatus::FlightStatusAlertBit,
+    heading::Heading,
+    lastknownposition::LastKnownPosition,
+    latitude::Latitude,
+    longitude::Longitude,
+    meters::{Meters, NauticalMiles},
+    nacp::NavigationIntegrityCategory,
+    nacv::NavigationAccuracyVelocity,
+    navigationmodes::NavigationModes,
+    sourceintegritylevel::SourceIntegrityLevelType,
+    speed::Speed,
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -221,16 +233,21 @@ pub struct JSONMessage {
     /// Navigation Integrity Category (2.2.3.2.7.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
     pub naviation_integrity_category: Option<NavigationIntegrityCategory>, // TODO: Verify the NIC is the same as the NACp
+    /// Navigation Integrity Category for Barometric Altitude (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
-    pub barometeric_altitude_integrity_category: Option<u8>,
+    pub barometeric_altitude_integrity_category: Option<u8>, // TODO: this should be an enum. Needs more research
     #[serde(skip_serializing_if = "Option::is_none", rename = "r")]
+    /// Wiedehopf's aircraft.json aircraft registration pulled from database
     pub aircraft_registration_from_database: Option<String>,
+    /// distance from supplied center point in nmi
     #[serde(skip_serializing_if = "Option::is_none", rename = "r_dir")]
-    pub aircraft_direction_from_receiving_station: Option<f32>,
+    pub aircraft_direction_from_receiving_station: Option<Heading>,
+    /// true direction of the aircraft from the supplied center point (degrees)
     #[serde(skip_serializing_if = "Option::is_none", rename = "r_dst")]
-    pub aircract_distance_from_receiving_station: Option<f32>,
+    pub aircract_distance_from_receiving_station: Option<NauticalMiles>,
+    /// Radius of Containment, meters; a measure of position integrity derived from NIC & supplementary bits. (2.2.3.2.7.2.6, Table 2-69)
     #[serde(skip_serializing_if = "Option::is_none", rename = "rc")]
-    pub radius_of_containment: Option<i32>,
+    pub radius_of_containment: Option<Meters>,
     pub rssi: f32,
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
     pub system_design_assurance: Option<i32>, // TODO: should this be an enum?
