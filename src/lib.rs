@@ -103,6 +103,8 @@ pub mod decoders {
         pub mod sil;
         pub mod sourceintegritylevel;
         pub mod speed;
+        pub mod squawk;
+        pub mod transponderhex;
     }
     #[cfg(feature = "raw")]
     pub mod raw;

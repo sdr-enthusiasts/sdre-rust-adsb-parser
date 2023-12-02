@@ -30,6 +30,8 @@ use super::json_types::{
     sil::SourceIntegrityLevel,
     sourceintegritylevel::SourceIntegrityLevelType,
     speed::Speed,
+    squawk::Squawk,
+    transponderhex::TransponderHex,
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -159,13 +161,13 @@ pub struct JSONMessage {
     pub timestamp: f64,
     /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
-    pub flight_status: Option<FlightStatusAlertBit>,
+    pub flight_status: Option<FlightStatusAlertBit>, // FIXME: I doubt this is right
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     /// Aircraft altitude reported from the barometric altimeter.
     pub barometric_altitude: Option<Altitude>,
     /// Aircraft altitude reported from the GNSS/INS system on the aircraft
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_geom")]
-    pub geometric_altitude: Option<i32>,
+    pub geometric_altitude: Option<Altitude>,
     /// Rate of change in the barometric altitude in feet per minute.
     #[serde(skip_serializing_if = "Option::is_none", rename = "baro_rate")]
     pub barometric_altitude_rate: Option<BaroRate>,
@@ -192,10 +194,10 @@ pub struct JSONMessage {
     pub ground_speed: Option<Speed>,
     /// Geometric Vertical Accuracy (2.2.3.2.7.2.8)
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
-    pub geometric_verticle_accuracy: Option<u8>, //TODO: This should probably be an enum
+    pub geometric_verticle_accuracy: Option<u8>, // FIXME: I doubt this is right
     /// The transponder hex identifier of the aircraft.
     #[serde(rename = "hex")]
-    pub transponder_hex: String,
+    pub transponder_hex: TransponderHex,
     /// {lat, lon, nic, rc, seen_pos} when the regular lat and lon are older than 60 seconds they are no longer considered valid,
     /// this will provide the last position and show the age for the last position. aircraft will only be in the aircraft json
     /// if a position has been received in the last 60 seconds or if any message has been received in the last 30 seconds.
@@ -211,22 +213,22 @@ pub struct JSONMessage {
     #[serde(rename = "messages")]
     pub number_of_received_messages: i32,
     /// list of fields derived from MLAT data
-    pub mlat: Vec<String>, // TODO: Figure out what this is
+    pub mlat: Vec<String>, // FIXME: I doubt this is right
     /// Navigation Accuracy for Position (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
-    pub navigation_accuracy_position: Option<NavigationIntegrityCategory>,
+    pub navigation_accuracy_position: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
     /// Navigation Accuracy for Velocity (2.2.5.1.19)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_v")]
-    pub navigation_accuracy_velocity: Option<NavigationAccuracyVelocity>,
+    pub navigation_accuracy_velocity: Option<NavigationAccuracyVelocity>, // FIXME: I doubt this is right
     /// selected altitude from the Mode Control Panel / Flight Control Unit (MCP/FCU) or equivalent equipment
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_mcp")]
     pub autopilot_selected_altitude: Option<Altitude>,
     /// selected heading (True or Magnetic is not defined in DO-260B, mostly Magnetic as that is the de facto standard) (2.2.3.2.7.1.3.7)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_heading")]
-    pub autopilot_selected_heading: Option<f32>,
+    pub autopilot_selected_heading: Option<Heading>,
     /// selected altitude from the Flight Manaagement System (FMS) (2.2.3.2.7.1.3.3)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_fms")]
-    pub flight_management_system_selected_altitude: Option<Altitude>, // TODO: this naming convention for autopilot and fms stuff kinda sux
+    pub flight_management_system_selected_altitude: Option<Altitude>,
     /// set of engaged automation modes: 'autopilot', 'vnav', 'althold', 'approach', 'lnav', 'tcas'
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_modes")]
     pub autopilot_modes: Option<Vec<NavigationModes>>,
@@ -235,10 +237,10 @@ pub struct JSONMessage {
     pub selected_altimeter: Option<f32>,
     /// Navigation Integrity Category (2.2.3.2.7.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
-    pub naviation_integrity_category: Option<NavigationIntegrityCategory>, // TODO: Verify the NIC is the same as the NACp
+    pub naviation_integrity_category: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
     /// Navigation Integrity Category for Barometric Altitude (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
-    pub barometeric_altitude_integrity_category: Option<u8>, // TODO: this should be an enum. Needs more research
+    pub barometeric_altitude_integrity_category: Option<u8>, // FIXME: I doubt this is right
     #[serde(skip_serializing_if = "Option::is_none", rename = "r")]
     /// Wiedehopf's aircraft.json aircraft registration pulled from database
     pub aircraft_registration_from_database: Option<String>,
@@ -255,7 +257,7 @@ pub struct JSONMessage {
     pub rssi: SignalPower,
     /// System Design Assurance (2.2.3.2.7.2.4.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
-    pub system_design_assurance: Option<i32>, // TODO: should this be an enum?
+    pub system_design_assurance: Option<i32>, // FIXME: I doubt this is right
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
     pub last_time_seen: f32,
@@ -264,22 +266,30 @@ pub struct JSONMessage {
     pub last_time_seen_pos_andalt: Option<f32>,
     /// Source Integity Level (2.2.5.1.40)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
-    pub source_integrity_level: Option<SourceIntegrityLevel>,
+    pub source_integrity_level: Option<SourceIntegrityLevel>, // FIXME: I doubt this is right
     /// interpretation of SIL: unknown, perhour, persample
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sil_type: Option<SourceIntegrityLevelType>,
+    pub sil_type: Option<SourceIntegrityLevelType>, // FIXME: I doubt this is right
     /// Flight status special position identification bit (2.2.3.2.3.2)
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
-    pub flight_status_special_position_id_bit: Option<u8>,
+    pub flight_status_special_position_id_bit: Option<u8>, // FIXME: I doubt this is right
+    /// Mode A code (Squawk), encoded as 4 octal digits
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
-    pub transponder_squawk_code: Option<String>,
+    pub transponder_squawk_code: Option<Squawk>,
+    /// wiedehopf's aircraft.json aircraft type pulled from database
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
     pub aircraft_type_from_database: Option<String>,
+    /// wiedehopf's aircraft.json aircraft type pulled from database, long name
+    #[serde(skip_serializing_if = "Option::is_none", rename = "desc")]
+    pub aircraft_type_from_database_long_name: Option<String>,
+    /// list of fields derived from TIS-B data
     pub tisb: Vec<String>, // TODO: this should def be an enum
+    /// true track over ground in degrees (0-359)
     #[serde(skip_serializing_if = "Option::is_none", rename = "track")]
-    pub true_track_over_ground: Option<f32>,
+    pub true_track_over_ground: Option<Heading>,
+    /// Heading, degrees clockwise from true north (usually only transmitted on ground, in the air usually derived from the magnetic heading using magnetic model WMM2020)
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub true_heading: Option<f32>,
+    pub true_heading: Option<Heading>,
     /// type of underlying messages / best source of current data for this position / aircraft
     #[serde(rename = "type")]
     pub message_type: MessageType,
