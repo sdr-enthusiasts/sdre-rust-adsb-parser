@@ -99,6 +99,7 @@ pub mod decoders {
         pub mod nacv;
         pub mod navigationmodes;
         pub mod signalpower;
+        pub mod sil;
         pub mod sourceintegritylevel;
         pub mod speed;
     }

@@ -26,6 +26,7 @@ use super::json_types::{
     nacv::NavigationAccuracyVelocity,
     navigationmodes::NavigationModes,
     signalpower::SignalPower,
+    sil::SourceIntegrityLevel,
     sourceintegritylevel::SourceIntegrityLevelType,
     speed::Speed,
 };
@@ -251,16 +252,22 @@ pub struct JSONMessage {
     pub radius_of_containment: Option<Meters>,
     /// recent average RSSI (signal power), in dbFS; this will always be negative.
     pub rssi: SignalPower,
+    /// System Design Assurance (2.2.3.2.7.2.4.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
     pub system_design_assurance: Option<i32>, // TODO: should this be an enum?
+    /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
     pub last_time_seen: f32,
+    /// how long ago (in seconds before "now") the position was last updated
     #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
-    pub last_time_seen_alt: Option<f32>, // FIXME: Do we need this? It's the same as last_time_seen maybe?
+    pub last_time_seen_pos_andalt: Option<f32>,
+    /// Source Integity Level (2.2.5.1.40)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
-    pub source_integrity_level: Option<u8>, // TODO: should this be an enum?
+    pub source_integrity_level: Option<SourceIntegrityLevel>,
+    /// interpretation of SIL: unknown, perhour, persample
     #[serde(skip_serializing_if = "Option::is_none")]
     pub sil_type: Option<SourceIntegrityLevelType>,
+    /// Flight status special position identification bit (2.2.3.2.3.2)
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
     pub flight_status_special_position_id_bit: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]

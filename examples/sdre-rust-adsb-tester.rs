@@ -40,6 +40,7 @@ extern crate log;
 use core::fmt;
 use generic_async_http_client::Request;
 use generic_async_http_client::Response;
+use sdre_rust_adsb_parser::decoders::json::NewJSONMessage;
 use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::ADSBBeastFrames;
@@ -262,7 +263,8 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
 
         for frame in frames.frames {
             debug!("Decoding: {}", frame);
-            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            //let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            let message = NewJSONMessage::to_json(&frame);
             if let Ok(message_done) = message {
                 info!("Decoded: {}", message_done);
             } else {
