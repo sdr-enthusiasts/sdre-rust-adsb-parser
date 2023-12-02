@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(untagged)]
+#[serde(from = "f32")]
 pub enum SignalPower {
     Decibels(f32),
     #[default]
@@ -16,8 +16,8 @@ pub enum SignalPower {
 }
 
 impl From<f32> for SignalPower {
-    fn from(speed: f32) -> Self {
-        Self::Decibels(speed)
+    fn from(rssi: f32) -> Self {
+        Self::Decibels(rssi)
     }
 }
 
@@ -25,7 +25,7 @@ impl fmt::Display for SignalPower {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            SignalPower::Decibels(speed) => write!(f, "{} dB", *speed as u32),
+            SignalPower::Decibels(rssi) => write!(f, "{:.1} dB", rssi),
             SignalPower::None => write!(f, "None"),
         }
     }

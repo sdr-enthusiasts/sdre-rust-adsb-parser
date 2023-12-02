@@ -33,7 +33,7 @@ impl fmt::Display for Heading {
         match self {
             // cast to u32 to remove the decimal
             Heading::HeadingAsInteger(speed) => write!(f, "{} degrees", speed),
-            Heading::HeadingAsFloat(speed) => write!(f, "{} degrees", speed),
+            Heading::HeadingAsFloat(speed) => write!(f, "{} degrees", *speed as u32),
             Heading::None => write!(f, "None"),
         }
     }

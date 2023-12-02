@@ -26,7 +26,10 @@ impl From<u8> for NavigationAccuracyVelocity {
             2 => NavigationAccuracyVelocity::Category2,
             3 => NavigationAccuracyVelocity::Category3,
             4 => NavigationAccuracyVelocity::Category4,
-            _ => NavigationAccuracyVelocity::Category0,
+            _ => panic!(
+                "NACv should be a value between 0 and 4, inclusive. Found {}",
+                nacv
+            ), // TODO: propagate this error
         }
     }
 }

@@ -66,7 +66,9 @@ impl fmt::Display for FlightStatusAlertBit {
                 write!(f, "No alert, SPI, aircraft is airborne or on-ground")
             }
             FlightStatusAlertBit::Reserved => write!(f, "Reserved"),
-            FlightStatusAlertBit::NotAssigned => write!(f, "Not assigned"),
+            FlightStatusAlertBit::NotAssigned => {
+                write!(f, "Not assigned")
+            }
         }
     }
 }

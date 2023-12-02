@@ -99,6 +99,7 @@ pub mod decoders {
         pub mod nacp;
         pub mod nacv;
         pub mod navigationmodes;
+        pub mod receivedmessages;
         pub mod secondsago;
         pub mod signalpower;
         pub mod sil;

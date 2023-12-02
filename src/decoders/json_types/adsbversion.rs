@@ -10,14 +10,14 @@ use std::fmt;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(from = "u8")]
 pub enum ADSBVersion {
-    Version0 = 0,
-    Version1 = 1,
-    Version2 = 2,
-    Version3 = 3,
-    Version4 = 4,
-    Version5 = 5,
-    Version6 = 6,
-    Version7 = 7,
+    Version0,
+    Version1,
+    Version2,
+    Version3,
+    Version4,
+    Version5,
+    Version6,
+    Version7,
 }
 
 impl From<u8> for ADSBVersion {
@@ -31,7 +31,10 @@ impl From<u8> for ADSBVersion {
             5 => ADSBVersion::Version5,
             6 => ADSBVersion::Version6,
             7 => ADSBVersion::Version7,
-            _ => ADSBVersion::Version0,
+            _ => panic!(
+                "Invalid ADSB Version. Should be a value between 0 - 7, inclusive. Found {}",
+                version
+            ), // TODO: propagate error
         }
     }
 }

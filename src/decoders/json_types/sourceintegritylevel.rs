@@ -21,7 +21,11 @@ impl From<String> for SourceIntegrityLevelType {
         match source_integrity_level.as_str() {
             "persample" => SourceIntegrityLevelType::PerSample,
             "perhour" => SourceIntegrityLevelType::PerHour,
-            _ => SourceIntegrityLevelType::Unknown,
+            "unknown" => SourceIntegrityLevelType::Unknown,
+            _ => panic!(
+                "SIL should be unknown, persample, perhour, inclusive. Found {}",
+                source_integrity_level
+            ), // TODO: propagate this error
         }
     }
 }

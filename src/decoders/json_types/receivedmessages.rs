@@ -9,18 +9,18 @@ use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(from = "i32")]
-pub struct BaroRate {
-    baro_rate: i32,
+pub struct ReceivedMessages {
+    received_messages: i32,
 }
 
-impl From<i32> for BaroRate {
-    fn from(baro_rate: i32) -> Self {
-        Self { baro_rate }
+impl From<i32> for ReceivedMessages {
+    fn from(received_messages: i32) -> Self {
+        Self { received_messages }
     }
 }
 
-impl fmt::Display for BaroRate {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{} ft/min", self.baro_rate)
+impl fmt::Display for ReceivedMessages {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.received_messages)
     }
 }

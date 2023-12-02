@@ -24,7 +24,10 @@ impl From<u8> for SourceIntegrityLevel {
             1 => Self::Level1,
             2 => Self::Level2,
             3 => Self::Level3,
-            _ => Self::Level0,
+            _ => panic!(
+                "SIL should be a value between 0 and 3, inclusive. Found {}",
+                level
+            ), // TODO: propagate this error
         }
     }
 }

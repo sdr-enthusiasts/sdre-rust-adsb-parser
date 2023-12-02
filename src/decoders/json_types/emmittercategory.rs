@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-// emitter category https://www.adsbexchange.com/emitter-category-ads-b-do-260b-2-2-3-2-5-2/
+// https://www.adsbexchange.com/emitter-category-ads-b-do-260b-2-2-3-2-5-2/
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -74,7 +74,7 @@ impl From<String> for EmitterCategory {
 impl fmt::Display for EmitterCategory {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            EmitterCategory::A0 => write!(f, "A0 : No ADS-B emitter category information"),
+            EmitterCategory::A0 => write!(f, "A0 : No ADS-B information"),
             EmitterCategory::A1 => write!(f, "A1 : Light (< 15500 lbs)"),
             EmitterCategory::A2 => write!(f, "A2 : Small (15500 to 75000 lbs)"),
             EmitterCategory::A3 => write!(f, "A3 : Large (75000 to 300000 lbs)"),
@@ -82,17 +82,21 @@ impl fmt::Display for EmitterCategory {
             EmitterCategory::A5 => write!(f, "A5 : Heavy (> 300000 lbs) "),
             EmitterCategory::A6 => write!(f, "A6 : High performance"),
             EmitterCategory::A7 => write!(f, "A7 : Rotorcraft"),
-            EmitterCategory::B0 => write!(f, "B0 : No ADS-B emitter category information"),
+            EmitterCategory::B0 => write!(f, "B0 : No ADS-B information"),
             EmitterCategory::B1 => write!(f, "B1 : Glider / sailplane"),
             EmitterCategory::B2 => write!(f, "B2 : Lighter-than-air"),
             EmitterCategory::B3 => write!(f, "B3 : Parachutist / skydiver"),
             EmitterCategory::B4 => write!(f, "B4 : Ultralight / hang-glider / paraglider"),
             EmitterCategory::B5 => write!(f, "B5 : Reserved"),
             EmitterCategory::B6 => write!(f, "B6 : Unmanned Aerial Vehicle"),
-            EmitterCategory::B7 => write!(f, "B7 : Space / trans-atmospheric vehicle"),
-            EmitterCategory::C0 => write!(f, "C0 : No ADS-B emitter category information"),
+            EmitterCategory::B7 => {
+                write!(f, "B7 : Space / trans-atmospheric vehicle")
+            }
+            EmitterCategory::C0 => write!(f, "C0 : No ADS-B information"),
             EmitterCategory::C1 => write!(f, "C1 : Surface vehicle - emergency vehicle"),
-            EmitterCategory::C2 => write!(f, "C2 : Surface vehicle - service vehicle"),
+            EmitterCategory::C2 => {
+                write!(f, "C2 : Surface vehicle - service vehicle")
+            }
             EmitterCategory::C3 => write!(f, "C3 : Point obstacle (includes tethered balloons)"),
             EmitterCategory::C4 => write!(f, "C4 : Cluster obstacle"),
             EmitterCategory::C5 => write!(f, "C5 : Line obstacle"),

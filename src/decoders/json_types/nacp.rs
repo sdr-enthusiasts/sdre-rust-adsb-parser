@@ -10,19 +10,19 @@ use std::fmt;
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(from = "u8")]
 pub enum NavigationIntegrityCategory {
-    Category11 = 11,
-    Category10 = 10,
-    Category9 = 9,
-    Category8 = 8,
-    Category7 = 7,
-    Category6 = 6,
-    Category5 = 5,
-    Category4 = 4,
-    Category3 = 3,
-    Category2 = 2,
-    Category1 = 1,
+    Category11,
+    Category10,
+    Category9,
+    Category8,
+    Category7,
+    Category6,
+    Category5,
+    Category4,
+    Category3,
+    Category2,
+    Category1,
     #[default]
-    Unknown = 0,
+    Unknown,
 }
 
 impl From<u8> for NavigationIntegrityCategory {
@@ -39,7 +39,11 @@ impl From<u8> for NavigationIntegrityCategory {
             3 => NavigationIntegrityCategory::Category3,
             2 => NavigationIntegrityCategory::Category2,
             1 => NavigationIntegrityCategory::Category1,
-            _ => NavigationIntegrityCategory::Unknown,
+            0 => NavigationIntegrityCategory::Unknown,
+            _ => panic!(
+                "NIC should be a value between 0 and 11, inclusive. Found {}",
+                nic
+            ), // TODO: propagate this error
         }
     }
 }

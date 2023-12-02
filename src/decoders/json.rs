@@ -26,6 +26,7 @@ use super::json_types::{
     nacp::NavigationIntegrityCategory,
     nacv::NavigationAccuracyVelocity,
     navigationmodes::NavigationModes,
+    receivedmessages::ReceivedMessages,
     secondsago::SecondsAgo,
     signalpower::SignalPower,
     sil::SourceIntegrityLevel,
@@ -108,6 +109,174 @@ impl JSONMessage {
             Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
+    }
+
+    pub fn pretty_print(&self) -> String {
+        // Go through each field and print it out
+        let mut output: String = String::new();
+        output.push_str(&format!(
+            "Aircraft:\n\tTransponder Hex: {}\n",
+            self.transponder_hex
+        ));
+
+        if let Some(calculated_best_flight_id) = &self.calculated_best_flight_id {
+            output.push_str(&format!(
+                "\tCalculated Best Flight ID: {}\n",
+                calculated_best_flight_id
+            ));
+        }
+
+        if let Some(aircraft_registration_from_database) = &self.aircraft_registration_from_database
+        {
+            output.push_str(&format!(
+                "\tAircraft Registration From Database: {}\n",
+                aircraft_registration_from_database
+            ));
+        }
+
+        if let Some(aircraft_type_from_database) = &self.aircraft_type_from_database {
+            output.push_str(&format!(
+                "\tAircraft Type From Database: {}\n",
+                aircraft_type_from_database
+            ));
+        }
+
+        if let Some(aircraft_type_from_database_long_name) =
+            &self.aircraft_type_from_database_long_name
+        {
+            output.push_str(&format!(
+                "\tAircraft Type From Database Long Name: {}\n",
+                aircraft_type_from_database_long_name
+            ));
+        }
+
+        if let Some(latitude) = &self.latitude {
+            output.push_str(&format!("\tLatitude: {}\n", latitude));
+        }
+
+        if let Some(longitude) = &self.longitude {
+            output.push_str(&format!("\tLongitude: {}\n", longitude));
+        }
+
+        output.push_str(&format!("\tTimestamp: {}\n", self.timestamp));
+        if let Some(barometric_altitude) = &self.barometric_altitude {
+            output.push_str(&format!("\tBarometric Altitude: {}\n", barometric_altitude));
+        }
+
+        if let Some(geometric_altitude) = &self.geometric_altitude {
+            output.push_str(&format!("\tGeometric Altitude: {}\n", geometric_altitude));
+        }
+
+        if let Some(barometric_altitude_rate) = &self.barometric_altitude_rate {
+            output.push_str(&format!(
+                "\tBarometric Altitude Rate: {}\n",
+                barometric_altitude_rate
+            ));
+        }
+
+        if let Some(geometric_altitude_rate) = &self.geometric_altitude_rate {
+            output.push_str(&format!(
+                "\tGeometric Altitude Rate: {}\n",
+                geometric_altitude_rate
+            ));
+        }
+
+        if let Some(ground_speed) = &self.ground_speed {
+            output.push_str(&format!("\tGround Speed: {}\n", ground_speed));
+        }
+
+        if let Some(category) = &self.category {
+            output.push_str(&format!("\tCategory: {}\n", category));
+        }
+
+        if let Some(db_flags) = &self.db_flags {
+            output.push_str(&format!("\tDB Flags: {}\n", db_flags));
+        }
+
+        if let Some(emergency) = &self.emergency {
+            output.push_str(&format!("\tEmergency: {}\n", emergency));
+        }
+
+        if let Some(geometric_verticle_accuracy) = &self.geometric_verticle_accuracy {
+            output.push_str(&format!(
+                "\tGeometric Vertical Accuracy: {}\n",
+                geometric_verticle_accuracy
+            ));
+        }
+
+        if let Some(navigation_accuracy_position) = &self.navigation_accuracy_position {
+            output.push_str(&format!(
+                "\tNavigation Accuracy Position: {}\n",
+                navigation_accuracy_position
+            ));
+        }
+
+        if let Some(last_known_position) = &self.last_known_position {
+            output.push_str(&format!("\tLast Known Position: {}\n", last_known_position));
+        }
+
+        output.push_str(&format!(
+            "\tNumber of Received Messages: {}\n",
+            self.number_of_received_messages
+        ));
+
+        if let Some(autopilot_selected_altitude) = &self.autopilot_selected_altitude {
+            output.push_str(&format!(
+                "\tAutopilot Selected Altitude: {}\n",
+                autopilot_selected_altitude
+            ));
+        }
+
+        if let Some(autopilot_selected_heading) = &self.autopilot_selected_heading {
+            output.push_str(&format!(
+                "\tAutopilot Selected Heading: {}\n",
+                autopilot_selected_heading
+            ));
+        }
+
+        if let Some(flight_management_system_selected_altitude) =
+            &self.flight_management_system_selected_altitude
+        {
+            output.push_str(&format!(
+                "\tFlight Management System Selected Altitude: {}\n",
+                flight_management_system_selected_altitude
+            ));
+        }
+
+        if let Some(autopilot_modes) = &self.autopilot_modes {
+            output.push_str(&format!("\tAutopilot Modes: {:?}\n", autopilot_modes));
+        }
+
+        if let Some(selected_altimeter) = &self.selected_altimeter {
+            output.push_str(&format!("\tSelected Altimeter: {}\n", selected_altimeter));
+        }
+
+        if let Some(naviation_integrity_category) = &self.naviation_integrity_category {
+            output.push_str(&format!(
+                "\tNaviation Integrity Category: {}\n",
+                naviation_integrity_category
+            ));
+        }
+
+        if let Some(barometeric_altitude_integrity_category) =
+            &self.barometeric_altitude_integrity_category
+        {
+            output.push_str(&format!(
+                "\tBarometeric Altitude Integrity Category: {}\n",
+                barometeric_altitude_integrity_category
+            ));
+        }
+
+        if let Some(radius_of_containment) = &self.radius_of_containment {
+            output.push_str(&format!(
+                "\tRadius of Containment: {}\n",
+                radius_of_containment
+            ));
+        }
+
+        output.push_str(&format!("\tRSSI: {}\n", self.rssi));
+
+        output
     }
 
     /// Converts `JSONMessage` to `String` and appends a `\n` to the end.
@@ -213,7 +382,7 @@ pub struct JSONMessage {
     pub longitude: Option<Longitude>,
     /// The number of messages received for this aircraft.
     #[serde(rename = "messages")]
-    pub number_of_received_messages: i32,
+    pub number_of_received_messages: ReceivedMessages,
     /// list of fields derived from MLAT data
     pub mlat: Vec<String>, // FIXME: I doubt this is right
     /// Navigation Accuracy for Position (2.2.5.1.35)

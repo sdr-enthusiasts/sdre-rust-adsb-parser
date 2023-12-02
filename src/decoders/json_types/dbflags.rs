@@ -39,7 +39,10 @@ impl From<u8> for DBFlags {
         } else if db_flags & 8 != 0 {
             Self::LADD
         } else {
-            panic!("DBFlags should be a value between 0 and 15, inclusive")
+            panic!(
+                "DBFlags should be a value between 0 and 15, inclusive. Found: {}",
+                db_flags
+            ) // TODO: propagate this error
         }
     }
 }

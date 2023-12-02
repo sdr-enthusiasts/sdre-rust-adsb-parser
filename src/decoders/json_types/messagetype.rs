@@ -74,35 +74,29 @@ impl From<String> for MessageType {
 impl fmt::Display for MessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            MessageType::ADSBICAO => write!(f, "Source: ADSB, ICAO Address"),
+            MessageType::ADSBICAO => write!(f, "ADSB, ICAO Address"),
             MessageType::ADSBICAONONTRANSPONDER => {
-                write!(f, "Source: ADSB, ICAO Address, Non-Transponder")
+                write!(f, "ADSB, ICAO Address, Non-Transponder")
             }
             MessageType::ADSBICAOREBROADCAST => {
-                write!(f, "Source: ADSB, ICAO Address, Rebroadcast (eg UAT)")
+                write!(f, "ADSB, ICAO Address, Rebroadcast (eg UAT)")
             }
             MessageType::ADSBICAOSECONDARYSURVEILLANCE => {
-                write!(
-                    f,
-                    "Source: ADSB, ICAO Address, Secondary Surveillance (\"TISB\")"
-                )
+                write!(f, "ADSB, ICAO Address, Secondary Surveillance (\"TISB\")")
             }
-            MessageType::ADSC => write!(f, "Source: ADS-C"),
-            MessageType::MLAT => write!(f, "Source: MLAT"),
-            MessageType::OTHER => write!(f, "Source: Other"),
-            MessageType::MODES => write!(f, "Source: Mode S"),
-            MessageType::ADSBOTHER => write!(f, "Source: ADSB, Other Address"),
+            MessageType::ADSC => write!(f, "ADS-C"),
+            MessageType::MLAT => write!(f, "MLAT"),
+            MessageType::OTHER => write!(f, "Other"),
+            MessageType::MODES => write!(f, "Mode S"),
+            MessageType::ADSBOTHER => write!(f, "ADSB, Other Address"),
             MessageType::ADSBOTHERREBROADCAST => {
-                write!(f, "Source: ADSB, Other Address, Rebroadcast (eg UAT)")
+                write!(f, "ADSB, Other Address, Rebroadcast (eg UAT)")
             }
             MessageType::ADSBOTHERSECONDARYSURVEILLANCE => {
-                write!(
-                    f,
-                    "Source: ADSB, Other Address, Secondary Surveillance (\"TISB\")"
-                )
+                write!(f, "ADSB, Other Address, Secondary Surveillance (\"TISB\")")
             }
-            MessageType::ADSBTRACKFILE => write!(f, "Source: ADSB, Track/File Identifier"),
-            MessageType::UNKNOWN => write!(f, "Source: Unknown"),
+            MessageType::ADSBTRACKFILE => write!(f, "ADSB, Track/File Identifier"),
+            MessageType::UNKNOWN => write!(f, "Unknown"),
         }
     }
 }
