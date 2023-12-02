@@ -10,6 +10,7 @@ use std::{fmt, time::SystemTime};
 
 use super::json_types::{
     adsbversion::ADSBVersion,
+    altimeter::Altimeter,
     altitude::Altitude,
     barorate::BaroRate,
     calculatedbestflightid::CalculatedBestFlightID,
@@ -162,6 +163,10 @@ impl JSONMessage {
             output.push_str(&format!("\tLongitude: {}\n", longitude));
         }
 
+        if let Some(selected_altimeter) = &self.selected_altimeter {
+            output.push_str(&format!("\tSelected Altimeter: {}\n", selected_altimeter));
+        }
+
         output.push_str(&format!("\tTimestamp: {}\n", self.timestamp));
         if let Some(barometric_altitude) = &self.barometric_altitude {
             output.push_str(&format!("\tBarometric Altitude: {}\n", barometric_altitude));
@@ -249,10 +254,6 @@ impl JSONMessage {
 
         if let Some(autopilot_modes) = &self.autopilot_modes {
             output.push_str(&format!("\tAutopilot Modes: {:?}\n", autopilot_modes));
-        }
-
-        if let Some(selected_altimeter) = &self.selected_altimeter {
-            output.push_str(&format!("\tSelected Altimeter: {}\n", selected_altimeter));
         }
 
         if let Some(naviation_integrity_category) = &self.naviation_integrity_category {
@@ -417,7 +418,7 @@ pub struct JSONMessage {
     pub autopilot_modes: Option<Vec<NavigationModes>>,
     /// altimeter setting (QFE or QNH/QNE), hPa
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_qnh")]
-    pub selected_altimeter: Option<f32>,
+    pub selected_altimeter: Option<Altimeter>,
     /// Navigation Integrity Category (2.2.3.2.7.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
     pub naviation_integrity_category: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right

@@ -83,6 +83,7 @@ pub mod decoders {
     #[cfg(feature = "json")]
     pub mod json_types {
         pub mod adsbversion;
+        pub mod altimeter;
         pub mod altitude;
         pub mod barorate;
         pub mod calculatedbestflightid;
