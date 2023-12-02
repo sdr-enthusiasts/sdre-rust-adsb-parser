@@ -14,6 +14,36 @@ pub enum Altitude {
     String(String),
 }
 
+impl Altitude {
+    pub fn as_meters(&self) -> f32 {
+        match self {
+            Altitude::I32(altitude) => *altitude as f32 * 0.3048,
+            Altitude::String(_) => 0.0,
+        }
+    }
+
+    pub fn as_feet(&self) -> f32 {
+        match self {
+            Altitude::I32(altitude) => *altitude as f32,
+            Altitude::String(_) => 0.0,
+        }
+    }
+
+    pub fn display_as_feet(&self) -> String {
+        match self {
+            Altitude::I32(altitude) => format!("{} ft", altitude),
+            Altitude::String(_) => "On Ground".to_string(),
+        }
+    }
+
+    pub fn display_as_meters(&self) -> String {
+        match self {
+            Altitude::I32(altitude) => format!("{} m", *altitude as f32 * 0.3048),
+            Altitude::String(_) => "On Ground".to_string(),
+        }
+    }
+}
+
 impl Default for Altitude {
     fn default() -> Self {
         Self::I32(0)

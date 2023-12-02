@@ -150,6 +150,10 @@ impl JSONMessage {
             ));
         }
 
+        if let Some(squawk) = &self.transponder_squawk_code {
+            output.push_str(&format!("\tSquawk: {}\n", squawk));
+        }
+
         if let Some(latitude) = &self.latitude {
             output.push_str(&format!("\tLatitude: {}\n", latitude));
         }
@@ -272,6 +276,14 @@ impl JSONMessage {
                 "\tRadius of Containment: {}\n",
                 radius_of_containment
             ));
+        }
+
+        for item in &self.mlat {
+            output.push_str(&format!("\tMLAT: {}\n", item));
+        }
+
+        for item in &self.tisb {
+            output.push_str(&format!("\tTISB: {}\n", item));
         }
 
         output.push_str(&format!("\tRSSI: {}\n", self.rssi));

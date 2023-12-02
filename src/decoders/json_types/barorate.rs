@@ -19,6 +19,24 @@ impl From<i32> for BaroRate {
     }
 }
 
+impl BaroRate {
+    pub fn as_meters(&self) -> f32 {
+        self.baro_rate as f32 * 0.00508
+    }
+
+    pub fn as_feet(&self) -> f32 {
+        self.baro_rate as f32
+    }
+
+    pub fn display_as_feet(&self) -> String {
+        format!("{} ft/min", self.baro_rate)
+    }
+
+    pub fn display_as_meters(&self) -> String {
+        format!("{} m/min", self.baro_rate as f32 * 0.00508)
+    }
+}
+
 impl fmt::Display for BaroRate {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{} ft/min", self.baro_rate)

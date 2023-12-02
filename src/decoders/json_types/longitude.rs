@@ -13,6 +13,36 @@ pub struct Longitude {
     longitude: f32,
 }
 
+impl Longitude {
+    pub fn as_degrees(&self) -> f32 {
+        self.longitude
+    }
+
+    pub fn as_radians(&self) -> f32 {
+        self.longitude.to_radians()
+    }
+
+    pub fn display_as_degrees(&self) -> String {
+        format!("{}°", self.longitude)
+    }
+
+    pub fn display_as_radians(&self) -> String {
+        format!("{} rad", self.longitude.to_radians())
+    }
+
+    pub fn display_as_dms(&self) -> String {
+        // format the longitude in DMS
+        let lon_deg: f32 = self.longitude.abs().floor();
+        let lon_min: f32 = (self.longitude.abs() - lon_deg) * 60.0;
+        let lon_sec: f32 = (lon_min - lon_min.floor()) * 60.0;
+        let lon_dir: &str = if self.longitude >= 0.0 { "E" } else { "W" };
+        format!(
+            "{:.0}° {:.0}' {:.4}\" {}",
+            lon_deg, lon_min, lon_sec, lon_dir
+        )
+    }
+}
+
 impl From<f32> for Longitude {
     fn from(lat: f32) -> Self {
         Longitude { longitude: lat }

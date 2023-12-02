@@ -21,6 +21,36 @@ impl From<f32> for Speed {
     }
 }
 
+impl Speed {
+    pub fn as_meters(&self) -> f32 {
+        match self {
+            Speed::Knots(speed) => *speed * 0.514444,
+            Speed::None => 0.0,
+        }
+    }
+
+    pub fn as_knots(&self) -> f32 {
+        match self {
+            Speed::Knots(speed) => *speed,
+            Speed::None => 0.0,
+        }
+    }
+
+    pub fn display_as_knots(&self) -> String {
+        match self {
+            Speed::Knots(speed) => format!("{} knots", speed),
+            Speed::None => "None".to_string(),
+        }
+    }
+
+    pub fn display_as_meters(&self) -> String {
+        match self {
+            Speed::Knots(speed) => format!("{} m/min", speed * 0.514444),
+            Speed::None => "None".to_string(),
+        }
+    }
+}
+
 impl fmt::Display for Speed {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
