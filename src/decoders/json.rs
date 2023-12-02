@@ -21,6 +21,7 @@ use super::json_types::{
     lastknownposition::LastKnownPosition,
     latitude::Latitude,
     longitude::Longitude,
+    messagetype::MessageType,
     meters::{Meters, NauticalMiles},
     nacp::NavigationIntegrityCategory,
     nacv::NavigationAccuracyVelocity,
@@ -279,8 +280,10 @@ pub struct JSONMessage {
     pub true_track_over_ground: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub true_heading: Option<f32>,
+    /// type of underlying messages / best source of current data for this position / aircraft
     #[serde(rename = "type")]
-    pub vehicle_type: String,
+    pub message_type: MessageType,
+    /// ADS-B Version Number 0, 1, 2 (3-7 are reserved) (2.2.3.2.7.5)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<ADSBVersion>,
 }
