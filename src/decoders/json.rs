@@ -103,6 +103,31 @@ impl fmt::Display for JSONMessage {
     }
 }
 
+fn pretty_print_field_from_option<T: fmt::Display>(
+    field_name: &str,
+    field: &Option<T>,
+    output: &mut String,
+) {
+    match field {
+        Some(value) => {
+            pretty_print_field(field_name, value, output);
+        }
+        None => (),
+    }
+}
+
+fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: &mut String) {
+    output.push_str(&format!("\t{}: {}\n", field_name, field));
+}
+
+fn pretty_print_field_no_leading_tab<T: fmt::Display>(
+    field_name: &str,
+    field: &T,
+    output: &mut String,
+) {
+    output.push_str(&format!("{}: {}\n", field_name, field))
+}
+
 impl JSONMessage {
     /// Converts `JSONMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
@@ -115,179 +140,167 @@ impl JSONMessage {
     pub fn pretty_print(&self) -> String {
         // Go through each field and print it out
         let mut output: String = String::new();
-        output.push_str(&format!(
-            "Aircraft:\n\tTransponder Hex: {}\n",
-            self.transponder_hex
-        ));
+        pretty_print_field_no_leading_tab(
+            "Aircraft\n\tTransponder Hex:",
+            &self.transponder_hex,
+            &mut output,
+        );
+        pretty_print_field("Timestamp", &self.timestamp, &mut output);
+        pretty_print_field_from_option(
+            "Barometric Altitude",
+            &self.barometric_altitude,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Calculated Best Flight ID",
+            &self.calculated_best_flight_id,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Aircraft Registration from Database",
+            &self.aircraft_registration_from_database,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Aircraft Type from Database",
+            &self.aircraft_type_from_database,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Aircraft Type from Database Long Name",
+            &self.aircraft_type_from_database_long_name,
+            &mut output,
+        );
+        pretty_print_field_from_option("Category", &self.category, &mut output);
+        pretty_print_field_from_option("DB Flags", &self.db_flags, &mut output);
+        pretty_print_field_from_option("Emergency", &self.emergency, &mut output);
+        pretty_print_field_from_option(
+            "Flight Management System Selected Altitude",
+            &self.flight_management_system_selected_altitude,
+            &mut output,
+        );
+        pretty_print_field_from_option("Geometric Altitude", &self.geometric_altitude, &mut output);
+        pretty_print_field_from_option(
+            "Geometric Altitude Rate",
+            &self.geometric_altitude_rate,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Geometric Vertical Accuracy",
+            &self.geometric_verticle_accuracy,
+            &mut output,
+        );
+        pretty_print_field_from_option("Ground Speed", &self.ground_speed, &mut output);
+        pretty_print_field_from_option(
+            "Last Known Position",
+            &self.last_known_position,
+            &mut output,
+        );
+        pretty_print_field_from_option("Latitude", &self.latitude, &mut output);
+        pretty_print_field_from_option("Longitude", &self.longitude, &mut output);
+        pretty_print_field("Messages", &self.number_of_received_messages, &mut output);
+        pretty_print_field_from_option(
+            "Navigation Accuracy Position",
+            &self.navigation_accuracy_position,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Navigation Accuracy Velocity",
+            &self.navigation_accuracy_velocity,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Autopilot Selected Altitude",
+            &self.autopilot_selected_altitude,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Autopilot Selected Heading",
+            &self.autopilot_selected_heading,
+            &mut output,
+        );
+        // loop through all of the autopilot modes and print them out
+        match &self.autopilot_modes {
+            Some(autopilot_modes) => {
+                for autopilot_mode in autopilot_modes {
+                    pretty_print_field("Autopilot Mode", &autopilot_mode, &mut output);
+                }
+            }
+            None => (),
+        }
+        pretty_print_field_from_option("Selected Altimeter", &self.selected_altimeter, &mut output);
+        pretty_print_field_from_option(
+            "Navigation Integrity Category",
+            &self.naviation_integrity_category,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Barometric Altitude Integrity Category",
+            &self.barometeric_altitude_integrity_category,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Aircraft Direction from Receiving Station",
+            &self.aircraft_direction_from_receiving_station,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Aircraft Distance from Receiving Station",
+            &self.aircract_distance_from_receiving_station,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Radius of Containment",
+            &self.radius_of_containment,
+            &mut output,
+        );
+        pretty_print_field("RSSI", &self.rssi, &mut output);
+        pretty_print_field_from_option(
+            "System Design Assurance",
+            &self.system_design_assurance,
+            &mut output,
+        );
+        pretty_print_field("Last Time Seen", &self.last_time_seen, &mut output);
+        pretty_print_field_from_option(
+            "Last Time Seen Position and Altitude",
+            &self.last_time_seen_pos_andalt,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Source Integrity Level",
+            &self.source_integrity_level,
+            &mut output,
+        );
+        pretty_print_field_from_option("Source Integrity Level Type", &self.sil_type, &mut output);
+        pretty_print_field_from_option(
+            "Flight Status Special Position ID Bit",
+            &self.flight_status_special_position_id_bit,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Transponder Squawk Code",
+            &self.transponder_squawk_code,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "True Track Over Ground",
+            &self.true_track_over_ground,
+            &mut output,
+        );
+        pretty_print_field_from_option("True Heading", &self.true_heading, &mut output);
+        pretty_print_field("Message Type", &self.message_type, &mut output);
+        pretty_print_field_from_option("Version", &self.version, &mut output);
+        // loop through TISB and print
 
-        if let Some(calculated_best_flight_id) = &self.calculated_best_flight_id {
-            output.push_str(&format!(
-                "\tCalculated Best Flight ID: {}\n",
-                calculated_best_flight_id
-            ));
+        for tisb_message in &self.tisb {
+            pretty_print_field("TISB Message", tisb_message, &mut output);
         }
 
-        if let Some(aircraft_registration_from_database) = &self.aircraft_registration_from_database
-        {
-            output.push_str(&format!(
-                "\tAircraft Registration From Database: {}\n",
-                aircraft_registration_from_database
-            ));
+        // loop through MLAT and print
+
+        for mlat_message in &self.mlat {
+            pretty_print_field("MLAT Message", mlat_message, &mut output);
         }
-
-        if let Some(aircraft_type_from_database) = &self.aircraft_type_from_database {
-            output.push_str(&format!(
-                "\tAircraft Type From Database: {}\n",
-                aircraft_type_from_database
-            ));
-        }
-
-        if let Some(aircraft_type_from_database_long_name) =
-            &self.aircraft_type_from_database_long_name
-        {
-            output.push_str(&format!(
-                "\tAircraft Type From Database Long Name: {}\n",
-                aircraft_type_from_database_long_name
-            ));
-        }
-
-        if let Some(squawk) = &self.transponder_squawk_code {
-            output.push_str(&format!("\tSquawk: {}\n", squawk));
-        }
-
-        if let Some(latitude) = &self.latitude {
-            output.push_str(&format!("\tLatitude: {}\n", latitude));
-        }
-
-        if let Some(longitude) = &self.longitude {
-            output.push_str(&format!("\tLongitude: {}\n", longitude));
-        }
-
-        if let Some(selected_altimeter) = &self.selected_altimeter {
-            output.push_str(&format!("\tSelected Altimeter: {}\n", selected_altimeter));
-        }
-
-        output.push_str(&format!("\tTimestamp: {}\n", self.timestamp));
-        if let Some(barometric_altitude) = &self.barometric_altitude {
-            output.push_str(&format!("\tBarometric Altitude: {}\n", barometric_altitude));
-        }
-
-        if let Some(geometric_altitude) = &self.geometric_altitude {
-            output.push_str(&format!("\tGeometric Altitude: {}\n", geometric_altitude));
-        }
-
-        if let Some(barometric_altitude_rate) = &self.barometric_altitude_rate {
-            output.push_str(&format!(
-                "\tBarometric Altitude Rate: {}\n",
-                barometric_altitude_rate
-            ));
-        }
-
-        if let Some(geometric_altitude_rate) = &self.geometric_altitude_rate {
-            output.push_str(&format!(
-                "\tGeometric Altitude Rate: {}\n",
-                geometric_altitude_rate
-            ));
-        }
-
-        if let Some(ground_speed) = &self.ground_speed {
-            output.push_str(&format!("\tGround Speed: {}\n", ground_speed));
-        }
-
-        if let Some(category) = &self.category {
-            output.push_str(&format!("\tCategory: {}\n", category));
-        }
-
-        if let Some(db_flags) = &self.db_flags {
-            output.push_str(&format!("\tDB Flags: {}\n", db_flags));
-        }
-
-        if let Some(emergency) = &self.emergency {
-            output.push_str(&format!("\tEmergency: {}\n", emergency));
-        }
-
-        if let Some(geometric_verticle_accuracy) = &self.geometric_verticle_accuracy {
-            output.push_str(&format!(
-                "\tGeometric Vertical Accuracy: {}\n",
-                geometric_verticle_accuracy
-            ));
-        }
-
-        if let Some(navigation_accuracy_position) = &self.navigation_accuracy_position {
-            output.push_str(&format!(
-                "\tNavigation Accuracy Position: {}\n",
-                navigation_accuracy_position
-            ));
-        }
-
-        if let Some(last_known_position) = &self.last_known_position {
-            output.push_str(&format!("\tLast Known Position: {}\n", last_known_position));
-        }
-
-        output.push_str(&format!(
-            "\tNumber of Received Messages: {}\n",
-            self.number_of_received_messages
-        ));
-
-        if let Some(autopilot_selected_altitude) = &self.autopilot_selected_altitude {
-            output.push_str(&format!(
-                "\tAutopilot Selected Altitude: {}\n",
-                autopilot_selected_altitude
-            ));
-        }
-
-        if let Some(autopilot_selected_heading) = &self.autopilot_selected_heading {
-            output.push_str(&format!(
-                "\tAutopilot Selected Heading: {}\n",
-                autopilot_selected_heading
-            ));
-        }
-
-        if let Some(flight_management_system_selected_altitude) =
-            &self.flight_management_system_selected_altitude
-        {
-            output.push_str(&format!(
-                "\tFlight Management System Selected Altitude: {}\n",
-                flight_management_system_selected_altitude
-            ));
-        }
-
-        if let Some(autopilot_modes) = &self.autopilot_modes {
-            output.push_str(&format!("\tAutopilot Modes: {:?}\n", autopilot_modes));
-        }
-
-        if let Some(naviation_integrity_category) = &self.naviation_integrity_category {
-            output.push_str(&format!(
-                "\tNaviation Integrity Category: {}\n",
-                naviation_integrity_category
-            ));
-        }
-
-        if let Some(barometeric_altitude_integrity_category) =
-            &self.barometeric_altitude_integrity_category
-        {
-            output.push_str(&format!(
-                "\tBarometeric Altitude Integrity Category: {}\n",
-                barometeric_altitude_integrity_category
-            ));
-        }
-
-        if let Some(radius_of_containment) = &self.radius_of_containment {
-            output.push_str(&format!(
-                "\tRadius of Containment: {}\n",
-                radius_of_containment
-            ));
-        }
-
-        for item in &self.mlat {
-            output.push_str(&format!("\tMLAT: {}\n", item));
-        }
-
-        for item in &self.tisb {
-            output.push_str(&format!("\tTISB: {}\n", item));
-        }
-
-        output.push_str(&format!("\tRSSI: {}\n", self.rssi));
 
         output
     }
