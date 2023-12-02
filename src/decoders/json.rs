@@ -26,11 +26,13 @@ use super::json_types::{
     nacp::NavigationIntegrityCategory,
     nacv::NavigationAccuracyVelocity,
     navigationmodes::NavigationModes,
+    secondsago::SecondsAgo,
     signalpower::SignalPower,
     sil::SourceIntegrityLevel,
     sourceintegritylevel::SourceIntegrityLevelType,
     speed::Speed,
     squawk::Squawk,
+    timestamp::TimeStamp,
     transponderhex::TransponderHex,
 };
 
@@ -138,10 +140,10 @@ impl JSONMessage {
 }
 
 // Not all messages have a timestamp, so we'll use the current time if one isn't provided.
-fn get_timestamp() -> f64 {
+fn get_timestamp() -> TimeStamp {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
-        Ok(n) => n.as_secs_f64(),
-        Err(_) => 0.0,
+        Ok(n) => TimeStamp::from(n.as_secs_f64()),
+        Err(_) => TimeStamp::default(),
     }
 }
 
@@ -158,7 +160,7 @@ fn get_timestamp() -> f64 {
 pub struct JSONMessage {
     /// The timestamp of the message in seconds since the epoch.
     #[serde(rename = "now", default = "get_timestamp")]
-    pub timestamp: f64,
+    pub timestamp: TimeStamp,
     /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
     pub flight_status: Option<FlightStatusAlertBit>, // FIXME: I doubt this is right
@@ -260,7 +262,7 @@ pub struct JSONMessage {
     pub system_design_assurance: Option<i32>, // FIXME: I doubt this is right
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
-    pub last_time_seen: f32,
+    pub last_time_seen: SecondsAgo,
     /// how long ago (in seconds before "now") the position was last updated
     #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
     pub last_time_seen_pos_andalt: Option<f32>,
