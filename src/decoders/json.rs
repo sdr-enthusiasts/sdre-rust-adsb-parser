@@ -8,34 +8,39 @@ use crate::MessageResult;
 use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
-use super::json_types::{
-    adsbversion::ADSBVersion,
-    altimeter::Altimeter,
-    altitude::Altitude,
-    barorate::BaroRate,
-    calculatedbestflightid::CalculatedBestFlightID,
-    dbflags::DBFlags,
-    emergency::Emergency,
-    emmittercategory::EmitterCategory,
-    flightstatus::FlightStatusAlertBit,
-    heading::Heading,
-    lastknownposition::LastKnownPosition,
-    latitude::Latitude,
-    longitude::Longitude,
-    messagetype::MessageType,
-    meters::{Meters, NauticalMiles},
-    nacp::NavigationIntegrityCategory,
-    nacv::NavigationAccuracyVelocity,
-    navigationmodes::NavigationModes,
-    receivedmessages::ReceivedMessages,
-    secondsago::SecondsAgo,
-    signalpower::SignalPower,
-    sil::SourceIntegrityLevel,
-    sourceintegritylevel::SourceIntegrityLevelType,
-    speed::Speed,
-    squawk::Squawk,
-    timestamp::TimeStamp,
-    transponderhex::TransponderHex,
+use super::{
+    helpers::prettyprint::{
+        pretty_print_field, pretty_print_field_from_option, pretty_print_label,
+    },
+    json_types::{
+        adsbversion::ADSBVersion,
+        altimeter::Altimeter,
+        altitude::Altitude,
+        barorate::BaroRate,
+        calculatedbestflightid::CalculatedBestFlightID,
+        dbflags::DBFlags,
+        emergency::Emergency,
+        emmittercategory::EmitterCategory,
+        flightstatus::FlightStatusAlertBit,
+        heading::Heading,
+        lastknownposition::LastKnownPosition,
+        latitude::Latitude,
+        longitude::Longitude,
+        messagetype::MessageType,
+        meters::{Meters, NauticalMiles},
+        nacp::NavigationIntegrityCategory,
+        nacv::NavigationAccuracyVelocity,
+        navigationmodes::NavigationModes,
+        receivedmessages::ReceivedMessages,
+        secondsago::SecondsAgo,
+        signalpower::SignalPower,
+        sil::SourceIntegrityLevel,
+        sourceintegritylevel::SourceIntegrityLevelType,
+        speed::Speed,
+        squawk::Squawk,
+        timestamp::TimeStamp,
+        transponderhex::TransponderHex,
+    },
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -103,41 +108,6 @@ impl fmt::Display for JSONMessage {
     }
 }
 
-fn pretty_print_field_from_option<T: fmt::Display>(
-    field_name: &str,
-    field: &Option<T>,
-    output: &mut String,
-) {
-    match field {
-        Some(value) => {
-            pretty_print_field(field_name, value, output);
-        }
-        None => (),
-    }
-}
-
-fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: &mut String) {
-    output.push_str(&format!("{}: {}\n", field_name, field));
-}
-
-fn pretty_print_label(label: &str, output: &mut String) {
-    // center the label in a 70 character line
-    // 80 - 2 for the ':' - the length of the label
-    let spaces: usize = (70 - label.len()) / 2;
-    // see if we need to add an extra '=' to the end
-    let extra = if (70 - label.len()) % 2 != 0 {
-        '='
-    } else {
-        ' '
-    };
-    let mut buffer: String = String::new();
-    for _i in 0..spaces {
-        buffer.push('=');
-    }
-
-    output.push_str(&format!("{}{}{}{}\n", buffer, label, buffer, extra));
-}
-
 impl JSONMessage {
     /// Converts `JSONMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
@@ -157,7 +127,7 @@ impl JSONMessage {
     }
 
     /// Function to pretty print the JSONMessage.
-    /// Units will be in Feet, Nautical Miles, and inches of mercury
+    /// Units will be in Feet, Nautical Miles, and converted to inches of mercury
     ///
     /// return type is a String
     pub fn pretty_print_united_states(&self) -> String {
@@ -165,7 +135,8 @@ impl JSONMessage {
     }
 
     /// Function to pretty print the JSONMessage.
-    /// Units will be in Meters, Kilometers, and hPa.
+    /// Units will be converted to Meters for altitude, Nautical Miles for distance,
+    /// and hPa to line up with aviation conventions for the rest of the world.
     ///
     /// return type is a String
     pub fn pretty_print_metric(&self) -> String {
@@ -381,6 +352,7 @@ impl JSONMessage {
             &self.aircraft_direction_from_receiving_station,
             &mut output,
         );
+
         pretty_print_field_from_option(
             "Aircraft Distance from Receiving Station",
             &self.aircract_distance_from_receiving_station,
