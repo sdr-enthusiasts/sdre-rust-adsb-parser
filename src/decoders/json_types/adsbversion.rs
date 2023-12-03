@@ -42,14 +42,14 @@ impl From<u8> for ADSBVersion {
 impl fmt::Display for ADSBVersion {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {
-            ADSBVersion::Version0 => write!(f, "Version 0"),
-            ADSBVersion::Version1 => write!(f, "Version 1"),
-            ADSBVersion::Version2 => write!(f, "Version 2"),
-            ADSBVersion::Version3 => write!(f, "Version 3"),
-            ADSBVersion::Version4 => write!(f, "Version 4"),
-            ADSBVersion::Version5 => write!(f, "Version 5"),
-            ADSBVersion::Version6 => write!(f, "Version 6"),
-            ADSBVersion::Version7 => write!(f, "Version 7"),
+            ADSBVersion::Version0 => write!(f, "ADSB Version 0"),
+            ADSBVersion::Version1 => write!(f, "ADSB Version 1"),
+            ADSBVersion::Version2 => write!(f, "ADSB Version 2"),
+            ADSBVersion::Version3 => write!(f, "ADSB Version 3"),
+            ADSBVersion::Version4 => write!(f, "ADSB Version 4"),
+            ADSBVersion::Version5 => write!(f, "ADSB Version 5"),
+            ADSBVersion::Version6 => write!(f, "ADSB Version 6"),
+            ADSBVersion::Version7 => write!(f, "ADSB Version 7"),
         }
     }
 }

@@ -33,7 +33,7 @@ impl BaroRate {
     }
 
     pub fn display_as_meters(&self) -> String {
-        format!("{} m/min", self.baro_rate as f32 * 0.00508)
+        format!("{} m/min", (self.baro_rate as f32 * 0.00508) as i32)
     }
 }
 

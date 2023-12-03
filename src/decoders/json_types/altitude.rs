@@ -38,7 +38,7 @@ impl Altitude {
 
     pub fn display_as_meters(&self) -> String {
         match self {
-            Altitude::I32(altitude) => format!("{} m", *altitude as f32 * 0.3048),
+            Altitude::I32(altitude) => format!("{} m", (*altitude as f32 * 0.3048) as i32),
             Altitude::String(_) => "On Ground".to_string(),
         }
     }

@@ -34,7 +34,7 @@ impl Altimeter {
     }
 
     pub fn display_as_inches_of_mercury(&self) -> String {
-        format!("{:.2} inHg", self.altimeter * 0.02953)
+        format!("{:.2} inHg", self.altimeter * 0.02953) // FIXME: This conversion is off by a bit. Rounding error probably
     }
 }
 
