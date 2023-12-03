@@ -112,6 +112,9 @@ pub mod decoders {
     }
     #[cfg(feature = "raw")]
     pub mod raw;
+    pub mod helpers {
+        pub mod prettyprint;
+    }
 }
 
 pub mod error_handling {
@@ -262,31 +265,19 @@ impl DecodeMessage for str {
 /// This does not consume the `&[u8]`.
 impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        // FIXME: we should probably do serde last, as it's the least likely candidate for this input
-        let error_serde: DeserializationError = match serde_json::from_slice(self) {
-            Ok(v) => return Ok(v),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&self, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
-        let bytes: Vec<u8> = match hex::decode(self) {
-            Ok(v) => v,
-            Err(e) => {
-                // return e and serde error
-                // we can't attempt to use the other decoders here, because we didn't get sane bytes
-                return Err(DeserializationError::CombinedError(vec![
-                    error_serde,
-                    e.into(),
-                ]));
-            }
-        };
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_serde: DeserializationError = match serde_json::from_slice(self) {
+            Ok(v) => return Ok(v),
             Err(e) => e.into(),
         };
 
@@ -311,31 +302,19 @@ impl DecodeMessage for &[u8] {
 
 impl DecodeMessage for Vec<u8> {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        // FIXME: we should probably do serde last, as it's the least likely candidate for this input
-        let error_serde: DeserializationError = match serde_json::from_slice(self) {
-            Ok(v) => return Ok(v),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&self, 0)) {
+            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
-        let bytes: Vec<u8> = match hex::decode(self) {
-            Ok(v) => v,
-            Err(e) => {
-                // return e and serde error
-                // we can't attempt to use the other decoders here, because we didn't get sane bytes
-                return Err(DeserializationError::CombinedError(vec![
-                    error_serde,
-                    e.into(),
-                ]));
-            }
-        };
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&self, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_serde: DeserializationError = match serde_json::from_slice(self) {
+            Ok(v) => return Ok(v),
             Err(e) => e.into(),
         };
 
