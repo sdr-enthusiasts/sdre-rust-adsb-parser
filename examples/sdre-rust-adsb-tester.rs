@@ -40,7 +40,6 @@ extern crate log;
 use core::fmt;
 use generic_async_http_client::Request;
 use generic_async_http_client::Response;
-use sdre_rust_adsb_parser::decoders::json::NewJSONMessage;
 use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
 use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::ADSBBeastFrames;
@@ -106,10 +105,47 @@ enum ArgParseError {
     InvalidMode,
 }
 
+#[derive(Debug)]
+enum PrettyPrintMode {
+    Standard,
+    USA,
+    Metric,
+}
+
+impl FromStr for PrettyPrintMode {
+    type Err = ArgParseError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "standard" => Ok(PrettyPrintMode::Standard),
+            "usa" => Ok(PrettyPrintMode::USA),
+            "metric" => Ok(PrettyPrintMode::Metric),
+            _ => Err(ArgParseError::InvalidMode),
+        }
+    }
+}
+
+impl fmt::Display for PrettyPrintMode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PrettyPrintMode::Standard => write!(f, "standard"),
+            PrettyPrintMode::USA => write!(f, "usa"),
+            PrettyPrintMode::Metric => write!(f, "metric"),
+        }
+    }
+}
+
+impl Default for PrettyPrintMode {
+    fn default() -> Self {
+        PrettyPrintMode::Standard
+    }
+}
+
 struct Args {
     url: String,
     log_verbosity: u8,
     mode: Modes,
+    pretty_print_mode: PrettyPrintMode,
 }
 
 impl Args {
@@ -120,6 +156,7 @@ impl Args {
         let mut url: Option<String> = None;
         let mut log_verbosity_temp: Option<String> = None;
         let mut mode: Option<String> = None;
+        let mut pretty_print_mode: Option<String> = None;
 
         while let Some(arg) = arg_it.next() {
             match arg.as_str() {
@@ -135,6 +172,9 @@ impl Args {
                 "--help" => {
                     println!("{}", Args::help());
                     exit(0);
+                }
+                "--pretty-print" => {
+                    pretty_print_mode = arg_it.next().map(Into::into);
                 }
                 s => {
                     println!("Invalid argument: {s}");
@@ -165,10 +205,18 @@ impl Args {
             Modes::default()
         };
 
+        let pretty_print_mode: PrettyPrintMode = if let Some(pretty_print_mode) = pretty_print_mode
+        {
+            pretty_print_mode.parse::<PrettyPrintMode>().unwrap()
+        } else {
+            PrettyPrintMode::default()
+        };
+
         Ok(Args {
             url: url,
             log_verbosity: log_verbosity,
             mode: mode,
+            pretty_print_mode: pretty_print_mode,
         })
     }
 
@@ -191,6 +239,7 @@ impl Args {
             --url [url:[port]]: URL and optional port to get ADSB data from\n\
             --log-verbosity [0-5]: Set the log verbosity\n\
             --mode [jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast]: Set the mode to use\n\
+            --pretty-print [standard, usa, metric]: Set the pretty print mode\n\
             --help: Show this help and exit\n\
         "
         .to_string()
@@ -206,34 +255,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // loop and connect to the URL given
     let url_input: &String = &args.url;
     let mode: &Modes = &args.mode;
+    let pretty_print_mode: &PrettyPrintMode = &args.pretty_print_mode;
 
     match mode {
         Modes::JSONFromURLIndividual => {
             info!("Processing as individual messages");
-            process_as_individual_messages(url_input).await?;
+            process_as_individual_messages(url_input, pretty_print_mode).await?;
         }
         Modes::JSONFromUrlBulk => {
             info!("Processing as bulk messages");
-            process_as_bulk_messages(url_input).await?;
+            process_as_bulk_messages(url_input, pretty_print_mode).await?;
         }
         Modes::JSONFromTCP => {
             info!("Processing as JSON from TCP");
-            process_json_from_tcp(url_input).await?;
+            process_json_from_tcp(url_input, pretty_print_mode).await?;
         }
         Modes::Raw => {
             info!("Processing as raw frames");
-            process_raw_frames(url_input).await?;
+            process_raw_frames(url_input, pretty_print_mode).await?;
         }
         Modes::Beast => {
             info!("Processing as beast frames");
-            process_beast_frames(url_input).await?;
+            process_beast_frames(url_input, pretty_print_mode).await?;
         }
     }
 
     Ok(())
 }
 
-async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn process_json_from_tcp(
+    ip: &str,
+    pretty_print: &PrettyPrintMode,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
@@ -263,10 +316,15 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
 
         for frame in frames.frames {
             debug!("Decoding: {}", frame);
-            //let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            let message = NewJSONMessage::to_json(&frame);
-            if let Ok(message_done) = message {
-                info!("Decoded:\n{}", message_done.pretty_print());
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+
+            if let Ok(message) = message {
+                let decoded_message = match pretty_print {
+                    PrettyPrintMode::Standard => message.pretty_print(),
+                    PrettyPrintMode::USA => message.pretty_print_united_states(),
+                    PrettyPrintMode::Metric => message.pretty_print_metric(),
+                };
+                info!("Decoded: {}", decoded_message);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -275,7 +333,10 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
     Ok(())
 }
 
-async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn process_beast_frames(
+    ip: &str,
+    pretty_print: &PrettyPrintMode,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
@@ -292,8 +353,13 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
         for frame in frames.frames {
             debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            if let Ok(message_done) = message {
-                info!("Decoded {:x?}: {}", frame, message_done);
+            if let Ok(message) = message {
+                let decoded_message = match pretty_print {
+                    PrettyPrintMode::Standard => message.pretty_print(),
+                    PrettyPrintMode::USA => message.pretty_print_united_states(),
+                    PrettyPrintMode::Metric => message.pretty_print_metric(),
+                };
+                info!("Decoded: {}", decoded_message);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -302,7 +368,10 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
     Ok(())
 }
 
-async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+async fn process_raw_frames(
+    ip: &str,
+    pretty_print: &PrettyPrintMode,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
@@ -322,8 +391,13 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
         for frame in frames.frames {
             debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            if let Ok(message_done) = message {
-                info!("Decoded {:?}: {}", frame, message_done);
+            if let Ok(message) = message {
+                let decoded_message = match pretty_print {
+                    PrettyPrintMode::Standard => message.pretty_print(),
+                    PrettyPrintMode::USA => message.pretty_print_united_states(),
+                    PrettyPrintMode::Metric => message.pretty_print_metric(),
+                };
+                info!("Decoded: {}", decoded_message);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -334,6 +408,7 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
 
 async fn process_as_bulk_messages(
     url: &str,
+    pretty_print: &PrettyPrintMode,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
         let req: Request = Request::get(url);
@@ -349,7 +424,12 @@ async fn process_as_bulk_messages(
             trace!("Processing: {}", body);
             let message: Result<ADSBMessage, DeserializationError> = body.decode_message();
             if let Ok(message) = message {
-                info!("Decoded: {}", message);
+                let decoded_message = match pretty_print {
+                    PrettyPrintMode::Standard => message.pretty_print(),
+                    PrettyPrintMode::USA => message.pretty_print_united_states(),
+                    PrettyPrintMode::Metric => message.pretty_print_metric(),
+                };
+                info!("Decoded: {}", decoded_message);
                 planes_procesed = message.len();
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
@@ -369,6 +449,7 @@ async fn process_as_bulk_messages(
 
 async fn process_as_individual_messages(
     url: &str,
+    pretty_print: &PrettyPrintMode,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
         let req: Request = Request::get(url);
@@ -388,7 +469,12 @@ async fn process_as_individual_messages(
                         final_message_to_process.decode_message();
 
                     if let Ok(message) = message {
-                        info!("Decoded: {:?}", message);
+                        let decoded_message = match pretty_print {
+                            PrettyPrintMode::Standard => message.pretty_print(),
+                            PrettyPrintMode::USA => message.pretty_print_united_states(),
+                            PrettyPrintMode::Metric => message.pretty_print_metric(),
+                        };
+                        info!("Decoded: {}", decoded_message);
                         planes_procesed += 1;
                     } else {
                         error!("Error decoding: {}", message.unwrap_err());
