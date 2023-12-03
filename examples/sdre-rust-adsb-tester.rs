@@ -397,7 +397,7 @@ async fn process_raw_frames(
                     PrettyPrintMode::USA => message.pretty_print_united_states(),
                     PrettyPrintMode::Metric => message.pretty_print_metric(),
                 };
-                info!("Decoded: {}", decoded_message);
+                info!("Decoded:\n{}", decoded_message);
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }

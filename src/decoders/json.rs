@@ -505,7 +505,7 @@ pub struct JSONMessage {
     #[serde(rename = "messages")]
     pub number_of_received_messages: ReceivedMessages,
     /// list of fields derived from MLAT data
-    pub mlat: Vec<MLATFields>, // FIXME: I doubt this is right
+    pub mlat: Vec<MLATFields>,
     /// Navigation Accuracy for Position (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
     pub navigation_accuracy_position: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right

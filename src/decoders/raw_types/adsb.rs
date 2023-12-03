@@ -6,7 +6,6 @@
 
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
 
 use super::{capability::Capability, icao::ICAO, me::ME};
 
@@ -23,12 +22,11 @@ pub struct Adsb {
     pub pi: ICAO,
 }
 
-impl fmt::Display for Adsb {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{:?}",
-            self.me.to_string(self.icao, "ADS-B", self.capability, true)
-        )
+impl Adsb {
+    /// `to_string` with DF.id() input
+    pub fn to_string(&self, address_type: &str) -> String {
+        self.me
+            .to_string(self.icao, address_type, self.capability, true)
+            .unwrap()
     }
 }

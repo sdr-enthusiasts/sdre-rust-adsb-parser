@@ -11,8 +11,9 @@ use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;
 use hex;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
+use std::fmt::{self};
 
+use super::helpers::prettyprint::{pretty_print_field, pretty_print_label};
 use super::raw_types::{df::DF, helper_functions::modes_checksum};
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -99,13 +100,82 @@ pub struct AdsbRawMessage {
 }
 
 impl fmt::Display for AdsbRawMessage {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.to_string()
-                .unwrap_or("Failed to convert to string".to_string())
-        )
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let crc = self.crc;
+        match &self.df {
+            DF::ShortAirAirSurveillance { altitude, .. } => {
+                writeln!(f, " Short Air-Air Surveillance")?;
+                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                if altitude.0 > 0 {
+                    let altitude = altitude.0;
+                    writeln!(f, "  Air/Ground:    airborne?")?;
+                    writeln!(f, "  Altitude:      {altitude} ft barometric")?;
+                } else {
+                    writeln!(f, "  Air/Ground:    ground")?;
+                }
+            }
+            DF::SurveillanceAltitudeReply { fs, ac, .. } => {
+                writeln!(f, " Surveillance, Altitude Reply")?;
+                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                writeln!(f, "  Air/Ground:    {fs}")?;
+                if ac.0 > 0 {
+                    let altitude = ac.0;
+                    writeln!(f, "  Altitude:      {altitude} ft barometric")?;
+                }
+            }
+            DF::SurveillanceIdentityReply { fs, id, .. } => {
+                let identity = id.0;
+                writeln!(f, " Surveillance, Identity Reply")?;
+                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                writeln!(f, "  Air/Ground:    {fs}")?;
+                writeln!(f, "  Identity:      {identity:04x}")?;
+            }
+            DF::AllCallReply {
+                capability, icao, ..
+            } => {
+                writeln!(f, " All Call Reply")?;
+                writeln!(f, "  ICAO Address:  {icao} (Mode S / ADS-B)")?;
+                writeln!(f, "  Air/Ground:    {capability}")?;
+            }
+            DF::LongAirAir { altitude, .. } => {
+                writeln!(f, " Long Air-Air ACAS")?;
+                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                // TODO the airborne? shouldn't be static
+                if altitude.0 > 0 {
+                    let altitude = altitude.0;
+                    writeln!(f, "  Air/Ground:    airborne?")?;
+                    writeln!(f, "  Baro altitude: {altitude} ft")?;
+                } else {
+                    writeln!(f, "  Air/Ground:    ground")?;
+                }
+            }
+            DF::ADSB(adsb) => {
+                write!(f, "{}", adsb.to_string("(Mode S / ADS-B)"))?;
+            }
+            DF::TisB { cf, .. } => {
+                write!(f, "{cf}")?;
+            }
+            // TODO
+            DF::ExtendedQuitterMilitaryApplication { .. } => {}
+            DF::CommBAltitudeReply { bds, alt, .. } => {
+                writeln!(f, " Comm-B, Altitude Reply")?;
+                writeln!(f, "  ICAO Address:  {crc:x?} (Mode S / ADS-B)")?;
+                let altitude = alt.0;
+                writeln!(f, "  Altitude:      {altitude} ft")?;
+                write!(f, "  {bds}")?;
+            }
+            DF::CommBIdentityReply { id, bds, .. } => {
+                writeln!(f, " Comm-B, Identity Reply")?;
+                writeln!(f, "    ICAO Address:  {crc:x?} (Mode S / ADS-B)")?;
+                writeln!(f, "    Squawk:        {id:x?}")?;
+                write!(f, "    {bds}")?;
+            }
+            DF::CommDExtendedLengthMessage { .. } => {
+                writeln!(f, " Comm-D Extended Length Message")?;
+                writeln!(f, "    ICAO Address:     {crc:x?} (Mode S / ADS-B)")?;
+            }
+        }
+        Ok(())
     }
 }
 
@@ -141,8 +211,8 @@ impl AdsbRawMessage {
 
     pub fn pretty_print(&self) -> String {
         let mut output: String = String::new();
-        // output.push_str(&format!("DF: {}\n", self.df));
-        output.push_str(&format!("CRC: {}\n", self.crc));
+        pretty_print_label("ADS-B Raw Message", &mut output);
+        pretty_print_field("ADSB Raw Message", &self, &mut output);
         output
     }
 
