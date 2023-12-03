@@ -11,7 +11,11 @@ use hex;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
-use super::{beast_types::messagetype::MessageType, raw_types::df::DF};
+use super::{
+    beast_types::messagetype::MessageType,
+    helpers::prettyprint::{pretty_print_field, pretty_print_label},
+    raw::AdsbRawMessage,
+};
 
 // Beast format sources:
 // https://wiki.jetvision.de/wiki/Mode-S_Beast:Data_Output_Formats
@@ -133,7 +137,7 @@ pub struct AdsbBeastMessage {
     #[deku(bits = "8")]
     signal_level: u8,
     /// 4: Message
-    message: DF,
+    message: AdsbRawMessage,
 }
 
 impl AdsbBeastMessage {
@@ -171,6 +175,14 @@ impl AdsbBeastMessage {
     }
 
     pub fn pretty_print(&self) -> String {
-        unimplemented!()
+        let mut output = String::new();
+        pretty_print_label("ADS-B Beast Message", &mut output);
+        pretty_print_field("Message Type", &self.message_type, &mut output);
+        pretty_print_field("MLAT Timestamp", &self.mlat_timestamp, &mut output);
+        pretty_print_field("Signal Level", &self.signal_level, &mut output);
+        pretty_print_label("ADS-B Beast Message", &mut output);
+        pretty_print_field("", &self.message, &mut output);
+
+        output
     }
 }

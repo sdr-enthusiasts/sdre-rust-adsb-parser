@@ -212,7 +212,7 @@ impl AdsbRawMessage {
     pub fn pretty_print(&self) -> String {
         let mut output: String = String::new();
         pretty_print_label("ADS-B Raw Message", &mut output);
-        pretty_print_field("ADSB Raw Message", &self, &mut output);
+        pretty_print_field("", &self, &mut output);
         output
     }
 
