@@ -145,7 +145,7 @@ pub trait DecodeMessage {
         match self.decode_message()? {
             ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
             _ => {
-                let error = WrongType::WrongTypeForAircraft {
+                let error: WrongType = WrongType::WrongTypeForAircraft {
                     message: "The message is not an aircraft".to_string(),
                 };
 
@@ -165,7 +165,7 @@ impl DecodeMessage for String {
             Err(e) => e.into(),
         };
 
-        let bytes = match hex::decode(self) {
+        let bytes: Vec<u8> = match hex::decode(self) {
             Ok(v) => v,
             Err(e) => {
                 // return e and serde error
@@ -177,18 +177,18 @@ impl DecodeMessage for String {
             }
         };
         // try to decode it as a raw frame
-        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // create a combined error
-        let errors = vec![error_serde, error_raw, error_beast];
+        let errors: Vec<DeserializationError> = vec![error_serde, error_raw, error_beast];
         Err(DeserializationError::CombinedError(errors))
     }
 
@@ -196,7 +196,7 @@ impl DecodeMessage for String {
         match self.decode_message()? {
             ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
             _ => {
-                let error = WrongType::WrongTypeForAircraft {
+                let error: WrongType = WrongType::WrongTypeForAircraft {
                     message: "The message is not an aircraft".to_string(),
                 };
 
@@ -216,7 +216,7 @@ impl DecodeMessage for str {
             Err(e) => e.into(),
         };
 
-        let bytes = match hex::decode(self) {
+        let bytes: Vec<u8> = match hex::decode(self) {
             Ok(v) => v,
             Err(e) => {
                 // return e and serde error
@@ -228,18 +228,18 @@ impl DecodeMessage for str {
             }
         };
         // try to decode it as a raw frame
-        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // create a combined error
-        let errors = vec![error_serde, error_raw, error_beast];
+        let errors: Vec<DeserializationError> = vec![error_serde, error_raw, error_beast];
         Err(DeserializationError::CombinedError(errors))
     }
 
@@ -247,7 +247,7 @@ impl DecodeMessage for str {
         match self.decode_message()? {
             ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
             _ => {
-                let error = WrongType::WrongTypeForAircraft {
+                let error: WrongType = WrongType::WrongTypeForAircraft {
                     message: "The message is not an aircraft".to_string(),
                 };
 
@@ -268,7 +268,7 @@ impl DecodeMessage for &[u8] {
             Err(e) => e.into(),
         };
 
-        let bytes = match hex::decode(self) {
+        let bytes: Vec<u8> = match hex::decode(self) {
             Ok(v) => v,
             Err(e) => {
                 // return e and serde error
@@ -280,18 +280,18 @@ impl DecodeMessage for &[u8] {
             }
         };
         // try to decode it as a raw frame
-        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // create a combined error
-        let errors = vec![error_serde, error_raw, error_beast];
+        let errors: Vec<DeserializationError> = vec![error_serde, error_raw, error_beast];
         Err(DeserializationError::CombinedError(errors))
     }
 
@@ -299,7 +299,7 @@ impl DecodeMessage for &[u8] {
         match self.decode_message()? {
             ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
             _ => {
-                let error = WrongType::WrongTypeForAircraft {
+                let error: WrongType = WrongType::WrongTypeForAircraft {
                     message: "The message is not an aircraft".to_string(),
                 };
 
@@ -317,7 +317,7 @@ impl DecodeMessage for Vec<u8> {
             Err(e) => e.into(),
         };
 
-        let bytes = match hex::decode(self) {
+        let bytes: Vec<u8> = match hex::decode(self) {
             Ok(v) => v,
             Err(e) => {
                 // return e and serde error
@@ -329,18 +329,18 @@ impl DecodeMessage for Vec<u8> {
             }
         };
         // try to decode it as a raw frame
-        let error_raw = match AdsbRawMessage::from_bytes((&bytes, 0)) {
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
             Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // create a combined error
-        let errors = vec![error_serde, error_raw, error_beast];
+        let errors: Vec<DeserializationError> = vec![error_serde, error_raw, error_beast];
         Err(DeserializationError::CombinedError(errors))
     }
 
@@ -439,7 +439,6 @@ impl ADSBMessage {
     }
 }
 
-//TODO: Fix the docs here.
 /// This will automagically serialise to either
 ///
 /// This simplifies the handling of messaging by not needing to identify it first.
