@@ -139,6 +139,21 @@ impl AdsbRawMessage {
         Ok((rest, crc))
     }
 
+    pub fn pretty_print(&self) -> String {
+        let mut output: String = String::new();
+        // output.push_str(&format!("DF: {}\n", self.df));
+        output.push_str(&format!("CRC: {}\n", self.crc));
+        output
+    }
+
+    pub fn pretty_print_united_states(&self) -> String {
+        unimplemented!()
+    }
+
+    pub fn pretty_print_metric(&self) -> String {
+        unimplemented!()
+    }
+
     /// Converts `AdsbRawMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
