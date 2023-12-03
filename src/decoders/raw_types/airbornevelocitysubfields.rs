@@ -7,7 +7,6 @@
 use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
 
 use super::airbornevelocitytype::AirborneVelocityType;
 use super::direction_nsew::{DirectionEW, DirectionNS};
@@ -21,13 +20,6 @@ pub struct AirborneVelocitySubFields {
     pub dns: DirectionNS,
     #[deku(reader = "Self::read_v(deku::rest, t)")]
     pub vns: u16,
-}
-
-impl fmt::Display for AirborneVelocitySubFields {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "EW: {} {} kt", self.dew, self.vew)?;
-        write!(f, "NS: {} {} kt", self.dns, self.vns)
-    }
 }
 
 impl AirborneVelocitySubFields {

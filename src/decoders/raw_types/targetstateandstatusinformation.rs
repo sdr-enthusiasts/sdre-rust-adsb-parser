@@ -6,40 +6,6 @@
 
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
-
-impl fmt::Display for TargetStateAndStatusInformation {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "    Target altitude:   MCP, {} ft", self.altitude)?;
-        writeln!(f, "    Altimeter setting: {} millibars", self.qnh)?;
-        if self.is_heading {
-            writeln!(f, "    Target heading:    {}", self.heading)?;
-        }
-        if self.tcas {
-            write!(f, "    ACAS:              operational ")?;
-            if self.autopilot {
-                write!(f, "autopilot ")?;
-            }
-            if self.vnac {
-                write!(f, "vnav ")?;
-            }
-            if self.alt_hold {
-                write!(f, "altitude-hold ")?;
-            }
-            if self.approach {
-                write!(f, " approach")?;
-            }
-            writeln!(f)?;
-        } else {
-            writeln!(f, "    ACAS:              NOT operational")?;
-        }
-        writeln!(f, "    NACp:              {}", self.nacp)?;
-        writeln!(f, "    NICbaro:           {}", self.nicbaro)?;
-        writeln!(f, "    SIL:               {} (per sample)", self.sil)?;
-        writeln!(f, "    QNH:               {} millibars", self.qnh)?;
-        Ok(())
-    }
-}
 
 /// Target State and Status (§2.2.3.2.7.1)
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, PartialEq)]

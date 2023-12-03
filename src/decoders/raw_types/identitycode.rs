@@ -7,7 +7,6 @@
 use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
 
 /// 13 bit identity code
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
@@ -37,12 +36,5 @@ impl IdentityCode {
 
         let num: u16 = (a << 12 | b << 8 | c << 4 | d) as u16;
         Ok((rest, num))
-    }
-}
-
-impl fmt::Display for IdentityCode {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "  Ident:         {}", self.0)?;
-        Ok(())
     }
 }

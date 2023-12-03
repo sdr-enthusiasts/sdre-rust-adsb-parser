@@ -8,18 +8,10 @@ use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
 use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
 
 /// 13 bit encoded altitude
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct AC13Field(#[deku(reader = "Self::read(deku::rest)")] pub u16);
-
-impl fmt::Display for AC13Field {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        writeln!(f, "  AC13:          {}", self.0)?;
-        Ok(())
-    }
-}
 
 impl AC13Field {
     // TODO Add unit

@@ -6,7 +6,6 @@
 
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
-use std::fmt::{self, Formatter};
 
 use super::{
     airbornevelocitysubtype::AirborneVelocitySubType, sign::Sign,
@@ -34,18 +33,6 @@ pub struct AirborneVelocity {
         map = "|gnss_baro_diff: u16| -> Result<_, DekuError> {Ok(if gnss_baro_diff > 1 {(gnss_baro_diff - 1)* 25} else { 0 })}"
     )]
     pub gnss_baro_diff: u16,
-}
-
-impl fmt::Display for AirborneVelocity {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        let (heading, ground_speed, vertical_rate) = self.calculate().unwrap_or((0.0, 0.0, 0));
-
-        write!(f, "  Heading:       {}", heading)?;
-        write!(f, "  Speed:         {} kt groundspeed", ground_speed)?;
-        write!(f, "  Vertical rate: {} ft/min", vertical_rate)?;
-
-        Ok(())
-    }
 }
 
 impl AirborneVelocity {
