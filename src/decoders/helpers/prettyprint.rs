@@ -18,7 +18,12 @@ pub fn pretty_print_field_from_option<T: fmt::Display>(
 
 /// Pretty print a field.
 pub fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: &mut String) {
-    output.push_str(&format!("{}: {}\n", field_name, field));
+    output.push_str(&format!(
+        "{}{}{}\n",
+        field_name,
+        if !field_name.is_empty() { ": " } else { "" },
+        field
+    ));
 }
 
 /// Pretty print a label. The label will be centered in a 70 character line
