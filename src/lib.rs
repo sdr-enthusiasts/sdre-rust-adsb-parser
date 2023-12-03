@@ -97,6 +97,7 @@ pub mod decoders {
         pub mod longitude;
         pub mod messagetype;
         pub mod meters;
+        pub mod mlat;
         pub mod nacp;
         pub mod nacv;
         pub mod navigationmodes;
