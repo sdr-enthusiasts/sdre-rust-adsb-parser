@@ -405,30 +405,6 @@ impl ADSBMessage {
         }
     }
 
-    pub fn pretty_print_united_states(&self) -> String {
-        match self {
-            ADSBMessage::JSONMessage(json_message) => json_message.pretty_print_united_states(),
-            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.pretty_print_united_states(),
-            ADSBMessage::AdsbRawMessage(adsb_raw_message) => {
-                adsb_raw_message.pretty_print_united_states()
-            }
-            ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
-                adsb_beast_message.pretty_print_united_states()
-            }
-        }
-    }
-
-    pub fn pretty_print_metric(&self) -> String {
-        match self {
-            ADSBMessage::JSONMessage(json_message) => json_message.pretty_print_metric(),
-            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.pretty_print_metric(),
-            ADSBMessage::AdsbRawMessage(adsb_raw_message) => adsb_raw_message.pretty_print_metric(),
-            ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
-                adsb_beast_message.pretty_print_metric()
-            }
-        }
-    }
-
     /// Returns the number of aircraft in the message.
     ///
     /// the output is a `usize`.

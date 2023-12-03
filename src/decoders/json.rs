@@ -124,27 +124,10 @@ impl JSONMessage {
     ///
     /// return type is a String
     pub fn pretty_print(&self) -> String {
-        self.pretty_print_with_options(false, false)
+        self.pretty_print_with_options()
     }
 
-    /// Function to pretty print the JSONMessage.
-    /// Units will be in Feet, Nautical Miles, and converted to inches of mercury
-    ///
-    /// return type is a String
-    pub fn pretty_print_united_states(&self) -> String {
-        self.pretty_print_with_options(false, true)
-    }
-
-    /// Function to pretty print the JSONMessage.
-    /// Units will be converted to Meters for altitude, Nautical Miles for distance,
-    /// and hPa to line up with aviation conventions for the rest of the world.
-    ///
-    /// return type is a String
-    pub fn pretty_print_metric(&self) -> String {
-        self.pretty_print_with_options(true, false)
-    }
-
-    fn pretty_print_with_options(&self, with_metric: bool, with_inches_of_mercury: bool) -> String {
+    fn pretty_print_with_options(&self) -> String {
         // Go through each field and print it out
         let mut output: String = String::new();
         pretty_print_label("JSON Message", &mut output);
@@ -199,98 +182,35 @@ impl JSONMessage {
             &self.last_time_seen_pos_and_alt,
             &mut output,
         );
-        if let Some(baro_alt) = &self.barometric_altitude {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Barometric Altitude",
-                    &baro_alt.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Barometric Altitude",
-                    &baro_alt.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
-        if let Some(baro_alt_rate) = &self.barometric_altitude_rate {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Barometric Altitude Rate",
-                    &baro_alt_rate.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Barometric Altitude Rate",
-                    &baro_alt_rate.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
-        if let Some(geo_alt) = &self.geometric_altitude {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Geometric Altitude",
-                    &geo_alt.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Geometric Altitude",
-                    &geo_alt.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
+        pretty_print_field_from_option(
+            "Barometric Altitude",
+            &self.barometric_altitude,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Barometric Altitude Rate",
+            &self.barometric_altitude_rate,
+            &mut output,
+        );
+        pretty_print_field_from_option("Geometric Altitude", &self.geometric_altitude, &mut output);
+        pretty_print_field_from_option(
+            "Geometric Altitude Rate",
+            &self.geometric_altitude_rate,
+            &mut output,
+        );
 
-        if let Some(geo_alt_rate) = &self.geometric_altitude_rate {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Geometric Altitude Rate",
-                    &geo_alt_rate.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Geometric Altitude Rate",
-                    &geo_alt_rate.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
         pretty_print_label("Autopilot Settings", &mut output);
-        if let Some(fms_alt) = &self.flight_management_system_selected_altitude {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Flight Management System Selected Altitude",
-                    &fms_alt.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Flight Management System Selected Altitude",
-                    &fms_alt.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
-        if let Some(nav_alt) = &self.autopilot_selected_altitude {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Autopilot Selected Altitude",
-                    &nav_alt.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Autopilot Selected Altitude",
-                    &nav_alt.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
+        pretty_print_field_from_option(
+            "Flight Management System Selected Altitude",
+            &self.flight_management_system_selected_altitude,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Autopilot Selected Altitude",
+            &self.autopilot_selected_altitude,
+            &mut output,
+        );
+
         pretty_print_field_from_option(
             "Autopilot Selected Heading",
             &self.autopilot_selected_heading,
@@ -302,21 +222,7 @@ impl JSONMessage {
                 pretty_print_field("Autopilot Mode", &autopilot_mode, &mut output);
             }
         }
-        if let Some(selected_altimeter) = &self.selected_altimeter {
-            if with_inches_of_mercury {
-                pretty_print_field::<String>(
-                    "Selected Altimeter",
-                    &selected_altimeter.display_as_inches_of_mercury(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Selected Altimeter",
-                    &selected_altimeter.display_as_qnh(),
-                    &mut output,
-                );
-            }
-        }
+        pretty_print_field_from_option("Selected Altimeter", &self.selected_altimeter, &mut output);
 
         pretty_print_label("ADSB Information", &mut output);
 
@@ -647,28 +553,6 @@ impl AircraftJSON {
 
         for aircraft in &self.aircraft {
             output.push_str(&aircraft.pretty_print());
-        }
-
-        output
-    }
-
-    pub fn pretty_print_united_states(&self) -> String {
-        // TODO: output the now and messages field
-        let mut output: String = String::new();
-
-        for aircraft in &self.aircraft {
-            output.push_str(&aircraft.pretty_print_united_states());
-        }
-
-        output
-    }
-
-    pub fn pretty_print_metric(&self) -> String {
-        // TODO: output the now and messages field
-        let mut output: String = String::new();
-
-        for aircraft in &self.aircraft {
-            output.push_str(&aircraft.pretty_print_metric());
         }
 
         output

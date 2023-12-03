@@ -173,12 +173,4 @@ impl AdsbBeastMessage {
     pub fn pretty_print(&self) -> String {
         unimplemented!()
     }
-
-    pub fn pretty_print_united_states(&self) -> String {
-        unimplemented!()
-    }
-
-    pub fn pretty_print_metric(&self) -> String {
-        unimplemented!()
-    }
 }
