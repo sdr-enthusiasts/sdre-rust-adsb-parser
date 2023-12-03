@@ -117,15 +117,25 @@ fn pretty_print_field_from_option<T: fmt::Display>(
 }
 
 fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: &mut String) {
-    output.push_str(&format!("\t{}: {}\n", field_name, field));
+    output.push_str(&format!("{}: {}\n", field_name, field));
 }
 
-fn pretty_print_field_no_leading_tab<T: fmt::Display>(
-    field_name: &str,
-    field: &T,
-    output: &mut String,
-) {
-    output.push_str(&format!("{}: {}\n", field_name, field))
+fn pretty_print_label(label: &str, output: &mut String) {
+    // center the label in a 70 character line
+    // 80 - 2 for the ':' - the length of the label
+    let spaces: usize = (70 - label.len()) / 2;
+    // see if we need to add an extra '=' to the end
+    let extra = if (70 - label.len()) % 2 != 0 {
+        '='
+    } else {
+        ' '
+    };
+    let mut buffer: String = String::new();
+    for _i in 0..spaces {
+        buffer.push('=');
+    }
+
+    output.push_str(&format!("{}{}{}{}\n", buffer, label, buffer, extra));
 }
 
 impl JSONMessage {
@@ -165,45 +175,17 @@ impl JSONMessage {
     fn pretty_print_with_options(&self, with_metric: bool, with_inches_of_mercury: bool) -> String {
         // Go through each field and print it out
         let mut output: String = String::new();
-        pretty_print_field_no_leading_tab(
-            "Aircraft\n\tTransponder Hex:",
-            &self.transponder_hex,
+        pretty_print_label("JSON Message", &mut output);
+        pretty_print_field("Timestamp", &self.timestamp, &mut output);
+        pretty_print_field("Message Type", &self.message_type, &mut output);
+        pretty_print_field("Messages", &self.number_of_received_messages, &mut output);
+        pretty_print_label("Aircraft Identification", &mut output);
+        pretty_print_field("Transponder Hex:", &self.transponder_hex, &mut output);
+        pretty_print_field_from_option(
+            "Transponder Squawk Code",
+            &self.transponder_squawk_code,
             &mut output,
         );
-        pretty_print_field("Timestamp", &self.timestamp, &mut output);
-
-        if let Some(baro_alt) = &self.barometric_altitude {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Barometric Altitude",
-                    &baro_alt.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Barometric Altitude",
-                    &baro_alt.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
-
-        if let Some(baro_alt_rate) = &self.barometric_altitude_rate {
-            if with_metric {
-                pretty_print_field::<String>(
-                    "Barometric Altitude Rate",
-                    &baro_alt_rate.display_as_meters(),
-                    &mut output,
-                );
-            } else {
-                pretty_print_field::<String>(
-                    "Barometric Altitude Rate",
-                    &baro_alt_rate.display_as_feet(),
-                    &mut output,
-                );
-            }
-        }
-
         pretty_print_field_from_option(
             "Calculated Best Flight ID",
             &self.calculated_best_flight_id,
@@ -224,25 +206,57 @@ impl JSONMessage {
             &self.aircraft_type_from_database_long_name,
             &mut output,
         );
-        pretty_print_field_from_option("Category", &self.category, &mut output);
-        pretty_print_field_from_option("DB Flags", &self.db_flags, &mut output);
-        pretty_print_field_from_option("Emergency", &self.emergency, &mut output);
-        if let Some(fms_alt) = &self.flight_management_system_selected_altitude {
+        pretty_print_label("Aircraft Position, Altitude and Speed", &mut output);
+        pretty_print_field_from_option("Latitude", &self.latitude, &mut output);
+        pretty_print_field_from_option("Longitude", &self.longitude, &mut output);
+        pretty_print_field_from_option("Ground Speed", &self.ground_speed, &mut output);
+        pretty_print_field_from_option(
+            "True Track Over Ground",
+            &self.true_track_over_ground,
+            &mut output,
+        );
+        pretty_print_field_from_option("True Heading", &self.true_heading, &mut output);
+        pretty_print_field_from_option(
+            "Last Known Position",
+            &self.last_known_position,
+            &mut output,
+        );
+        pretty_print_field("Last Time Seen", &self.last_time_seen, &mut output);
+        pretty_print_field_from_option(
+            "Last Time Seen Position and Altitude",
+            &self.last_time_seen_pos_and_alt,
+            &mut output,
+        );
+        if let Some(baro_alt) = &self.barometric_altitude {
             if with_metric {
                 pretty_print_field::<String>(
-                    "Flight Management System Selected Altitude",
-                    &fms_alt.display_as_meters(),
+                    "Barometric Altitude",
+                    &baro_alt.display_as_meters(),
                     &mut output,
                 );
             } else {
                 pretty_print_field::<String>(
-                    "Flight Management System Selected Altitude",
-                    &fms_alt.display_as_feet(),
+                    "Barometric Altitude",
+                    &baro_alt.display_as_feet(),
                     &mut output,
                 );
             }
         }
-
+        if let Some(baro_alt_rate) = &self.barometric_altitude_rate {
+            if with_metric {
+                pretty_print_field::<String>(
+                    "Barometric Altitude Rate",
+                    &baro_alt_rate.display_as_meters(),
+                    &mut output,
+                );
+            } else {
+                pretty_print_field::<String>(
+                    "Barometric Altitude Rate",
+                    &baro_alt_rate.display_as_feet(),
+                    &mut output,
+                );
+            }
+        }
         if let Some(geo_alt) = &self.geometric_altitude {
             if with_metric {
                 pretty_print_field::<String>(
@@ -274,30 +288,22 @@ impl JSONMessage {
                 );
             }
         }
-        pretty_print_field_from_option(
-            "Geometric Vertical Accuracy",
-            &self.geometric_verticle_accuracy,
-            &mut output,
-        );
-        pretty_print_field_from_option("Ground Speed", &self.ground_speed, &mut output);
-        pretty_print_field_from_option(
-            "Last Known Position",
-            &self.last_known_position,
-            &mut output,
-        );
-        pretty_print_field_from_option("Latitude", &self.latitude, &mut output);
-        pretty_print_field_from_option("Longitude", &self.longitude, &mut output);
-        pretty_print_field("Messages", &self.number_of_received_messages, &mut output);
-        pretty_print_field_from_option(
-            "Navigation Accuracy Position",
-            &self.navigation_accuracy_position,
-            &mut output,
-        );
-        pretty_print_field_from_option(
-            "Navigation Accuracy Velocity",
-            &self.navigation_accuracy_velocity,
-            &mut output,
-        );
+        pretty_print_label("Autopilot Settings", &mut output);
+        if let Some(fms_alt) = &self.flight_management_system_selected_altitude {
+            if with_metric {
+                pretty_print_field::<String>(
+                    "Flight Management System Selected Altitude",
+                    &fms_alt.display_as_meters(),
+                    &mut output,
+                );
+            } else {
+                pretty_print_field::<String>(
+                    "Flight Management System Selected Altitude",
+                    &fms_alt.display_as_feet(),
+                    &mut output,
+                );
+            }
+        }
         if let Some(nav_alt) = &self.autopilot_selected_altitude {
             if with_metric {
                 pretty_print_field::<String>(
@@ -340,6 +346,26 @@ impl JSONMessage {
             }
         }
 
+        pretty_print_label("ADSB Information", &mut output);
+
+        pretty_print_field_from_option("Category", &self.category, &mut output);
+        pretty_print_field_from_option("DB Flags", &self.db_flags, &mut output);
+        pretty_print_field_from_option("Emergency", &self.emergency, &mut output);
+        pretty_print_field_from_option(
+            "Geometric Vertical Accuracy",
+            &self.geometric_verticle_accuracy,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Navigation Accuracy Position",
+            &self.navigation_accuracy_position,
+            &mut output,
+        );
+        pretty_print_field_from_option(
+            "Navigation Accuracy Velocity",
+            &self.navigation_accuracy_velocity,
+            &mut output,
+        );
         pretty_print_field_from_option(
             "Navigation Integrity Category",
             &self.naviation_integrity_category,
@@ -371,12 +397,7 @@ impl JSONMessage {
             &self.system_design_assurance,
             &mut output,
         );
-        pretty_print_field("Last Time Seen", &self.last_time_seen, &mut output);
-        pretty_print_field_from_option(
-            "Last Time Seen Position and Altitude",
-            &self.last_time_seen_pos_and_alt,
-            &mut output,
-        );
+
         pretty_print_field_from_option(
             "Source Integrity Level",
             &self.source_integrity_level,
@@ -389,18 +410,7 @@ impl JSONMessage {
             &mut output,
         );
         pretty_print_field_from_option("Flight Status", &self.flight_status, &mut output);
-        pretty_print_field_from_option(
-            "Transponder Squawk Code",
-            &self.transponder_squawk_code,
-            &mut output,
-        );
-        pretty_print_field_from_option(
-            "True Track Over Ground",
-            &self.true_track_over_ground,
-            &mut output,
-        );
-        pretty_print_field_from_option("True Heading", &self.true_heading, &mut output);
-        pretty_print_field("Message Type", &self.message_type, &mut output);
+
         pretty_print_field_from_option("Version", &self.version, &mut output);
         // loop through TISB and print
 
