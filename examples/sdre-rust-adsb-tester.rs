@@ -266,7 +266,7 @@ async fn process_json_from_tcp(ip: &str) -> Result<(), Box<dyn std::error::Error
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
 
             if let Ok(message) = message {
-                info!("Decoded: {}", message);
+                info!("Decoded: {}", message.pretty_print());
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -293,7 +293,7 @@ async fn process_beast_frames(ip: &str) -> Result<(), Box<dyn std::error::Error 
             debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message) = message {
-                info!("Decoded: {}", message);
+                info!("Decoded: {}", message.pretty_print());
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -323,7 +323,7 @@ async fn process_raw_frames(ip: &str) -> Result<(), Box<dyn std::error::Error + 
             debug!("Decoding: {:x?}", frame);
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message) = message {
-                info!("Decoded:\n{}", message);
+                info!("Decoded:\n{}", message.pretty_print());
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
             }
@@ -349,7 +349,7 @@ async fn process_as_bulk_messages(
             trace!("Processing: {}", body);
             let message: Result<ADSBMessage, DeserializationError> = body.decode_message();
             if let Ok(message) = message {
-                info!("Decoded: {}", message);
+                info!("Decoded: {}", message.pretty_print());
                 planes_procesed = message.len();
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
@@ -388,7 +388,7 @@ async fn process_as_individual_messages(
                         final_message_to_process.decode_message();
 
                     if let Ok(message) = message {
-                        info!("Decoded: {}", message);
+                        info!("Decoded: {}", message.pretty_print());
                         planes_procesed += 1;
                     } else {
                         error!("Error decoding: {}", message.unwrap_err());
