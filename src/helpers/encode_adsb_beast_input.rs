@@ -53,31 +53,46 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
         let next_byte = byte_iter.peek();
 
         // if this is the start of a new frame, lets process the old one
-        if *byte == ADSB_BEAST_START_CHARACTER && next_byte != Some(&&ADSB_BEAST_START_CHARACTER) {
+        if (*byte == ADSB_BEAST_START_CHARACTER && next_byte != Some(&&ADSB_BEAST_START_CHARACTER))
+            || next_byte.is_none()
+        {
+            // if this is the last byte, append it and then test
+            if next_byte.is_none() {
+                frame_bytes.push(*byte);
+            }
             // if we have a frame, process it
             if !frame_bytes.is_empty() {
                 // verify we have a valid frame length
-
                 match frame_type {
                     FrameType::Short => {
                         if frame_bytes.len() != ADSB_BEAST_SHORT_FRAME_LENGTH {
-                            error!(
-                                "Frame is not the correct length. Expected {} got {}\n{:X?}",
-                                ADSB_BEAST_SHORT_FRAME_LENGTH,
-                                frame_bytes.len(),
-                                frame_bytes
-                            );
+                            if next_byte.is_some() {
+                                error!(
+                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
+                                    ADSB_BEAST_SHORT_FRAME_LENGTH,
+                                    frame_bytes.len(),
+                                    frame_bytes
+                                );
+                                frame_bytes.clear();
+                            }
+                        } else {
+                            formatted_frames.push(frame_bytes.clone());
                             frame_bytes.clear();
                         }
                     }
                     FrameType::Long => {
                         if frame_bytes.len() != ADSB_BEAST_LONG_FRAME_LENGTH {
-                            error!(
-                                "Frame is not the correct length. Expected {} got {}\n{:X?}",
-                                ADSB_BEAST_LONG_FRAME_LENGTH,
-                                frame_bytes.len(),
-                                frame_bytes
-                            );
+                            if next_byte.is_some() {
+                                error!(
+                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
+                                    ADSB_BEAST_LONG_FRAME_LENGTH,
+                                    frame_bytes.len(),
+                                    frame_bytes
+                                );
+                                frame_bytes.clear();
+                            }
+                        } else {
+                            formatted_frames.push(frame_bytes.clone());
                             frame_bytes.clear();
                         }
                     }
@@ -88,12 +103,6 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         // Ignore the modeac frame
                         frame_bytes.clear();
                     }
-                }
-
-                // we have a valid frame, so lets add it to the list
-                if !frame_bytes.is_empty() {
-                    formatted_frames.push(frame_bytes.clone());
-                    frame_bytes.clear();
                 }
             }
 
@@ -111,14 +120,20 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     frame_type = FrameType::ModeAC;
                     continue;
                 }
+                None => {
+                    // we are at the end of the buffer, continue to exit
+                    continue;
+                }
                 _ => {
                     error!("Found a start character that wasn't a start sequence");
+                    error!("The entire buffer is: {:02X?}", bytes);
                     frame_type = FrameType::None;
                     continue;
                 }
             }
         }
         // if we have a valid frame type, we should continue, otherwise, we continue
+
         match frame_type {
             FrameType::None => {
                 error!("Frame type is None");
@@ -169,13 +184,6 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
 
     if !frame_bytes.is_empty() {
         // we trimmed off the control characters, so we need to add them back if the frame starts with a start character
-        if frame_bytes[0] == ADSB_BEAST_MODEAC_FRAME_START_CHARACTER
-            || frame_bytes[0] == ADSB_BEAST_SHORT_FRAME_START_CHARACTER
-            || frame_bytes[0] == ADSB_BEAST_LONG_FRAME_START_CHARACTER
-        {
-            frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
-        }
-
         match frame_bytes[0] {
             ADSB_BEAST_SHORT_FRAME_START_CHARACTER
             | ADSB_BEAST_LONG_FRAME_START_CHARACTER
@@ -258,7 +266,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:x?}", frame);
+            println!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
@@ -345,7 +353,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:x?}", frame);
+            println!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
@@ -433,7 +441,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:x?}", frame);
+            println!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
