@@ -524,6 +524,10 @@ pub struct JSONMessage {
     /// True air speed
     #[serde(skip_serializing_if = "Option::is_none", rename = "tas")]
     pub true_air_speed: Option<Speed>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    track_rate: Option<f32>, // TODO: print this out
+    #[serde(skip_serializing_if = "Option::is_none")]
+    roll: Option<f32>, // TODO: print this out
 }
 
 #[cfg(test)]
