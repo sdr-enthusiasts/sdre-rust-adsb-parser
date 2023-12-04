@@ -256,3 +256,16 @@ impl AdsbRawMessage {
         Some(0.0)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_message_by_itself() {
+        let input = "8DA0CA2DEA57F866C15C088DEF6F";
+
+        let result = input.to_adsb_raw();
+        assert!(result.is_ok(), "Failed to decode message: {:?}", result);
+    }
+}
