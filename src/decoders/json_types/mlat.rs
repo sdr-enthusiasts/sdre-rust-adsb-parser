@@ -36,6 +36,7 @@ impl From<String> for MLATFields {
             "nic" => MLATFields::NIC,
             "rc" => MLATFields::RC,
             "nac_v" => MLATFields::NACv,
+            //_ => panic!("Unknown MLAT field: {}", field),
             _ => panic!("Unknown MLAT field: {}", field),
         }
     }
