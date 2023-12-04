@@ -37,7 +37,6 @@
 
 #[macro_use]
 extern crate log;
-use core::fmt;
 use generic_async_http_client::Request;
 use generic_async_http_client::Response;
 use sdre_rust_adsb_parser::decoders::aircraftjson::AircraftJSON;
@@ -56,7 +55,7 @@ use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
 use sdre_rust_adsb_parser::ADSBMessage;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
-use std::os::unix::process;
+use std::fmt;
 use std::process::exit;
 use std::str::FromStr;
 use std::time::Duration;
@@ -265,7 +264,8 @@ async fn process_beast_frames(
     // open a TCP connection to ip. Grab the frames and process them as raw
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
-    let mut buffer: [u8; 1024] = [0u8; 1024];
+    let mut buffer: [u8; 4096] = [0u8; 4096];
+    let mut left_over: Vec<u8> = Vec::new();
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -273,10 +273,10 @@ async fn process_beast_frames(
             continue;
         }
         trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
-        let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
-        if !frames.left_over.is_empty() {
-            error!("Left over bytes: {:x?}", frames.left_over);
-        }
+        let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
+        let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&processed_buffer);
+        left_over = frames.left_over;
+
         trace!("Pre-processed: {:x?}", frames.frames);
         for frame in &frames.frames {
             debug!("Decoding: {:x?}", frame);
@@ -314,7 +314,7 @@ async fn process_raw_frames(
     // open a TCP connection to ip. Grab the frames and process them as raw
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
-    let mut buffer: [u8; 1024] = [0u8; 1024];
+    let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
     while let Ok(n) = stream.read(&mut buffer).await {
@@ -323,14 +323,11 @@ async fn process_raw_frames(
             continue;
         }
         trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
+
         // append the left over bytes to the buffer
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
-
         let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&processed_buffer);
-        if !frames.left_over.is_empty() {
-            error!("Left over bytes: {:x?}", frames.left_over);
-            left_over = frames.left_over;
-        }
+        left_over = frames.left_over;
 
         trace!("Pre-processed: {:?}", frames.frames);
 
