@@ -58,16 +58,17 @@ impl TryFrom<String> for MessageType {
         match message_type.as_str() {
             "adsb_icao" => Ok(MessageType::ADSBICAO),
             "adsb_icao_nt" => Ok(MessageType::ADSBICAONONTRANSPONDER),
-            "adsb_icao_reb" => Ok(MessageType::ADSBICAOREBROADCAST),
-            "adsb_icao_sec" => Ok(MessageType::ADSBICAOSECONDARYSURVEILLANCE),
+            "adsr_icao" => Ok(MessageType::ADSBICAOREBROADCAST),
+            "tisb_icao" => Ok(MessageType::ADSBICAOSECONDARYSURVEILLANCE),
             "adsc" => Ok(MessageType::ADSC),
             "mlat" => Ok(MessageType::MLAT),
             "other" => Ok(MessageType::OTHER),
             "mode_s" => Ok(MessageType::MODES),
             "adsb_other" => Ok(MessageType::ADSBOTHER),
-            "adsb_other_reb" => Ok(MessageType::ADSBOTHERREBROADCAST),
-            "adsb_other_sec" => Ok(MessageType::ADSBOTHERSECONDARYSURVEILLANCE),
+            "adsr_other" => Ok(MessageType::ADSBOTHERREBROADCAST),
+            "tisb_other" => Ok(MessageType::ADSBOTHERSECONDARYSURVEILLANCE),
             "tisb_trackfile" => Ok(MessageType::ADSBTRACKFILE),
+            "unknown" => Ok(MessageType::UNKNOWN),
             _ => Err(format!("Invalid MessageType field: {}", message_type)),
         }
     }
