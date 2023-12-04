@@ -38,80 +38,63 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
     let mut current_frame: Vec<u8> = Vec::new();
     let mut errors_found: Vec<DeserializationError> = Vec::new();
 
-    let mut byte_iter = bytes.iter().enumerate().peekable();
+    let mut byte_iter = bytes.iter().peekable();
 
-    while let Some((position, byte)) = byte_iter.next() {
-        let (_, next) = byte_iter.peek().unwrap_or(&(0usize, &0u8));
+    while let Some(byte) = byte_iter.next() {
+        // if the byte, and the next one, are the end sequence, we should have a frame
+        // verify the frame length is correct, and if so, add it to the list of frames
         if *byte == ADSB_RAW_END_SEQUENCE_INIT_CHARACTER
-            && **next == ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER
-            && position != 0
+            && byte_iter.peek() == Some(&&ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER)
         {
-            match current_frame.len() {
-                ADSB_RAW_MODEAC_FRAME => {
-                    // this is a valid frame size, but it's NOT one we want to decode
-                    debug!("Detected a MODEAC frame, skipping");
-                }
-                // The frame size is valid
-                ADSB_RAW_FRAME_SMALL | ADSB_RAW_FRAME_LARGE => {
-                    if let Ok(frame_bytes) = hex::decode(&current_frame) {
-                        formatted_frames.push(frame_bytes);
-                        current_frame = Vec::new();
-                    } else {
-                        errors_found.push(DeserializationError::ADSBRawError(
-                            ADSBRawError::HexEncodingError {
-                                message: "Could not convert the {frame_string} string to bytes"
-                                    .to_string(),
-                            },
-                        ));
-                    }
-                }
-                // The frame size is invalid
-                _ => {
-                    errors_found.push(DeserializationError::ADSBRawError(
-                        ADSBRawError::ByteSequenceWrong {
-                            size: current_frame.len() as u8,
-                        },
-                    ));
-                }
+            // verify we have a valid frame length
+            if current_frame.len() == ADSB_RAW_MODEAC_FRAME {
+                // we will ignore the modeac frame
+                current_frame.clear();
+                _ = byte_iter.next();
+                continue;
             }
-        } else if byte == &ADSB_RAW_START_CHARACTER {
-            current_frame = Vec::new();
-        } else if byte != &ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER
-            && byte != &ADSB_RAW_END_SEQUENCE_INIT_CHARACTER
-        {
-            current_frame.push(*byte);
-        }
-        // if it's the last character, see if we have a valid frame
-        if position == bytes.len() - 1 && !current_frame.is_empty() {
-            debug!("Reached the end of the input, checking for a valid frame");
-            match current_frame.len() {
-                ADSB_RAW_MODEAC_FRAME => {
-                    // this is a valid frame size, but it's NOT one we want to decode
-                    debug!("Detected a MODEAC frame, skipping");
-                    current_frame = Vec::new();
-                }
-                ADSB_RAW_FRAME_SMALL | ADSB_RAW_FRAME_LARGE => {
-                    debug!("Detected a valid frame at end of input, converting to bytes");
 
-                    if let Ok(frame_bytes) = hex::decode(&current_frame) {
-                        formatted_frames.push(frame_bytes);
-                        current_frame = Vec::new();
-                    } else {
-                        errors_found.push(DeserializationError::ADSBRawError(
-                            ADSBRawError::HexEncodingError {
-                                message: "Could not convert the bytes {current_frame} to a string"
-                                    .to_string(),
-                            },
-                        ));
-                    }
-                }
-                _ => {
-                    // append the control character init to the start of the frame
-                    current_frame.insert(0, ADSB_RAW_START_CHARACTER);
-                    debug!("Detected unused bits at end of input, skipping and sending back")
-                }
+            if current_frame.len() != ADSB_RAW_FRAME_SMALL
+                && current_frame.len() != ADSB_RAW_FRAME_LARGE
+            {
+                errors_found.push(DeserializationError::ADSBRawError(
+                    ADSBRawError::ByteSequenceWrong {
+                        size: current_frame.len() as u8,
+                    },
+                ));
+                current_frame.clear();
+                _ = byte_iter.next();
+                continue;
             }
+
+            // we've ended up here, the frame size should be valid
+            if let Ok(frame_bytes) = hex::decode(&current_frame) {
+                formatted_frames.push(frame_bytes);
+            } else {
+                errors_found.push(DeserializationError::ADSBRawError(
+                    ADSBRawError::HexEncodingError {
+                        message: "Could not convert the {frame_string} string to bytes".to_string(),
+                    },
+                ));
+            }
+
+            current_frame.clear();
+            _ = byte_iter.next();
+            continue;
         }
+
+        // If we've encountered the start character, we will just continue to the next loop iteration
+        if *byte == ADSB_RAW_START_CHARACTER {
+            continue;
+        }
+
+        // if we've ended up here we should just append the byte to the current frame
+        current_frame.push(*byte);
+    }
+
+    // current frame should be clear, but just in case, we will log it
+    if !current_frame.is_empty() {
+        debug!("Left over frame: {:?}", current_frame);
     }
 
     // log any errors in decoding
