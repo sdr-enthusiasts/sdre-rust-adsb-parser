@@ -15,7 +15,9 @@ use decoders::beast::AdsbBeastMessage;
 use error_handling::deserialization_error::{DeserializationError, WrongType};
 
 #[cfg(feature = "json")]
-use decoders::json::{AircraftJSON, JSONMessage};
+use decoders::aircraftjson::AircraftJSON;
+#[cfg(feature = "json")]
+use decoders::json::JSONMessage;
 #[cfg(feature = "raw")]
 use decoders::raw::AdsbRawMessage;
 use deku::prelude::*;
