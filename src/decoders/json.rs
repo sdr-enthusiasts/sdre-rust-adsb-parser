@@ -167,11 +167,18 @@ impl JSONMessage {
         pretty_print_field_from_option("Longitude", &self.longitude, &mut output);
         pretty_print_field_from_option("Ground Speed", &self.ground_speed, &mut output);
         pretty_print_field_from_option(
+            "Indicator Air Speed",
+            &self.indicator_air_speed,
+            &mut output,
+        );
+        pretty_print_field_from_option("True Air Speed", &self.true_air_speed, &mut output);
+        pretty_print_field_from_option(
             "True Track Over Ground",
             &self.true_track_over_ground,
             &mut output,
         );
         pretty_print_field_from_option("True Heading", &self.true_heading, &mut output);
+        pretty_print_field_from_option("Magnetic Heading", &self.magnetic_heading, &mut output);
         pretty_print_field_from_option(
             "Last Known Position",
             &self.last_known_position,
@@ -502,6 +509,21 @@ pub struct JSONMessage {
     /// ADS-B Version Number 0, 1, 2 (3-7 are reserved) (2.2.3.2.7.5)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub version: Option<ADSBVersion>,
+    /// Magnetic heading
+    #[serde(skip_serializing_if = "Option::is_none", rename = "mag_heading")]
+    pub magnetic_heading: Option<Heading>,
+    /// GPS Okay before this time.
+    #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkBefore")]
+    pub gps_ok_before: Option<TimeStamp>, // TODO: print out
+    /// GPS Okay Latitude
+    #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkLat")]
+    pub gps_ok_latitude: Option<Latitude>, // TODO: print out
+    /// GPS Okay Longitude
+    #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkLon")]
+    pub gps_ok_longitude: Option<Longitude>, // TODO: print out
+    /// True air speed
+    #[serde(skip_serializing_if = "Option::is_none", rename = "tas")]
+    pub true_air_speed: Option<Speed>,
 }
 
 #[cfg(test)]
