@@ -79,6 +79,8 @@ pub mod decoders {
         pub mod messagetype;
     }
     #[cfg(feature = "json")]
+    pub mod aircraftjson;
+    #[cfg(feature = "json")]
     pub mod json;
     #[cfg(feature = "json")]
     pub mod json_types {

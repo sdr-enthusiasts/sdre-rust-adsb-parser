@@ -40,11 +40,11 @@ extern crate log;
 use core::fmt;
 use generic_async_http_client::Request;
 use generic_async_http_client::Response;
+use sdre_rust_adsb_parser::decoders::aircraftjson::AircraftJSON;
+use sdre_rust_adsb_parser::decoders::aircraftjson::NewAircraftJSONMessage;
 use sdre_rust_adsb_parser::decoders::beast::AdsbBeastMessage;
 use sdre_rust_adsb_parser::decoders::beast::NewAdsbBeastMessage;
-use sdre_rust_adsb_parser::decoders::json::AircraftJSON;
 use sdre_rust_adsb_parser::decoders::json::JSONMessage;
-use sdre_rust_adsb_parser::decoders::json::NewAircraftJSONMessage;
 use sdre_rust_adsb_parser::decoders::json::NewJSONMessage;
 use sdre_rust_adsb_parser::decoders::raw::NewAdsbRawMessage;
 use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
@@ -56,6 +56,7 @@ use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
 use sdre_rust_adsb_parser::ADSBMessage;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
+use std::os::unix::process;
 use std::process::exit;
 use std::str::FromStr;
 use std::time::Duration;
@@ -273,6 +274,9 @@ async fn process_beast_frames(
         }
         trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&buffer[0..n]);
+        if !frames.left_over.is_empty() {
+            error!("Left over bytes: {:x?}", frames.left_over);
+        }
         trace!("Pre-processed: {:x?}", frames.frames);
         for frame in &frames.frames {
             debug!("Decoding: {:x?}", frame);
@@ -285,6 +289,7 @@ async fn process_beast_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
+                    error!("Message input: {:x?}", frame);
                 }
             } else {
                 let message: Result<AdsbBeastMessage, DeserializationError> = frame.to_adsb_beast();
@@ -310,6 +315,7 @@ async fn process_raw_frames(
     let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
     info!("Connected to {:?}", stream);
     let mut buffer: [u8; 1024] = [0u8; 1024];
+    let mut left_over: Vec<u8> = Vec::new();
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -317,8 +323,14 @@ async fn process_raw_frames(
             continue;
         }
         trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        // append the left over bytes to the buffer
+        let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
 
-        let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&buffer[0..n]);
+        let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&processed_buffer);
+        if !frames.left_over.is_empty() {
+            error!("Left over bytes: {:x?}", frames.left_over);
+            left_over = frames.left_over;
+        }
 
         trace!("Pre-processed: {:?}", frames.frames);
 
@@ -332,6 +344,7 @@ async fn process_raw_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
+                    error!("Message input: {:x?}", frame);
                 }
             } else {
                 let message = frame.to_adsb_raw();
@@ -341,6 +354,7 @@ async fn process_raw_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
+                    error!("Message input: {:x?}", frame);
                 }
             }
         }
