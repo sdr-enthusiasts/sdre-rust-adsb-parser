@@ -109,6 +109,7 @@ pub mod decoders {
         pub mod speed;
         pub mod squawk;
         pub mod timestamp;
+        pub mod tisb;
         pub mod transponderhex;
     }
     #[cfg(feature = "raw")]
@@ -412,7 +413,7 @@ impl ADSBMessage {
     pub fn len(&self) -> usize {
         match self {
             ADSBMessage::JSONMessage(_) => 1,
-            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.len(),
+            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.len(),
             ADSBMessage::AdsbRawMessage(_) => 1, // FIXME: this ain't right
             ADSBMessage::AdsbBeastMessage(_) => 1, // FIXME: this ain't right
         }
@@ -421,7 +422,7 @@ impl ADSBMessage {
     pub fn is_empty(&self) -> bool {
         match self {
             ADSBMessage::JSONMessage(_) => false,
-            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.aircraft.is_empty(),
+            ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.is_empty(),
             ADSBMessage::AdsbRawMessage(_) => false,
             ADSBMessage::AdsbBeastMessage(_) => false,
         }

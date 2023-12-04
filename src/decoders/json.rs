@@ -40,6 +40,7 @@ use super::{
         speed::Speed,
         squawk::Squawk,
         timestamp::TimeStamp,
+        tisb::TiSB,
         transponderhex::TransponderHex,
     },
 };
@@ -51,6 +52,46 @@ use super::{
 /// This is intended for specifically decoding to `JSONMessage`.
 pub trait NewJSONMessage {
     fn to_json(&self) -> MessageResult<JSONMessage>;
+}
+
+pub trait NewAircraftJSONMessage {
+    fn to_aircraft_json(&self) -> MessageResult<AircraftJSON>;
+}
+
+impl NewAircraftJSONMessage for String {
+    fn to_aircraft_json(&self) -> MessageResult<AircraftJSON> {
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+impl NewAircraftJSONMessage for str {
+    fn to_aircraft_json(&self) -> MessageResult<AircraftJSON> {
+        match serde_json::from_str(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+impl NewAircraftJSONMessage for Vec<u8> {
+    fn to_aircraft_json(&self) -> MessageResult<AircraftJSON> {
+        match serde_json::from_slice(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
+}
+
+impl NewAircraftJSONMessage for &Vec<u8> {
+    fn to_aircraft_json(&self) -> MessageResult<AircraftJSON> {
+        match serde_json::from_slice(self) {
+            Ok(v) => Ok(v),
+            Err(e) => Err(e.into()),
+        }
+    }
 }
 
 /// Implementing `.to_json()` for the type `String`.
@@ -176,6 +217,7 @@ impl JSONMessage {
             &self.last_known_position,
             &mut output,
         );
+        pretty_print_field_from_option("Calculated Track", &self.calculated_track, &mut output);
         pretty_print_field("Last Time Seen", &self.last_time_seen, &mut output);
         pretty_print_field_from_option(
             "Last Time Seen Position and Altitude",
@@ -481,10 +523,13 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "desc")]
     pub aircraft_type_from_database_long_name: Option<String>,
     /// list of fields derived from TIS-B data
-    pub tisb: Vec<String>, // TODO: this should def be an enum
+    pub tisb: Vec<TiSB>, // TODO: this should def be an enum
     /// true track over ground in degrees (0-359)
     #[serde(skip_serializing_if = "Option::is_none", rename = "track")]
     pub true_track_over_ground: Option<Heading>,
+    /// calculated track?
+    #[serde(skip_serializing_if = "Option::is_none", rename = "calc_track")]
+    pub calculated_track: Option<Heading>,
     /// Heading, degrees clockwise from true north (usually only transmitted on ground, in the air usually derived from the magnetic heading using magnetic model WMM2020)
     #[serde(skip_serializing_if = "Option::is_none")]
     pub true_heading: Option<Heading>,
@@ -556,6 +601,14 @@ impl AircraftJSON {
         }
 
         output
+    }
+
+    pub fn len(&self) -> usize {
+        self.aircraft.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.aircraft.is_empty()
     }
 }
 
