@@ -272,14 +272,14 @@ async fn process_beast_frames(
             error!("No data read");
             continue;
         }
-        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:02X?}", buffer[0..n].to_vec());
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&processed_buffer);
         left_over = frames.left_over;
 
-        trace!("Pre-processed: {:x?}", frames.frames);
+        trace!("Pre-processed: {:02X?}", frames.frames);
         for frame in &frames.frames {
-            debug!("Decoding: {:x?}", frame);
+            debug!("Decoding: {:02X?}", frame);
 
             if !direct_decode {
                 let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
@@ -289,7 +289,7 @@ async fn process_beast_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
-                    error!("Message input: {:x?}", frame);
+                    error!("Message input: {:02X?}", frame);
                 }
             } else {
                 let message: Result<AdsbBeastMessage, DeserializationError> = frame.to_adsb_beast();
@@ -322,17 +322,17 @@ async fn process_raw_frames(
             error!("No data read");
             continue;
         }
-        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:02X?}", buffer[0..n].to_vec());
 
         // append the left over bytes to the buffer
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
         let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&processed_buffer);
         left_over = frames.left_over;
 
-        trace!("Pre-processed: {:?}", frames.frames);
+        trace!("Pre-processed: {:02X?}", frames.frames);
 
         for frame in &frames.frames {
-            debug!("Decoding: {:x?}", frame);
+            debug!("Decoding: {:02X?}", frame);
             if !direct_decode {
                 let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
                 if let Ok(message) = message {
@@ -341,7 +341,7 @@ async fn process_raw_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
-                    error!("Message input: {:x?}", frame);
+                    error!("Message input: {:02X?}", frame);
                 }
             } else {
                 let message = frame.to_adsb_raw();
@@ -351,7 +351,7 @@ async fn process_raw_frames(
                     }
                 } else {
                     error!("Error decoding: {}", message.unwrap_err());
-                    error!("Message input: {:x?}", frame);
+                    error!("Message input: {:02X?}", frame);
                 }
             }
         }
@@ -490,7 +490,7 @@ async fn process_json_from_tcp(
             error!("No data read");
             continue;
         }
-        trace!("Raw frame: {:x?}", buffer[0..n].to_vec());
+        trace!("Raw frame: {:02X?}", buffer[0..n].to_vec());
         // convert the bytes to a string
         let mut json_string: String = String::from_utf8_lossy(&buffer[0..n]).to_string();
         trace!("Pre-processed: {}", json_string);
@@ -502,7 +502,7 @@ async fn process_json_from_tcp(
 
         let frames = format_adsb_json_frames_from_string(&json_string);
 
-        trace!("Pre-processed with left overs: {:?}", frames.frames);
+        trace!("Pre-processed with left overs: {:02X?}", frames.frames);
 
         left_over = frames.left_over;
 

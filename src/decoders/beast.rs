@@ -113,7 +113,7 @@ impl fmt::Display for AdsbBeastMessage {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "ADSB Beast Message: Type: {}, MLAT Timestamp: {:?}, Signal Level: {}, Message: {:x?}",
+            "ADSB Beast Message: Type: {}, MLAT Timestamp: {:?}, Signal Level: {}, Message: {:02X?}",
             self.message_type, self.mlat_timestamp, self.signal_level, self.message
         )
     }

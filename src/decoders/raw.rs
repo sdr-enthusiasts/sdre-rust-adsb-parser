@@ -159,20 +159,20 @@ impl fmt::Display for AdsbRawMessage {
             DF::ExtendedQuitterMilitaryApplication { .. } => {}
             DF::CommBAltitudeReply { bds, alt, .. } => {
                 writeln!(f, " Comm-B, Altitude Reply")?;
-                writeln!(f, "  ICAO Address:  {crc:x?} (Mode S / ADS-B)")?;
+                writeln!(f, "  ICAO Address:  {crc:02X?} (Mode S / ADS-B)")?;
                 let altitude = alt.0;
                 writeln!(f, "  Altitude:      {altitude} ft")?;
                 write!(f, "  {bds}")?;
             }
             DF::CommBIdentityReply { id, bds, .. } => {
                 writeln!(f, " Comm-B, Identity Reply")?;
-                writeln!(f, "    ICAO Address:  {crc:x?} (Mode S / ADS-B)")?;
-                writeln!(f, "    Squawk:        {id:x?}")?;
+                writeln!(f, "    ICAO Address:  {crc:02X?} (Mode S / ADS-B)")?;
+                writeln!(f, "    Squawk:        {id:02X?}")?;
                 write!(f, "    {bds}")?;
             }
             DF::CommDExtendedLengthMessage { .. } => {
                 writeln!(f, " Comm-D Extended Length Message")?;
-                writeln!(f, "    ICAO Address:     {crc:x?} (Mode S / ADS-B)")?;
+                writeln!(f, "    ICAO Address:     {crc:02X?} (Mode S / ADS-B)")?;
             }
         }
         Ok(())

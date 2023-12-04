@@ -193,7 +193,7 @@ impl ME {
                 )?;
                 writeln!(f, "  Address:       {icao} {address_type}")?;
                 writeln!(f, "  Air/Ground:    {capability}")?;
-                writeln!(f, "  Squawk:        {squawk:x?}")?;
+                writeln!(f, "  Squawk:        {squawk:02X?}")?;
                 writeln!(f, "  Emergency/priority:    {emergency_state}")?;
             }
             ME::TargetStateAndStatusInformation(target_info) => {
