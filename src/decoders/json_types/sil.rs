@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default, Debug)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum SourceIntegrityLevel {
     #[default]
     Level0,
@@ -17,17 +17,19 @@ pub enum SourceIntegrityLevel {
     Level3,
 }
 
-impl From<u8> for SourceIntegrityLevel {
-    fn from(level: u8) -> Self {
+impl TryFrom<u8> for SourceIntegrityLevel {
+    type Error = String;
+
+    fn try_from(level: u8) -> Result<Self, Self::Error> {
         match level {
-            0 => Self::Level0,
-            1 => Self::Level1,
-            2 => Self::Level2,
-            3 => Self::Level3,
-            _ => panic!(
+            0 => Ok(Self::Level0),
+            1 => Ok(Self::Level1),
+            2 => Ok(Self::Level2),
+            3 => Ok(Self::Level3),
+            _ => Err(format!(
                 "SIL should be a value between 0 and 3, inclusive. Found {}",
                 level
-            ), // TODO: propagate this error
+            )),
         }
     }
 }

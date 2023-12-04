@@ -16,7 +16,7 @@ use std::fmt;
 // 110 : reserved
 // 111 : not assigned
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum FlightStatusAlertBit {
     NoAlertNoSPIAirborne,
     NoAlertNoSPIOnGround,
@@ -28,18 +28,23 @@ pub enum FlightStatusAlertBit {
     NotAssigned,
 }
 
-impl From<u8> for FlightStatusAlertBit {
-    fn from(flight_status_alert_bit: u8) -> Self {
+impl TryFrom<u8> for FlightStatusAlertBit {
+    type Error = String;
+
+    fn try_from(flight_status_alert_bit: u8) -> Result<Self, Self::Error> {
         match flight_status_alert_bit {
-            0b000 => FlightStatusAlertBit::NoAlertNoSPIAirborne,
-            0b001 => FlightStatusAlertBit::NoAlertNoSPIOnGround,
-            0b010 => FlightStatusAlertBit::AlertNoSPIAirborne,
-            0b011 => FlightStatusAlertBit::AlertNoSPIOnGround,
-            0b100 => FlightStatusAlertBit::AlertSPIAirborneOrOnGround,
-            0b101 => FlightStatusAlertBit::NoAlertSPIAirborneOrOnGround,
-            0b110 => FlightStatusAlertBit::Reserved,
-            0b111 => FlightStatusAlertBit::NotAssigned,
-            _ => FlightStatusAlertBit::NotAssigned,
+            0b000 => Ok(FlightStatusAlertBit::NoAlertNoSPIAirborne),
+            0b001 => Ok(FlightStatusAlertBit::NoAlertNoSPIOnGround),
+            0b010 => Ok(FlightStatusAlertBit::AlertNoSPIAirborne),
+            0b011 => Ok(FlightStatusAlertBit::AlertNoSPIOnGround),
+            0b100 => Ok(FlightStatusAlertBit::AlertSPIAirborneOrOnGround),
+            0b101 => Ok(FlightStatusAlertBit::NoAlertSPIAirborneOrOnGround),
+            0b110 => Ok(FlightStatusAlertBit::Reserved),
+            0b111 => Ok(FlightStatusAlertBit::NotAssigned),
+            _ => Err(format!(
+                "FlightStatusAlertBit should be a value between 0 and 7, inclusive. Found: {}",
+                flight_status_alert_bit
+            )),
         }
     }
 }

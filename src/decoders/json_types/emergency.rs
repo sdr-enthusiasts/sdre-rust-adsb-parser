@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 // #[serde(untagged)]
 pub enum Emergency {
     #[default]
@@ -22,18 +22,20 @@ pub enum Emergency {
     Reserved,
 }
 
-impl From<String> for Emergency {
-    fn from(emergency: String) -> Self {
+impl TryFrom<String> for Emergency {
+    type Error = String;
+
+    fn try_from(emergency: String) -> Result<Self, Self::Error> {
         match emergency.as_str() {
-            "none" => Emergency::None,
-            "general" => Emergency::General,
-            "lifeguard" => Emergency::Lifeguard,
-            "minfuel" => Emergency::Minfuel,
-            "nordo" => Emergency::Nordo,
-            "unlawful" => Emergency::Unlawful,
-            "downed" => Emergency::Downed,
-            "reserved" => Emergency::Reserved,
-            _ => Emergency::None,
+            "none" => Ok(Emergency::None),
+            "general" => Ok(Emergency::General),
+            "lifeguard" => Ok(Emergency::Lifeguard),
+            "minfuel" => Ok(Emergency::Minfuel),
+            "nordo" => Ok(Emergency::Nordo),
+            "unlawful" => Ok(Emergency::Unlawful),
+            "downed" => Ok(Emergency::Downed),
+            "reserved" => Ok(Emergency::Reserved),
+            _ => Err(format!("Invalid emergency: {}", emergency)),
         }
     }
 }

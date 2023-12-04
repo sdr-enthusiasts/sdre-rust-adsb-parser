@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 pub enum MessageType {
     /// messages from a Mode S or ADS-B transponder, using a 24-bit ICAO address
     /// Original json "adsb_icao"
@@ -51,22 +51,24 @@ pub enum MessageType {
     UNKNOWN,
 }
 
-impl From<String> for MessageType {
-    fn from(message_type: String) -> Self {
+impl TryFrom<String> for MessageType {
+    type Error = String;
+
+    fn try_from(message_type: String) -> Result<Self, Self::Error> {
         match message_type.as_str() {
-            "adsb_icao" => MessageType::ADSBICAO,
-            "adsb_icao_nt" => MessageType::ADSBICAONONTRANSPONDER,
-            "adsb_icao_reb" => MessageType::ADSBICAOREBROADCAST,
-            "adsb_icao_sec" => MessageType::ADSBICAOSECONDARYSURVEILLANCE,
-            "adsc" => MessageType::ADSC,
-            "mlat" => MessageType::MLAT,
-            "other" => MessageType::OTHER,
-            "mode_s" => MessageType::MODES,
-            "adsb_other" => MessageType::ADSBOTHER,
-            "adsb_other_reb" => MessageType::ADSBOTHERREBROADCAST,
-            "adsb_other_sec" => MessageType::ADSBOTHERSECONDARYSURVEILLANCE,
-            "tisb_trackfile" => MessageType::ADSBTRACKFILE,
-            _ => MessageType::UNKNOWN,
+            "adsb_icao" => Ok(MessageType::ADSBICAO),
+            "adsb_icao_nt" => Ok(MessageType::ADSBICAONONTRANSPONDER),
+            "adsb_icao_reb" => Ok(MessageType::ADSBICAOREBROADCAST),
+            "adsb_icao_sec" => Ok(MessageType::ADSBICAOSECONDARYSURVEILLANCE),
+            "adsc" => Ok(MessageType::ADSC),
+            "mlat" => Ok(MessageType::MLAT),
+            "other" => Ok(MessageType::OTHER),
+            "mode_s" => Ok(MessageType::MODES),
+            "adsb_other" => Ok(MessageType::ADSBOTHER),
+            "adsb_other_reb" => Ok(MessageType::ADSBOTHERREBROADCAST),
+            "adsb_other_sec" => Ok(MessageType::ADSBOTHERSECONDARYSURVEILLANCE),
+            "tisb_trackfile" => Ok(MessageType::ADSBTRACKFILE),
+            _ => Err(format!("Invalid MessageType field: {}", message_type)),
         }
     }
 }

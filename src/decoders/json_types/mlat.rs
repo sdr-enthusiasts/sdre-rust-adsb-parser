@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 
 pub enum MLATFields {
     Altitude,
@@ -20,27 +20,56 @@ pub enum MLATFields {
     NIC,
     RC, // TODO: rename this field
     NACv,
+    NACp,
+    Sil,
+    SilType,
     #[default]
     None,
 }
 
-impl From<String> for MLATFields {
-    fn from(field: String) -> Self {
+impl TryFrom<String> for MLATFields {
+    type Error = String;
+
+    fn try_from(field: String) -> Result<Self, Self::Error> {
         match field.as_str() {
-            "altitude" => MLATFields::Altitude,
-            "gs" => MLATFields::GroundSpeed,
-            "track" => MLATFields::Track,
-            "baro_rate" => MLATFields::BaroRate,
-            "lat" => MLATFields::Latitude,
-            "lon" => MLATFields::Longitude,
-            "nic" => MLATFields::NIC,
-            "rc" => MLATFields::RC,
-            "nac_v" => MLATFields::NACv,
-            //_ => panic!("Unknown MLAT field: {}", field),
-            _ => panic!("Unknown MLAT field: {}", field),
+            "altitude" => Ok(MLATFields::Altitude),
+            "gs" => Ok(MLATFields::GroundSpeed),
+            "track" => Ok(MLATFields::Track),
+            "baro_rate" => Ok(MLATFields::BaroRate),
+            "lat" => Ok(MLATFields::Latitude),
+            "lon" => Ok(MLATFields::Longitude),
+            "nic" => Ok(MLATFields::NIC),
+            "rc" => Ok(MLATFields::RC),
+            "nac_v" => Ok(MLATFields::NACv),
+            "nac_p" => Ok(MLATFields::NACp),
+            "sil" => Ok(MLATFields::Sil),
+            "sil_type" => Ok(MLATFields::SilType),
+            "none" => Ok(MLATFields::None),
+            _ => Err(format!("Invalid MLAT field: {}", field)),
         }
     }
 }
+
+// impl From<String> for MLATFields {
+//     fn from(field: String) -> Self {
+//         match field.as_str() {
+//             "altitude" => MLATFields::Altitude,
+//             "gs" => MLATFields::GroundSpeed,
+//             "track" => MLATFields::Track,
+//             "baro_rate" => MLATFields::BaroRate,
+//             "lat" => MLATFields::Latitude,
+//             "lon" => MLATFields::Longitude,
+//             "nic" => MLATFields::NIC,
+//             "rc" => MLATFields::RC,
+//             "nac_v" => MLATFields::NACv,
+//             "nac_p" => MLATFields::NACp,
+//             "sil" => MLATFields::Sil,
+//             "sil_type" => MLATFields::SilType,
+//             "none" => MLATFields::None,
+//             _ => panic!("Invalid MLAT field: {}", field),
+//         }
+//     }
+// }
 
 impl fmt::Display for MLATFields {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -55,6 +84,9 @@ impl fmt::Display for MLATFields {
             MLATFields::RC => write!(f, "RC"),
             MLATFields::NACv => write!(f, "NACv"),
             MLATFields::None => write!(f, "None"),
+            MLATFields::NACp => write!(f, "NACp"),
+            MLATFields::Sil => write!(f, "SIL"),
+            MLATFields::SilType => write!(f, "SIL Type"),
         }
     }
 }

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 pub enum TiSB {
     #[default]
     None,
@@ -24,11 +24,13 @@ impl fmt::Display for TiSB {
     }
 }
 
-impl From<String> for TiSB {
-    fn from(s: String) -> Self {
-        match s.as_str() {
-            "None" => TiSB::None,
-            _ => panic!("Invalid TiSB: {}", s),
+impl TryFrom<String> for TiSB {
+    type Error = String;
+
+    fn try_from(field: String) -> Result<Self, Self::Error> {
+        match field.as_str() {
+            "None" => Ok(TiSB::None),
+            _ => Err(format!("Invalid TiSB field: {}", field)),
         }
     }
 }

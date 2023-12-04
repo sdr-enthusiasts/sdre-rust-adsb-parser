@@ -13,6 +13,7 @@ use super::{
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[serde(deny_unknown_fields)]
 pub struct LastKnownPosition {
     // lat, lon, nic, rc, seen_pos
     #[serde(rename = "lat")]

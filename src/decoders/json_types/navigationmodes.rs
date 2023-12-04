@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 pub enum NavigationModes {
     Autopilot,
     VNAV,
@@ -20,16 +20,18 @@ pub enum NavigationModes {
     None,
 }
 
-impl From<String> for NavigationModes {
-    fn from(navigation_modes: String) -> Self {
+impl TryFrom<String> for NavigationModes {
+    type Error = String;
+
+    fn try_from(navigation_modes: String) -> Result<Self, Self::Error> {
         match navigation_modes.as_str() {
-            "autopilot" => NavigationModes::Autopilot,
-            "vnav" => NavigationModes::VNAV,
-            "althold" => NavigationModes::AltHold,
-            "approach" => NavigationModes::Approach,
-            "lnav" => NavigationModes::LNAV,
-            "tcas" => NavigationModes::TCAS,
-            _ => NavigationModes::None,
+            "autopilot" => Ok(NavigationModes::Autopilot),
+            "vnav" => Ok(NavigationModes::VNAV),
+            "althold" => Ok(NavigationModes::AltHold),
+            "approach" => Ok(NavigationModes::Approach),
+            "lnav" => Ok(NavigationModes::LNAV),
+            "tcas" => Ok(NavigationModes::TCAS),
+            _ => Err(format!("Invalid navigation mode: {}", navigation_modes)),
         }
     }
 }

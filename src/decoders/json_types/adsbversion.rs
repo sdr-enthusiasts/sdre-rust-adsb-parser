@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum ADSBVersion {
     Version0,
     Version1,
@@ -20,21 +20,20 @@ pub enum ADSBVersion {
     Version7,
 }
 
-impl From<u8> for ADSBVersion {
-    fn from(version: u8) -> Self {
-        match version {
-            0 => ADSBVersion::Version0,
-            1 => ADSBVersion::Version1,
-            2 => ADSBVersion::Version2,
-            3 => ADSBVersion::Version3,
-            4 => ADSBVersion::Version4,
-            5 => ADSBVersion::Version5,
-            6 => ADSBVersion::Version6,
-            7 => ADSBVersion::Version7,
-            _ => panic!(
-                "Invalid ADSB Version. Should be a value between 0 - 7, inclusive. Found {}",
-                version
-            ), // TODO: propagate error
+impl TryFrom<u8> for ADSBVersion {
+    type Error = String;
+
+    fn try_from(field: u8) -> Result<Self, Self::Error> {
+        match field {
+            0 => Ok(ADSBVersion::Version0),
+            1 => Ok(ADSBVersion::Version1),
+            2 => Ok(ADSBVersion::Version2),
+            3 => Ok(ADSBVersion::Version3),
+            4 => Ok(ADSBVersion::Version4),
+            5 => Ok(ADSBVersion::Version5),
+            6 => Ok(ADSBVersion::Version6),
+            7 => Ok(ADSBVersion::Version7),
+            _ => Err(format!("Invalid ADSBVersion field: {}", field)),
         }
     }
 }

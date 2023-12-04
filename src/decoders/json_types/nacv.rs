@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum NavigationAccuracyVelocity {
     #[default]
     Category0,
@@ -18,18 +18,20 @@ pub enum NavigationAccuracyVelocity {
     Category4,
 }
 
-impl From<u8> for NavigationAccuracyVelocity {
-    fn from(nacv: u8) -> Self {
+impl TryFrom<u8> for NavigationAccuracyVelocity {
+    type Error = String;
+
+    fn try_from(nacv: u8) -> Result<Self, Self::Error> {
         match nacv {
-            0 => NavigationAccuracyVelocity::Category0,
-            1 => NavigationAccuracyVelocity::Category1,
-            2 => NavigationAccuracyVelocity::Category2,
-            3 => NavigationAccuracyVelocity::Category3,
-            4 => NavigationAccuracyVelocity::Category4,
-            _ => panic!(
+            0 => Ok(NavigationAccuracyVelocity::Category0),
+            1 => Ok(NavigationAccuracyVelocity::Category1),
+            2 => Ok(NavigationAccuracyVelocity::Category2),
+            3 => Ok(NavigationAccuracyVelocity::Category3),
+            4 => Ok(NavigationAccuracyVelocity::Category4),
+            _ => Err(format!(
                 "NACv should be a value between 0 and 4, inclusive. Found {}",
                 nacv
-            ), // TODO: propagate this error
+            )),
         }
     }
 }

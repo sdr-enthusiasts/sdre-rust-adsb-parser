@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 pub struct Squawk {
     code_digit1: u8,
     code_digit2: u8,
@@ -16,8 +16,10 @@ pub struct Squawk {
     code_digit4: u8,
 }
 
-impl From<String> for Squawk {
-    fn from(squawk: String) -> Self {
+impl TryFrom<String> for Squawk {
+    type Error = String;
+
+    fn try_from(squawk: String) -> Result<Self, Self::Error> {
         let squawk_as_bytes = squawk.as_bytes();
         let code_digit1 = squawk_as_bytes[0] - 48;
         let code_digit2 = squawk_as_bytes[1] - 48;
@@ -26,15 +28,15 @@ impl From<String> for Squawk {
 
         // verify all digits are between 0 and 7
         if code_digit1 > 7 || code_digit2 > 7 || code_digit3 > 7 || code_digit4 > 7 {
-            panic!("Invalid squawk code: {}", squawk); // TODO: This should just return an Err
+            return Err(format!("Invalid squawk code: {}", squawk));
         }
 
-        Self {
+        Ok(Self {
             code_digit1,
             code_digit2,
             code_digit3,
             code_digit4,
-        }
+        })
     }
 }
 

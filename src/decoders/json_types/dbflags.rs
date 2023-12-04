@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum DBFlags {
     Military,
     Interesting,
@@ -18,8 +18,10 @@ pub enum DBFlags {
     None,
 }
 
-impl From<u8> for DBFlags {
-    fn from(db_flags: u8) -> Self {
+impl TryFrom<u8> for DBFlags {
+    type Error = String;
+
+    fn try_from(db_flags: u8) -> Result<Self, Self::Error> {
         // the u8 should be bitwise ANDed with the following values:
         // 1, 2, 4, 8
         // if the result is 0, then the flag is not set
@@ -31,18 +33,18 @@ impl From<u8> for DBFlags {
         // LADD = dbFlags & 8;
 
         if db_flags & 1 != 0 {
-            Self::Military
+            Ok(Self::Military)
         } else if db_flags & 2 != 0 {
-            Self::Interesting
+            Ok(Self::Interesting)
         } else if db_flags & 4 != 0 {
-            Self::PIA
+            Ok(Self::PIA)
         } else if db_flags & 8 != 0 {
-            Self::LADD
+            Ok(Self::LADD)
         } else {
-            panic!(
+            Err(format!(
                 "DBFlags should be a value between 0 and 15, inclusive. Found: {}",
                 db_flags
-            ) // TODO: propagate this error
+            ))
         }
     }
 }

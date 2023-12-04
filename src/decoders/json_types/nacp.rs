@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "u8")]
+#[serde(try_from = "u8")]
 pub enum NavigationIntegrityCategory {
     Category11,
     Category10,
@@ -25,25 +25,27 @@ pub enum NavigationIntegrityCategory {
     Unknown,
 }
 
-impl From<u8> for NavigationIntegrityCategory {
-    fn from(nic: u8) -> Self {
+impl TryFrom<u8> for NavigationIntegrityCategory {
+    type Error = String;
+
+    fn try_from(nic: u8) -> Result<Self, Self::Error> {
         match nic {
-            11 => NavigationIntegrityCategory::Category11,
-            10 => NavigationIntegrityCategory::Category10,
-            9 => NavigationIntegrityCategory::Category9,
-            8 => NavigationIntegrityCategory::Category8,
-            7 => NavigationIntegrityCategory::Category7,
-            6 => NavigationIntegrityCategory::Category6,
-            5 => NavigationIntegrityCategory::Category5,
-            4 => NavigationIntegrityCategory::Category4,
-            3 => NavigationIntegrityCategory::Category3,
-            2 => NavigationIntegrityCategory::Category2,
-            1 => NavigationIntegrityCategory::Category1,
-            0 => NavigationIntegrityCategory::Unknown,
-            _ => panic!(
+            11 => Ok(NavigationIntegrityCategory::Category11),
+            10 => Ok(NavigationIntegrityCategory::Category10),
+            9 => Ok(NavigationIntegrityCategory::Category9),
+            8 => Ok(NavigationIntegrityCategory::Category8),
+            7 => Ok(NavigationIntegrityCategory::Category7),
+            6 => Ok(NavigationIntegrityCategory::Category6),
+            5 => Ok(NavigationIntegrityCategory::Category5),
+            4 => Ok(NavigationIntegrityCategory::Category4),
+            3 => Ok(NavigationIntegrityCategory::Category3),
+            2 => Ok(NavigationIntegrityCategory::Category2),
+            1 => Ok(NavigationIntegrityCategory::Category1),
+            0 => Ok(NavigationIntegrityCategory::Unknown),
+            _ => Err(format!(
                 "NIC should be a value between 0 and 11, inclusive. Found {}",
                 nic
-            ), // TODO: propagate this error
+            )),
         }
     }
 }

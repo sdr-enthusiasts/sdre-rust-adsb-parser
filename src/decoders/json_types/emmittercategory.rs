@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "String")]
+#[serde(try_from = "String")]
 pub enum EmitterCategory {
     #[default]
     A0,
@@ -39,34 +39,36 @@ pub enum EmitterCategory {
     C7,
 }
 
-impl From<String> for EmitterCategory {
-    fn from(emitter_category: String) -> Self {
+impl TryFrom<String> for EmitterCategory {
+    type Error = String;
+
+    fn try_from(emitter_category: String) -> Result<Self, Self::Error> {
         match emitter_category.as_str() {
-            "A0" => EmitterCategory::A0,
-            "A1" => EmitterCategory::A1,
-            "A2" => EmitterCategory::A2,
-            "A3" => EmitterCategory::A3,
-            "A4" => EmitterCategory::A4,
-            "A5" => EmitterCategory::A5,
-            "A6" => EmitterCategory::A6,
-            "A7" => EmitterCategory::A7,
-            "B0" => EmitterCategory::B0,
-            "B1" => EmitterCategory::B1,
-            "B2" => EmitterCategory::B2,
-            "B3" => EmitterCategory::B3,
-            "B4" => EmitterCategory::B4,
-            "B5" => EmitterCategory::B5,
-            "B6" => EmitterCategory::B6,
-            "B7" => EmitterCategory::B7,
-            "C0" => EmitterCategory::C0,
-            "C1" => EmitterCategory::C1,
-            "C2" => EmitterCategory::C2,
-            "C3" => EmitterCategory::C3,
-            "C4" => EmitterCategory::C4,
-            "C5" => EmitterCategory::C5,
-            "C6" => EmitterCategory::C6,
-            "C7" => EmitterCategory::C7,
-            _ => EmitterCategory::A0,
+            "A0" => Ok(EmitterCategory::A0),
+            "A1" => Ok(EmitterCategory::A1),
+            "A2" => Ok(EmitterCategory::A2),
+            "A3" => Ok(EmitterCategory::A3),
+            "A4" => Ok(EmitterCategory::A4),
+            "A5" => Ok(EmitterCategory::A5),
+            "A6" => Ok(EmitterCategory::A6),
+            "A7" => Ok(EmitterCategory::A7),
+            "B0" => Ok(EmitterCategory::B0),
+            "B1" => Ok(EmitterCategory::B1),
+            "B2" => Ok(EmitterCategory::B2),
+            "B3" => Ok(EmitterCategory::B3),
+            "B4" => Ok(EmitterCategory::B4),
+            "B5" => Ok(EmitterCategory::B5),
+            "B6" => Ok(EmitterCategory::B6),
+            "B7" => Ok(EmitterCategory::B7),
+            "C0" => Ok(EmitterCategory::C0),
+            "C1" => Ok(EmitterCategory::C1),
+            "C2" => Ok(EmitterCategory::C2),
+            "C3" => Ok(EmitterCategory::C3),
+            "C4" => Ok(EmitterCategory::C4),
+            "C5" => Ok(EmitterCategory::C5),
+            "C6" => Ok(EmitterCategory::C6),
+            "C7" => Ok(EmitterCategory::C7),
+            _ => Err(format!("Invalid emitter category: {}", emitter_category)),
         }
     }
 }
