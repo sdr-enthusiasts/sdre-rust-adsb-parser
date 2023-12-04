@@ -8,8 +8,8 @@ use crate::error_handling::adsb_raw_error::ADSBRawError;
 use crate::error_handling::deserialization_error::DeserializationError;
 use hex;
 const ADSB_RAW_START_CHARACTER: u8 = 0x2a; // The adsb raw end character sequence is is a '0x3b0a', start is '0x2a'
-const ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER: u8 = 0x3b;
-const ADSB_RAW_END_SEQUENCE_INIT_CHARACTER: u8 = 0x0a;
+const ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER: u8 = 0x0a;
+const ADSB_RAW_END_SEQUENCE_INIT_CHARACTER: u8 = 0x3b;
 const ADSB_RAW_FRAME_SMALL: usize = 14;
 const ADSB_RAW_FRAME_LARGE: usize = 28;
 const ADSB_RAW_MODEAC_FRAME: usize = 4;
@@ -38,8 +38,14 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
     let mut current_frame: Vec<u8> = Vec::new();
     let mut errors_found: Vec<DeserializationError> = Vec::new();
 
-    for (position, byte) in bytes.iter().enumerate() {
-        if byte == &ADSB_RAW_END_SEQUENCE_INIT_CHARACTER && position != 0 {
+    let mut byte_iter = bytes.iter().enumerate().peekable();
+
+    while let Some((position, byte)) = byte_iter.next() {
+        let (_, next) = byte_iter.peek().unwrap_or(&(0usize, &0u8));
+        if *byte == ADSB_RAW_END_SEQUENCE_INIT_CHARACTER
+            && **next == ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER
+            && position != 0
+        {
             match current_frame.len() {
                 ADSB_RAW_MODEAC_FRAME => {
                     // this is a valid frame size, but it's NOT one we want to decode
