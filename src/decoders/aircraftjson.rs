@@ -8,7 +8,10 @@ use crate::MessageResult;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-use super::json::JSONMessage;
+use super::{
+    helpers::prettyprint::{pretty_print_field, pretty_print_label},
+    json::JSONMessage,
+};
 
 pub trait NewAircraftJSONMessage {
     fn to_aircraft_json(&self) -> MessageResult<AircraftJSON>;
@@ -52,13 +55,10 @@ impl NewAircraftJSONMessage for &Vec<u8> {
 
 /// The JSON message readsb provided aircraft.json format.
 /// This file is a list of JSONMessage with some additional metadata provided.
-
-// TODO: When deserializing no planes in this format will include a timestamp field.
-// However, AircraftJSON provides it. We should inject that timestamp field in to the
-// JSONMessage before deserializing it.
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 pub struct AircraftJSON {
-    pub now: f32,
+    #[serde(rename = "now")]
+    pub timestamp: f32,
     pub messages: i32,
     pub aircraft: Vec<JSONMessage>,
 }
@@ -101,9 +101,12 @@ impl AircraftJSON {
     }
 
     pub fn pretty_print(&self) -> String {
-        // TODO: output the now and messages field
-
         let mut output: String = String::new();
+
+        pretty_print_label("Aircraft JSON", &mut output);
+        pretty_print_field("Time", &self.timestamp, &mut output);
+        pretty_print_field("Messages", &self.messages, &mut output);
+        pretty_print_label("Aircraft", &mut output);
 
         for aircraft in &self.aircraft {
             output.push_str(&aircraft.pretty_print());
