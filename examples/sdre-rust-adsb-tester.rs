@@ -55,13 +55,16 @@ use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
 use sdre_rust_adsb_parser::ADSBMessage;
 use sdre_rust_adsb_parser::DecodeMessage;
 use sdre_rust_logging::SetupLogging;
+use sdre_stubborn_io::config::DurationIterator;
+use sdre_stubborn_io::ReconnectOptions;
+use sdre_stubborn_io::StubbornTcpStream;
 use std::fmt;
+use std::net::SocketAddr;
 use std::process::exit;
 use std::str::FromStr;
 use std::time::Duration;
 use std::time::Instant;
-use tokio::io::{AsyncReadExt, BufReader};
-use tokio::net::TcpStream;
+use tokio::io::AsyncReadExt;
 use tokio::time::sleep;
 
 #[derive(Debug)]
@@ -176,7 +179,14 @@ impl Args {
         };
 
         let mode: Modes = if let Some(mode) = mode {
-            mode.parse::<Modes>().unwrap()
+            match mode.parse::<Modes>() {
+                Ok(v) => v,
+                Err(e) => {
+                    println!("Invalid mode: {e:?}");
+                    println!("Valid modes are: jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast");
+                    exit(1);
+                }
+            }
         } else {
             Modes::default()
         };
@@ -261,9 +271,25 @@ async fn process_beast_frames(
     only_show_errors: &bool,
     direct_decode: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // open a TCP connection to ip. Grab the frames and process them as raw
-    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
-    info!("Connected to {:?}", stream);
+    // open a TCP connection to ip. Grab the frames and process them as beast
+    let addr = match ip.parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(e) => {
+            error!("Error parsing host: {}", e);
+            return Ok(());
+        }
+    };
+
+    let mut stream =
+        match StubbornTcpStream::connect_with_options(addr, reconnect_options(ip)).await {
+            Ok(stream) => stream,
+            Err(e) => {
+                error!("Error connecting to {}: {}", ip, e);
+                Err(e)?
+            }
+        };
+
+    info!("Connected to {}", ip);
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
@@ -312,8 +338,24 @@ async fn process_raw_frames(
     direct_decode: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
-    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
-    info!("Connected to {:?}", stream);
+    let addr = match ip.parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(e) => {
+            error!("Error parsing host: {}", e);
+            return Ok(());
+        }
+    };
+
+    let mut stream =
+        match StubbornTcpStream::connect_with_options(addr, reconnect_options(ip)).await {
+            Ok(stream) => stream,
+            Err(e) => {
+                error!("Error connecting to {}: {}", ip, e);
+                Err(e)?
+            }
+        };
+
+    info!("Connected to {}", ip);
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
@@ -477,8 +519,24 @@ async fn process_json_from_tcp(
     direct_decode: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
-    let mut stream: BufReader<TcpStream> = BufReader::new(TcpStream::connect(ip).await?);
-    info!("Connected to {:?}", stream);
+    let addr = match ip.parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(e) => {
+            error!("Error parsing host: {}", e);
+            return Ok(());
+        }
+    };
+
+    let mut stream =
+        match StubbornTcpStream::connect_with_options(addr, reconnect_options(ip)).await {
+            Ok(stream) => stream,
+            Err(e) => {
+                error!("Error connecting to {}: {}", ip, e);
+                Err(e)?
+            }
+        };
+
+    info!("Connected to {}", ip);
     info!("Any error frames will be printed out once per hex");
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
@@ -565,4 +623,46 @@ async fn process_json_from_tcp(
         }
     }
     Ok(())
+}
+
+// create ReconnectOptions. We want the TCP stuff that goes out and connects to clients
+// to attempt to reconnect
+// See: https://docs.rs/stubborn-io/latest/src/stubborn_io/config.rs.html#93
+
+pub fn reconnect_options(host: &str) -> ReconnectOptions {
+    ReconnectOptions::new()
+        .with_exit_if_first_connect_fails(false)
+        .with_retries_generator(get_our_standard_reconnect_strategy)
+        .with_connection_name(host)
+}
+
+fn get_our_standard_reconnect_strategy() -> DurationIterator {
+    let initial_attempts = vec![
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(5),
+        Duration::from_secs(10),
+        Duration::from_secs(20),
+        Duration::from_secs(30),
+        Duration::from_secs(40),
+        Duration::from_secs(50),
+        Duration::from_secs(60),
+    ];
+
+    let repeat = std::iter::repeat(Duration::from_secs(60));
+
+    let forever_iterator = initial_attempts.into_iter().chain(repeat);
+
+    Box::new(forever_iterator)
 }
