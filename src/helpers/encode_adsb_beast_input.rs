@@ -10,6 +10,7 @@ const ADSB_BEAST_SHORT_FRAME_START_CHARACTER: u8 = 0x32;
 const ADSB_BEAST_MODEAC_FRAME_START_CHARACTER: u8 = 0x31;
 const ADSB_BEAST_SHORT_FRAME_LENGTH: usize = 15;
 const ADSB_BEAST_LONG_FRAME_LENGTH: usize = 22;
+const ADSB_BEAST_MODEAC_FRAME_LENGTH: usize = 10;
 
 pub struct ADSBBeastFrames {
     pub frames: Vec<Vec<u8>>,
@@ -49,6 +50,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
 
     let mut byte_iter = bytes.iter().peekable();
 
+    // loop through the bytes finding all frames
     while let Some(byte) = byte_iter.next() {
         let next_byte = byte_iter.peek();
 
@@ -100,8 +102,20 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         frame_bytes.clear();
                     }
                     FrameType::ModeAC => {
-                        // Ignore the modeac frame
-                        frame_bytes.clear();
+                        if frame_bytes.len() != ADSB_BEAST_MODEAC_FRAME_LENGTH {
+                            if next_byte.is_some() {
+                                error!(
+                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
+                                    ADSB_BEAST_MODEAC_FRAME_LENGTH,
+                                    frame_bytes.len(),
+                                    frame_bytes
+                                );
+                                frame_bytes.clear();
+                            }
+                        } else {
+                            // Ignore the modeac frame
+                            frame_bytes.clear();
+                        }
                     }
                 }
             }
@@ -158,7 +172,10 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
         }
     }
 
+    // We are done looping through the frame.
     // see if frame_bytes contains a valid frame
+    // if it does, add it to the list of frames
+    // otherwise, it's leftover bytes we'll process further down
     if !frame_bytes.is_empty() {
         // verify we have a valid frame length
         match frame_type {
@@ -176,13 +193,17 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
             }
             FrameType::None => (),
             FrameType::ModeAC => {
-                // TODO: we should probably verify the length is correct here. We don't want it, but if it's incomplete we need to send it back
-                // Ignore the modeac frame
-                frame_bytes.clear();
+                if frame_bytes.len() == ADSB_BEAST_MODEAC_FRAME_LENGTH {
+                    // Ignore the modeac frame
+                    frame_bytes.clear();
+                }
             }
         }
     }
 
+    // Process the leftover bytes
+    // We need to cover off any 1a characters that are not part of a start sequence
+    // as well as, if the frame starts with a start character, we need to add it back
     if !frame_bytes.is_empty() {
         // we trimmed off the control characters, so we need to add them back if the frame starts with a start character
         match frame_bytes[0] {
@@ -191,10 +212,17 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
             | ADSB_BEAST_MODEAC_FRAME_START_CHARACTER => {
                 frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
             }
-            _ => (),
+            // We should never end up here.
+            _ => {
+                error!("Frame bytes is not empty, but the first byte is not a start character");
+                error!("The frame bytes are: {:02X?}", frame_bytes);
+            }
         }
 
         // now walk the frame and replace any 1a with 1a 1a if it's not a 1a 31 or 1a 32 or 1a 33 sequence
+        // FIXME: ??? Verify that all possible 1x0a sequences are handled.
+        // possible sequences are: character in the middle, character at the end
+        // I think this is fixed, but I'm not 100% sure
         let mut new_frame_bytes: Vec<u8> = Vec::new();
         let mut byte_iter = frame_bytes.iter().peekable();
         while let Some(byte) = byte_iter.next() {
