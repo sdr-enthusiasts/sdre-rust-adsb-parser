@@ -418,8 +418,8 @@ impl ADSBMessage {
         match self {
             ADSBMessage::JSONMessage(_) => 1,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.len(),
-            ADSBMessage::AdsbRawMessage(_) => 1, // FIXME: this ain't right
-            ADSBMessage::AdsbBeastMessage(_) => 1, // FIXME: this ain't right
+            ADSBMessage::AdsbRawMessage(_) => 1,
+            ADSBMessage::AdsbBeastMessage(_) => 1,
         }
     }
 
