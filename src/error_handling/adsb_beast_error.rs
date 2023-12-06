@@ -7,8 +7,9 @@
 use custom_error::custom_error;
 
 custom_error! {pub ADSBBeastError
-    StringError{message: String}            = "Error converting the byte sequence to a string: {message}",
-    ShortFrameTooShort                      = "Found a short frame but not enough bytes to decode it",
-    LongFrameTooShort                       = "Found a long frame but not enough bytes to decode it",
-    HexEncodingError{message: String}       = "Could not convert the bytes {message} to a string: {message}",
+    ShortFrameTooShort{message: usize}                      = "Found a short frame but not enough bytes ({message}) to decode it",
+    LongFrameTooShort {message: usize}                      = "Found a long frame but not enough bytes  ({message}) to decode it",
+    ModeACFrameTooShort {message: usize}                    = "Found a Mode A/C frame but not enough bytes  ({message}) to decode it",
+    StartSequenceError {message: String}                    = "Found a start character ({message}) that wasn't a start sequence",
+    FrameTypeNone                                           = "We should be working on a frame but the frame type is None",
 }

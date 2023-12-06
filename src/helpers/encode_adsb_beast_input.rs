@@ -4,6 +4,8 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
+use crate::error_handling::adsb_beast_error::ADSBBeastError;
+
 const ADSB_BEAST_START_CHARACTER: u8 = 0x1a; // The adsb beast end character sequence is is a '0x3b0a', start is '0x2a'
 const ADSB_BEAST_LONG_FRAME_START_CHARACTER: u8 = 0x33;
 const ADSB_BEAST_SHORT_FRAME_START_CHARACTER: u8 = 0x32;
@@ -15,6 +17,7 @@ const ADSB_BEAST_MODEAC_FRAME_LENGTH: usize = 10;
 pub struct ADSBBeastFrames {
     pub frames: Vec<Vec<u8>>,
     pub left_over: Vec<u8>,
+    pub errors: Vec<ADSBBeastError>,
 }
 
 impl ADSBBeastFrames {
@@ -44,6 +47,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     let mut leftbytes: Vec<u8> = Vec::new();
     let mut frame_type: FrameType = FrameType::None;
     let mut frame_bytes: Vec<u8> = Vec::new();
+    let mut errors: Vec<ADSBBeastError> = Vec::new();
 
     // https://github.com/junzis/pyModeS/blob/77273153cba6c2f282f672ea4078a62efcf716d7/pyModeS/extra/tcpclient.py#L65
     // example logic for iterating over this buffer
@@ -69,12 +73,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     FrameType::Short => {
                         if frame_bytes.len() != ADSB_BEAST_SHORT_FRAME_LENGTH {
                             if next_byte.is_some() {
-                                error!(
-                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
-                                    ADSB_BEAST_SHORT_FRAME_LENGTH,
-                                    frame_bytes.len(),
-                                    frame_bytes
-                                );
+                                errors.push(ADSBBeastError::ShortFrameTooShort {
+                                    message: frame_bytes.len(),
+                                });
                                 frame_bytes.clear();
                             }
                         } else {
@@ -85,12 +86,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     FrameType::Long => {
                         if frame_bytes.len() != ADSB_BEAST_LONG_FRAME_LENGTH {
                             if next_byte.is_some() {
-                                error!(
-                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
-                                    ADSB_BEAST_LONG_FRAME_LENGTH,
-                                    frame_bytes.len(),
-                                    frame_bytes
-                                );
+                                errors.push(ADSBBeastError::LongFrameTooShort {
+                                    message: frame_bytes.len(),
+                                });
                                 frame_bytes.clear();
                             }
                         } else {
@@ -104,12 +102,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     FrameType::ModeAC => {
                         if frame_bytes.len() != ADSB_BEAST_MODEAC_FRAME_LENGTH {
                             if next_byte.is_some() {
-                                error!(
-                                    "Frame is not the correct length. Expected {} got {}\n{:02X?}",
-                                    ADSB_BEAST_MODEAC_FRAME_LENGTH,
-                                    frame_bytes.len(),
-                                    frame_bytes
-                                );
+                                errors.push(ADSBBeastError::ModeACFrameTooShort {
+                                    message: frame_bytes.len(),
+                                });
                                 frame_bytes.clear();
                             }
                         } else {
@@ -139,8 +134,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     continue;
                 }
                 _ => {
-                    error!("Found a start character that wasn't a start sequence");
-                    error!("The entire buffer is: {:02X?}", bytes);
+                    errors.push(ADSBBeastError::StartSequenceError {
+                        message: format!("{:02X?}", byte),
+                    });
                     frame_type = FrameType::None;
                     continue;
                 }
@@ -150,7 +146,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
 
         match frame_type {
             FrameType::None => {
-                error!("Frame type is None");
+                errors.push(ADSBBeastError::FrameTypeNone);
                 continue;
             }
             _ => match *byte {
@@ -160,7 +156,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         _ = byte_iter.next();
                         continue;
                     } else {
-                        error!("Found a start character that wasn't a start sequence, or a double escape");
+                        errors.push(ADSBBeastError::StartSequenceError {
+                            message: format!("{:02X?}", byte),
+                        });
                         frame_type = FrameType::None;
                         continue;
                     }
@@ -254,6 +252,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     ADSBBeastFrames {
         frames: formatted_frames,
         left_over: leftbytes,
+        errors: errors,
     }
 }
 

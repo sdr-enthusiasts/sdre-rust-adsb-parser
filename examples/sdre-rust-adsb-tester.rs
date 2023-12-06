@@ -303,6 +303,16 @@ async fn process_beast_frames(
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&processed_buffer);
         left_over = frames.left_over;
 
+        if !frames.errors.is_empty() {
+            for error in frames.errors {
+                error!("Error decoding: {}", error);
+            }
+
+            info!("Full buffer: {:02X?}", processed_buffer);
+            info!("Left over: {:02X?}", left_over);
+            info!("Frames: {:02X?}", frames.frames);
+        }
+
         trace!("Pre-processed: {:02X?}", frames.frames);
         for frame in &frames.frames {
             debug!("Decoding: {:02X?}", frame);
