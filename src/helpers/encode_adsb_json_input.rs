@@ -9,6 +9,7 @@ use crate::error_handling::adsb_json_error::ADSBJSONError;
 pub struct ADSBJSONFrames {
     pub frames: Vec<String>,
     pub left_over: String,
+    pub errors: Vec<ADSBJSONError>,
 }
 
 impl ADSBJSONFrames {
@@ -31,6 +32,11 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
     let mut errors: Vec<ADSBJSONError> = Vec::new();
 
     for (index, frame) in frames.iter().enumerate() {
+        let frame = frame.trim(); // remove the trailing '\n' from the frame
+                                  // If the frame is empty, skip it.
+        if frame.is_empty() {
+            continue;
+        }
         // Check if the frame starts with '{' and ends with '}'.
         if !frame.starts_with('{') {
             // if this is the first frame, and the only element in the vector, return the frame as the left_over.
@@ -38,6 +44,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
                 return ADSBJSONFrames {
                     frames: output,
                     left_over: frame.to_string(),
+                    errors,
                 };
             }
         }
@@ -48,6 +55,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
                 return ADSBJSONFrames {
                     frames: output,
                     left_over: frame.to_string(),
+                    errors,
                 };
             }
         }
@@ -63,13 +71,10 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
         }
     }
 
-    for error in errors {
-        error!("Error: {}", error);
-    }
-
     ADSBJSONFrames {
         frames: output,
         left_over: "".to_string(),
+        errors,
     }
 }
 

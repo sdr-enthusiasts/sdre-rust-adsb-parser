@@ -5,7 +5,6 @@
 // https://opensource.org/licenses/MIT.
 
 use crate::error_handling::adsb_raw_error::ADSBRawError;
-use crate::error_handling::deserialization_error::DeserializationError;
 use hex;
 const ADSB_RAW_START_CHARACTER: u8 = 0x2a; // The adsb raw end character sequence is is a '0x3b0a', start is '0x2a'
 const ADSB_RAW_END_SEQUENCE_FINISH_CHARACTER: u8 = 0x0a;
@@ -17,6 +16,7 @@ const ADSB_RAW_MODEAC_FRAME: usize = 4;
 pub struct ADSBRawFrames {
     pub frames: Vec<Vec<u8>>,
     pub left_over: Vec<u8>,
+    pub errors: Vec<ADSBRawError>,
 }
 
 impl ADSBRawFrames {
@@ -36,7 +36,7 @@ impl ADSBRawFrames {
 pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
     let mut formatted_frames: Vec<Vec<u8>> = Vec::new();
     let mut current_frame: Vec<u8> = Vec::new();
-    let mut errors_found: Vec<DeserializationError> = Vec::new();
+    let mut errors_found: Vec<ADSBRawError> = Vec::new();
 
     let mut byte_iter = bytes.iter().peekable();
 
@@ -57,11 +57,9 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
             if current_frame.len() != ADSB_RAW_FRAME_SMALL
                 && current_frame.len() != ADSB_RAW_FRAME_LARGE
             {
-                errors_found.push(DeserializationError::ADSBRawError(
-                    ADSBRawError::ByteSequenceWrong {
-                        size: current_frame.len() as u8,
-                    },
-                ));
+                errors_found.push(ADSBRawError::ByteSequenceWrong {
+                    size: current_frame.len() as u8,
+                });
                 current_frame.clear();
                 _ = byte_iter.next();
                 continue;
@@ -71,11 +69,9 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
             if let Ok(frame_bytes) = hex::decode(&current_frame) {
                 formatted_frames.push(frame_bytes);
             } else {
-                errors_found.push(DeserializationError::ADSBRawError(
-                    ADSBRawError::HexEncodingError {
-                        message: "Could not convert the {frame_string} string to bytes".to_string(),
-                    },
-                ));
+                errors_found.push(ADSBRawError::HexEncodingError {
+                    message: "Could not convert the {frame_string} string to bytes".to_string(),
+                });
             }
 
             current_frame.clear();
@@ -97,15 +93,10 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
         debug!("Left over frame: {:?}", current_frame);
     }
 
-    // log any errors in decoding
-
-    for error in errors_found {
-        error!("Error with frame: {}", error);
-    }
-
     ADSBRawFrames {
         frames: formatted_frames,
         left_over: current_frame,
+        errors: errors_found,
     }
 }
 

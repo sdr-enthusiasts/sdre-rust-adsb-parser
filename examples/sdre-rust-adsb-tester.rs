@@ -381,6 +381,16 @@ async fn process_raw_frames(
         let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&processed_buffer);
         left_over = frames.left_over;
 
+        if !frames.errors.is_empty() {
+            for error in frames.errors {
+                error!("Error decoding: {}", error);
+            }
+
+            info!("Full buffer: {:02X?}", processed_buffer);
+            info!("Left over: {:02X?}", left_over);
+            info!("Frames: {:02X?}", frames.frames);
+        }
+
         trace!("Pre-processed: {:02X?}", frames.frames);
 
         for frame in &frames.frames {
@@ -573,6 +583,16 @@ async fn process_json_from_tcp(
         trace!("Pre-processed with left overs: {:02X?}", frames.frames);
 
         left_over = frames.left_over;
+
+        if !frames.errors.is_empty() {
+            for error in frames.errors {
+                error!("Error decoding: {}", error);
+            }
+
+            info!("Full buffer: {}", json_string);
+            info!("Left over: {}", left_over);
+            info!("Frames: {:?}", frames.frames);
+        }
 
         for frame in frames.frames {
             debug!("Decoding: {}", frame);

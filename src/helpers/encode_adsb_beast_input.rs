@@ -252,7 +252,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     ADSBBeastFrames {
         frames: formatted_frames,
         left_over: leftbytes,
-        errors: errors,
+        errors,
     }
 }
 
