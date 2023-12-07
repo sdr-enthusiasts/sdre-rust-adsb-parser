@@ -117,7 +117,7 @@ enum ArgParseError {
 
 struct Args {
     url: String,
-    log_verbosity: u8,
+    log_verbosity: String,
     mode: Modes,
     only_show_errors: bool,
     direct_decode: bool,
@@ -165,17 +165,17 @@ impl Args {
 
         let url: String = url.ok_or(ArgParseError::UrlMissing)?;
 
-        let log_verbosity: u8 = if let Some(log_verbosity_temp) = log_verbosity_temp {
-            match log_verbosity_temp.parse::<u8>() {
+        let log_verbosity: String = if let Some(log_verbosity_temp) = log_verbosity_temp {
+            match log_verbosity_temp.parse::<String>() {
                 Ok(v) => v,
                 Err(e) => {
                     println!("Invalid log verbosity: {e:?}");
-                    println!("Defaulting to 0");
-                    0
+                    println!("Defaulting to info");
+                    "info".to_string()
                 }
             }
         } else {
-            0
+            "info".to_string()
         };
 
         let mode: Modes = if let Some(mode) = mode {
@@ -301,7 +301,6 @@ async fn process_beast_frames(
         trace!("Raw frame: {:02X?}", buffer[0..n].to_vec());
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&processed_buffer);
-        left_over = frames.left_over;
 
         if !frames.errors.is_empty() {
             for error in frames.errors {
@@ -309,9 +308,12 @@ async fn process_beast_frames(
             }
 
             info!("Full buffer: {:02X?}", processed_buffer);
-            info!("Left over: {:02X?}", left_over);
+            info!("Left over before: {:02X?}", left_over);
+            info!("Left over after: {:02X?}", frames.left_over);
             info!("Frames: {:02X?}", frames.frames);
         }
+
+        left_over = frames.left_over;
 
         trace!("Pre-processed: {:02X?}", frames.frames);
         for frame in &frames.frames {
@@ -379,7 +381,6 @@ async fn process_raw_frames(
         // append the left over bytes to the buffer
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
         let frames: ADSBRawFrames = format_adsb_raw_frames_from_bytes(&processed_buffer);
-        left_over = frames.left_over;
 
         if !frames.errors.is_empty() {
             for error in frames.errors {
@@ -387,9 +388,12 @@ async fn process_raw_frames(
             }
 
             info!("Full buffer: {:02X?}", processed_buffer);
-            info!("Left over: {:02X?}", left_over);
+            info!("Left over before: {:02X?}", left_over);
+            info!("Left over after: {:02X?}", frames.left_over);
             info!("Frames: {:02X?}", frames.frames);
         }
+
+        left_over = frames.left_over;
 
         trace!("Pre-processed: {:02X?}", frames.frames);
 
