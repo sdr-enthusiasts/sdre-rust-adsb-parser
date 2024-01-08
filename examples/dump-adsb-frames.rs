@@ -10,27 +10,27 @@
 /// This example program shows how to use the library to read in a file of ADS-B messages and print them out
 /// To run this example to process tar1090 aircraft.json file individually, run the following command:
 /// ```bash
-/// cargo run --example sdre-rust-adsb-tester -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlindividual
+/// cargo run --example dump-adsb-frames -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlindividual
 /// ```
 ///
 /// To run this example to process readsb JSON, run the following command:
 /// ```bash
-/// cargo run --example sdre-rust-adsb-tester -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlbulk
+/// cargo run --example dump-adsb-frames -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlbulk
 /// ```
 ///
 /// To run this example to process readsb JSON from a TCP connection, run the following command:
 /// ```bash
-/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30047 --mode jsonfromtcp
+/// cargo run --example dump-adsb-frames -- --url localhost:30047 --mode jsonfromtcp
 /// ```
 ///
 /// To run this example to process raw frames from a TCP connection, run the following command:
 /// ```bash
-/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30002 --mode raw
+/// cargo run --example dump-adsb-frames -- --url localhost:30002 --mode raw
 /// ```
 ///
 /// To run this example to process beast frames from a TCP connection, run the following command:
 /// ```bash
-/// cargo run --example sdre-rust-adsb-tester -- --url localhost:30005 --mode beast
+/// cargo run --example dump-adsb-frames -- --url localhost:30005 --mode beast
 /// ```
 ///
 /// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
@@ -213,7 +213,7 @@ impl Args {
 
     fn help() -> String {
         "\n\
-            sdre-rust-adsb-tester: Decodes readsb JSON, readsb airplanes.json, ADSB Raw or ADSB packets and prints the results to stdout\n\
+            dump-adsb-frames: Decodes readsb JSON, readsb airplanes.json, ADSB Raw or ADSB packets and prints the results to stdout\n\
 \n\
             Args:\n\
             --url [url:[port]]: URL and optional port to get ADSB data from\n\
