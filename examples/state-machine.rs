@@ -224,7 +224,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
     match mode {
         Modes::JSONFromAircraftJSON => {
-            info!("Processing as individual messages");
+            info!("Processing as Aircraft JSON");
             process_as_aircraft_json(url_input, print_interval_in_seconds, print_json).await?;
         }
         Modes::JSONFromTCP => {
@@ -408,12 +408,13 @@ async fn process_as_aircraft_json(
     print_interval_in_seconds: u64,
     print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut state_machine = StateMachine::new(90);
+    let mut state_machine = StateMachine::new(90, 360);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let expire_timeout = state_machine.timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
 
     if *print_json {
         tokio::spawn(async move {
@@ -442,7 +443,13 @@ async fn process_as_aircraft_json(
     });
 
     tokio::spawn(async move {
-        expire_planes(expire_mutex_context, 10, expire_timeout).await;
+        expire_planes(
+            expire_mutex_context,
+            10,
+            adsb_expire_timeout,
+            adsc_expire_timeout,
+        )
+        .await;
     });
 
     loop {
@@ -505,12 +512,13 @@ async fn process_json_from_tcp(
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
 
-    let mut state_machine = StateMachine::new(90);
+    let mut state_machine = StateMachine::new(90, 360);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let expire_timeout = state_machine.timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
 
     if *print_json {
         tokio::spawn(async move {
@@ -539,7 +547,13 @@ async fn process_json_from_tcp(
     });
 
     tokio::spawn(async move {
-        expire_planes(expire_mutex_context, 10, expire_timeout).await;
+        expire_planes(
+            expire_mutex_context,
+            10,
+            adsb_expire_timeout,
+            adsc_expire_timeout,
+        )
+        .await;
     });
 
     while let Ok(n) = stream.read(&mut buffer).await {

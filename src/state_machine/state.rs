@@ -18,25 +18,28 @@ use crate::decoders::raw_types::ke;
 use crate::{
     data_structures::airplane::Airplane,
     decoders::{
-        aircraftjson::AircraftJSON, beast::AdsbBeastMessage, json::JSONMessage, raw::AdsbRawMessage,
+        aircraftjson::AircraftJSON, beast::AdsbBeastMessage, json::JSONMessage,
+        json_types::messagetype::MessageType::ADSC, raw::AdsbRawMessage,
     },
     ADSBMessage,
 };
 
 pub struct StateMachine {
     pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
-    pub timeout_in_seconds: u64,
+    pub adsb_timeout_in_seconds: u64,
+    pub adsc_timeout_in_seconds: u64,
     input_channel: Sender<ADSBMessage>,
     output_channel: Receiver<ADSBMessage>,
     messages_processed: Arc<Mutex<u64>>,
 }
 
 impl StateMachine {
-    pub fn new(timeout_in_seconds: u32) -> StateMachine {
+    pub fn new(adsb_timeout_in_seconds: u32, adsc_timeout_in_seconds: u32) -> StateMachine {
         let (sender_channel, receiver_channel) = tokio::sync::mpsc::channel(100);
         StateMachine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
-            timeout_in_seconds: timeout_in_seconds as u64,
+            adsb_timeout_in_seconds: adsb_timeout_in_seconds as u64,
+            adsc_timeout_in_seconds: adsc_timeout_in_seconds as u64,
             input_channel: sender_channel,
             output_channel: receiver_channel,
             messages_processed: Arc::new(Mutex::new(0)),
@@ -164,9 +167,12 @@ pub async fn generate_aircraft_json(
 pub async fn expire_planes(
     planes: Arc<Mutex<HashMap<String, Airplane>>>,
     check_interval_in_seconds: u64,
-    timeout_in_seconds: u64,
+    adsb_timeout_in_seconds: u64,
+    adsc_timeout_in_seconds: u64,
 ) {
-    let timeout_in_seconds = timeout_in_seconds as f64;
+    let adsb_timeout_in_seconds = adsb_timeout_in_seconds as f64;
+    let adsc_timeout_in_seconds = adsc_timeout_in_seconds as f64;
+
     loop {
         tokio::time::sleep(tokio::time::Duration::from_secs(check_interval_in_seconds)).await;
         // current unix timestamp
@@ -175,14 +181,25 @@ pub async fn expire_planes(
         let mut planes_removed = 0;
 
         airplanes.retain(|key, value| match value.timestamp {
-            TimeStamp::TimeStampAsF64(timestamp) => {
-                if current_time - timestamp > timeout_in_seconds {
-                    planes_removed += 1;
-                    false
-                } else {
-                    true
+            TimeStamp::TimeStampAsF64(timestamp) => match &value.message_type {
+                ADSC => {
+                    if current_time - timestamp > adsc_timeout_in_seconds {
+                        planes_removed += 1;
+                        info!("Removing ADSC");
+                        false
+                    } else {
+                        true
+                    }
                 }
-            }
+                _ => {
+                    if current_time - timestamp > adsb_timeout_in_seconds {
+                        planes_removed += 1;
+                        false
+                    } else {
+                        true
+                    }
+                }
+            },
             TimeStamp::None => {
                 planes_removed += 1;
                 false
