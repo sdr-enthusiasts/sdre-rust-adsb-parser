@@ -7,11 +7,25 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(from = "String")]
 pub enum TransponderHex {
     TransponderHexAsString(String),
     None,
+}
+
+impl Serialize for TransponderHex {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::TransponderHexAsString(transponder_hex) => {
+                serializer.serialize_str(transponder_hex)
+            }
+            Self::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl Default for TransponderHex {

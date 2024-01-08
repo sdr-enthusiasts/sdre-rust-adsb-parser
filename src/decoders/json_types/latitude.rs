@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(from = "f32")]
 pub struct Latitude {
     latitude: f32,
@@ -16,6 +16,15 @@ pub struct Latitude {
 impl From<f32> for Latitude {
     fn from(lat: f32) -> Self {
         Latitude { latitude: lat }
+    }
+}
+
+impl Serialize for Latitude {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_f32(self.latitude)
     }
 }
 

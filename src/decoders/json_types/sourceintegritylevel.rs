@@ -7,13 +7,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum SourceIntegrityLevelType {
     #[default]
     Unknown,
     PerSample,
     PerHour,
+}
+
+impl Serialize for SourceIntegrityLevelType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            SourceIntegrityLevelType::PerSample => serializer.serialize_str("persample"),
+            SourceIntegrityLevelType::PerHour => serializer.serialize_str("perhour"),
+            SourceIntegrityLevelType::Unknown => serializer.serialize_str("unknown"),
+        }
+    }
 }
 
 impl TryFrom<String> for SourceIntegrityLevelType {

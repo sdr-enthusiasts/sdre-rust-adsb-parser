@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "u8")]
 pub enum NavigationIntegrityCategory {
     Category11,
@@ -23,6 +23,28 @@ pub enum NavigationIntegrityCategory {
     Category1,
     #[default]
     Unknown,
+}
+
+impl Serialize for NavigationIntegrityCategory {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            NavigationIntegrityCategory::Category11 => serializer.serialize_u8(11),
+            NavigationIntegrityCategory::Category10 => serializer.serialize_u8(10),
+            NavigationIntegrityCategory::Category9 => serializer.serialize_u8(9),
+            NavigationIntegrityCategory::Category8 => serializer.serialize_u8(8),
+            NavigationIntegrityCategory::Category7 => serializer.serialize_u8(7),
+            NavigationIntegrityCategory::Category6 => serializer.serialize_u8(6),
+            NavigationIntegrityCategory::Category5 => serializer.serialize_u8(5),
+            NavigationIntegrityCategory::Category4 => serializer.serialize_u8(4),
+            NavigationIntegrityCategory::Category3 => serializer.serialize_u8(3),
+            NavigationIntegrityCategory::Category2 => serializer.serialize_u8(2),
+            NavigationIntegrityCategory::Category1 => serializer.serialize_u8(1),
+            NavigationIntegrityCategory::Unknown => serializer.serialize_u8(0),
+        }
+    }
 }
 
 impl TryFrom<u8> for NavigationIntegrityCategory {

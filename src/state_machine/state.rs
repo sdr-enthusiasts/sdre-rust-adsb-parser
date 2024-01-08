@@ -6,8 +6,14 @@
 
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports, unused_variables))]
 
-use std::collections::HashMap;
+use core::time;
+use std::collections::{hash_map::Entry, HashMap};
+use std::sync::Arc;
+use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::sync::Mutex;
 
+use crate::decoders::json_types::timestamp::TimeStamp;
+use crate::decoders::raw_types::ke;
 use crate::{
     data_structures::airplane::Airplane,
     decoders::{
@@ -17,57 +23,214 @@ use crate::{
 };
 
 pub struct StateMachine {
-    pub airplanes: HashMap<String, Airplane>,
-    timeout_in_seconds: u64,
+    pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
+    pub timeout_in_seconds: u64,
+    input_channel: Sender<ADSBMessage>,
+    output_channel: Receiver<ADSBMessage>,
+    messages_processed: Arc<Mutex<u64>>,
 }
 
 impl StateMachine {
     pub fn new(timeout_in_seconds: u32) -> StateMachine {
+        let (sender_channel, receiver_channel) = tokio::sync::mpsc::channel(100);
         StateMachine {
-            airplanes: HashMap::new(),
+            airplanes: Arc::new(Mutex::new(HashMap::new())),
             timeout_in_seconds: timeout_in_seconds as u64,
+            input_channel: sender_channel,
+            output_channel: receiver_channel,
+            messages_processed: Arc::new(Mutex::new(0)),
         }
     }
 
-    pub async fn process_adsb_message(&mut self, message: ADSBMessage) {
-        match message {
-            ADSBMessage::AdsbRawMessage(raw_message) => self.process_aircraft_raw(raw_message),
-            ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
-                self.process_aircraft_beast(adsb_beast_message)
+    pub fn get_sender_channel(&self) -> Sender<ADSBMessage> {
+        self.input_channel.clone()
+    }
+
+    pub fn get_airplanes_mutex(&self) -> Arc<Mutex<HashMap<String, Airplane>>> {
+        self.airplanes.clone()
+    }
+
+    pub fn get_messages_processed_mutex(&self) -> Arc<Mutex<u64>> {
+        self.messages_processed.clone()
+    }
+
+    pub async fn get_airplane_by_hex(&self, transponder_hex: &str) -> Option<Airplane> {
+        let airplanes = self.airplanes.lock().await;
+
+        airplanes.get(transponder_hex).cloned()
+    }
+
+    pub async fn print_airplane_by_hex(&self, transponder_hex: &str) {
+        match self.get_airplane_by_hex(transponder_hex).await {
+            Some(airplane) => println!("{}", airplane),
+            None => println!("No airplane found with transponder hex {}", transponder_hex),
+        }
+    }
+
+    pub async fn print_airplanes(&self) {
+        let airplanes = self.airplanes.lock().await;
+
+        for (_, airplane) in airplanes.iter() {
+            println!("{}", airplane);
+        }
+    }
+
+    pub async fn get_airplanes(&self) -> Vec<Airplane> {
+        let mut airplanes = self.airplanes.lock().await;
+        let mut airplanes_vec = Vec::new();
+
+        for (_, airplane) in airplanes.iter_mut() {
+            airplanes_vec.push(airplane.clone());
+        }
+
+        airplanes_vec
+    }
+
+    pub async fn process_adsb_message(&mut self) {
+        while let Some(message) = self.output_channel.recv().await {
+            match message {
+                ADSBMessage::AdsbRawMessage(raw_message) => {
+                    self.process_aircraft_raw(raw_message).await
+                }
+                ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
+                    self.process_aircraft_beast(adsb_beast_message).await
+                }
+                ADSBMessage::AircraftJSON(aircraft_json) => {
+                    self.process_aircraft_json(aircraft_json).await
+                }
+                ADSBMessage::JSONMessage(json_message) => {
+                    self.process_json_message(json_message).await
+                }
             }
-            ADSBMessage::AircraftJSON(aircraft_json) => self.process_aircraft_json(aircraft_json),
-            ADSBMessage::JSONMessage(json_message) => self.process_json_message(json_message),
+
+            let mut messages_processed = self.messages_processed.lock().await;
+            *messages_processed += 1;
         }
     }
 
-    pub fn process_json_message(&mut self, message: JSONMessage) {
-        if self
-            .airplanes
-            .contains_key(&message.transponder_hex.get_transponder_hex_as_string())
-        {
-            let airplane = self
-                .airplanes
-                .get_mut(&message.transponder_hex.get_transponder_hex_as_string())
-                .unwrap();
-            //airplane.update(message);
-        } else {
-            // let mut airplane = Airplane::new(message);
-            // airplane.timeout_in_seconds = self.timeout_in_seconds;
-            // self.airplanes.insert(message.transponder_hex.get_transponder_hex_as_string(), airplane);
+    pub async fn process_json_message(&mut self, message: JSONMessage) {
+        // lock the mutex and get a mutable reference to the hashmap
+        let mut airplanes = self.airplanes.lock().await;
+
+        // get the airplane from the hashmap
+        match airplanes.entry(
+            message
+                .transponder_hex
+                .get_transponder_hex_as_string()
+                .clone(),
+        ) {
+            // if the airplane exists, update it
+            Entry::Occupied(mut airplane) => {
+                debug!("Updating airplane {}", airplane.get().transponder_hex);
+                airplane.get_mut().update_from_json(&message);
+            }
+
+            // if the airplane doesn't exist, create it
+            Entry::Vacant(airplane) => {
+                debug!("Creating airplane {}", message.transponder_hex);
+                airplane.insert(message);
+            }
         }
     }
 
-    pub fn process_aircraft_json(&mut self, message: AircraftJSON) {
+    pub async fn process_aircraft_json(&mut self, message: AircraftJSON) {
         for aircraft in message.aircraft {
-            self.process_json_message(aircraft);
+            self.process_json_message(aircraft).await;
         }
     }
 
-    pub fn process_aircraft_raw(&mut self, message: AdsbRawMessage) {
+    pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) {
         unimplemented!("RawMessage")
     }
 
-    pub fn process_aircraft_beast(&mut self, message: AdsbBeastMessage) {
-        self.process_aircraft_raw(message.raw_message)
+    pub async fn process_aircraft_beast(&mut self, message: AdsbBeastMessage) {
+        self.process_aircraft_raw(message.raw_message).await
+    }
+}
+
+pub async fn print_airplanes_at_interval(
+    planes: Arc<Mutex<HashMap<String, Airplane>>>,
+    messages: Arc<Mutex<u64>>,
+    interval_in_seconds: u64,
+) {
+    loop {
+        tokio::time::sleep(tokio::time::Duration::from_secs(interval_in_seconds)).await;
+
+        let airplanes = planes.lock().await;
+
+        let mut output = format!(
+            "{{\"now\": {},\n\"messages\": {},\n\"aircraft\": [\n",
+            chrono::Utc::now().timestamp(),
+            messages.lock().await
+        );
+
+        info!(
+            "Tracking {} airplane{}",
+            airplanes.len(),
+            if airplanes.len() == 1 { "" } else { "s" }
+        );
+
+        for (_, airplane) in airplanes.iter() {
+            match airplane.to_string() {
+                Ok(airplane_string) => {
+                    output.push_str(&airplane_string);
+                    output.push_str(",\n");
+                }
+                Err(error) => {
+                    error!("Error converting airplane to string: {}", error);
+                }
+            }
+        }
+
+        // remove the last comma if there are any airplanes
+        if airplanes.len() > 0 {
+            output.pop();
+            output.pop();
+        }
+
+        output.push_str("\n]\n}");
+
+        info!("{}", output);
+    }
+}
+
+pub async fn expire_planes(
+    planes: Arc<Mutex<HashMap<String, Airplane>>>,
+    check_interval_in_seconds: u64,
+    timeout_in_seconds: u64,
+) {
+    let timeout_in_seconds = timeout_in_seconds as f64;
+    loop {
+        tokio::time::sleep(tokio::time::Duration::from_secs(check_interval_in_seconds)).await;
+        // current unix timestamp
+        let current_time = chrono::Utc::now().timestamp() as f64;
+        let mut airplanes = planes.lock().await;
+
+        let mut planes_to_remove = Vec::new();
+
+        for (key, airplane) in airplanes.iter() {
+            match airplane.timestamp {
+                TimeStamp::TimeStampAsF64(timestamp) => {
+                    if current_time - timestamp > timeout_in_seconds {
+                        planes_to_remove.push(key.clone());
+                    }
+                }
+                TimeStamp::None => {
+                    planes_to_remove.push(key.clone());
+                }
+            }
+        }
+
+        info!(
+            "Tracking {} airplane{}. Removing {} for a new total of {}",
+            airplanes.len(),
+            if airplanes.len() == 1 { "" } else { "s" },
+            planes_to_remove.len(),
+            airplanes.len() - planes_to_remove.len()
+        );
+
+        for key in planes_to_remove {
+            airplanes.remove(&key);
+        }
     }
 }

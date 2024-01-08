@@ -7,10 +7,19 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(from = "i32")]
 pub struct BaroRate {
     baro_rate: i32,
+}
+
+impl Serialize for BaroRate {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_i32(self.baro_rate)
+    }
 }
 
 impl From<i32> for BaroRate {

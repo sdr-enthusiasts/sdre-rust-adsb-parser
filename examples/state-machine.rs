@@ -36,6 +36,7 @@
 #[macro_use]
 extern crate log;
 use generic_async_http_client::{Request, Response};
+use libm::asin;
 use sdre_rust_adsb_parser::{
     decoders::{
         aircraftjson::{AircraftJSON, NewAircraftJSONMessage},
@@ -48,6 +49,10 @@ use sdre_rust_adsb_parser::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
         encode_adsb_json_input::format_adsb_json_frames_from_string,
         encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
+    },
+    state_machine::{
+        self,
+        state::{expire_planes, print_airplanes_at_interval, StateMachine},
     },
     ADSBMessage, DecodeMessage,
 };
@@ -112,7 +117,7 @@ struct Args {
     url: String,
     log_verbosity: String,
     mode: Modes,
-    print_state_interval_seconds: u32,
+    print_state_interval_seconds: u64,
 }
 
 impl Args {
@@ -123,7 +128,7 @@ impl Args {
         let mut url: Option<String> = None;
         let mut log_verbosity_temp: Option<String> = None;
         let mut mode: Option<String> = None;
-        let mut print_state_interval_seconds: u32 = 10;
+        let mut print_state_interval_seconds: u64 = 10;
 
         while let Some(arg) = arg_it.next() {
             match arg.as_str() {
@@ -143,7 +148,7 @@ impl Args {
                 "--print-state-interval" => {
                     print_state_interval_seconds = arg_it
                         .next()
-                        .map(|s| s.parse::<u32>().unwrap_or(10))
+                        .map(|s| s.parse::<u64>().unwrap_or(10))
                         .unwrap_or(10);
                 }
                 s => {
@@ -225,7 +230,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // loop and connect to the URL given
     let url_input: &String = &args.url;
     let mode: &Modes = &args.mode;
-    let print_interval_in_seconds: &u32 = &args.print_state_interval_seconds;
+    let print_interval_in_seconds: u64 = args.print_state_interval_seconds.clone();
 
     match mode {
         Modes::JSONFromURLIndividual => {
@@ -255,7 +260,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
 async fn process_beast_frames(
     ip: &str,
-    print_interval_in_seconds: &u32,
+    print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as beast
     let addr = match ip.parse::<SocketAddr>() {
@@ -332,7 +337,7 @@ async fn process_beast_frames(
 
 async fn process_raw_frames(
     ip: &str,
-    print_interval_in_seconds: &u32,
+    print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -412,7 +417,7 @@ async fn process_raw_frames(
 
 async fn process_as_bulk_messages(
     url: &str,
-    print_interval_in_seconds: &u32,
+    print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     loop {
         let req: Request = Request::get(url);
@@ -462,7 +467,7 @@ async fn process_as_bulk_messages(
 
 async fn process_as_individual_messages(
     url: &str,
-    print_interval_in_seconds: &u32,
+    print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     info!("Error frames will be printed out for every error encountered");
     loop {
@@ -522,7 +527,7 @@ async fn process_as_individual_messages(
 
 async fn process_json_from_tcp(
     ip: &str,
-    print_interval_in_seconds: &u32,
+    print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
     let addr = match ip.parse::<SocketAddr>() {
@@ -543,11 +548,33 @@ async fn process_json_from_tcp(
         };
 
     info!("Connected to {}", ip);
-    info!("Any error frames will be printed out once per hex");
+
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
 
-    //let mut error_frames = Vec::new();
+    let mut state_machine = StateMachine::new(90);
+    let sender_channel = state_machine.get_sender_channel();
+    let print_mutex_context = state_machine.get_airplanes_mutex();
+    let message_count_context = state_machine.get_messages_processed_mutex();
+    let expire_mutex_context = state_machine.get_airplanes_mutex();
+    let expire_timeout = state_machine.timeout_in_seconds.clone();
+
+    tokio::spawn(async move {
+        print_airplanes_at_interval(
+            print_mutex_context,
+            message_count_context,
+            print_interval_in_seconds,
+        )
+        .await;
+    });
+
+    tokio::spawn(async move {
+        state_machine.process_adsb_message().await;
+    });
+
+    tokio::spawn(async move {
+        expire_planes(expire_mutex_context, 10, expire_timeout).await;
+    });
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -580,63 +607,17 @@ async fn process_json_from_tcp(
             info!("Frames: {:?}", frames.frames);
         }
 
-        // for frame in frames.frames {
-        //     debug!("Decoding: {}", frame);
-        //     if *direct_decode {
-        //         let message = frame.to_json();
+        for frame in frames.frames {
+            debug!("Decoding: {}", frame);
 
-        //         if let Ok(message) = message {
-        //             if !only_show_errors {
-        //                 info!("Decoded: {}", message.pretty_print());
-        //             }
-        //         } else {
-        //             // split the string on the comma, iterate over the strings, find the hex field
-        //             // store it in the error_frames vector
-        //             let mut split_string: Vec<&str> = frame.split(',').collect();
-
-        //             for split in split_string.iter_mut() {
-        //                 if split.starts_with("\"hex\":") {
-        //                     let hex = split.replace("\"hex\":", "");
-        //                     // check if the hex is already in the error_frames vector
-        //                     if !error_frames.contains(&hex) {
-        //                         error_frames.push(hex);
-        //                         error!("Error decoding: {}", message.unwrap_err());
-        //                         error!("Message input: {}", frame);
-        //                     } else {
-        //                         continue;
-        //                     }
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     } else {
-        //         let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-        //         if let Ok(message) = message {
-        //             if !only_show_errors {
-        //                 info!("Decoded: {}", message.pretty_print());
-        //             }
-        //         } else {
-        //             // split the string on the comma, iterate over the strings, find the hex field
-        //             // store it in the error_frames vector
-        //             let mut split_string: Vec<&str> = frame.split(',').collect();
-
-        //             for split in split_string.iter_mut() {
-        //                 if split.starts_with("\"hex\":") {
-        //                     let hex = split.replace("\"hex\":", "");
-        //                     // check if the hex is already in the error_frames vector
-        //                     if !error_frames.contains(&hex) {
-        //                         error_frames.push(hex);
-        //                         error!("Error decoding: {}", message.unwrap_err());
-        //                         error!("Message input: {}", frame);
-        //                     } else {
-        //                         continue;
-        //                     }
-        //                     break;
-        //                 }
-        //             }
-        //         }
-        //     }
-        // }
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            if let Ok(message) = message {
+                sender_channel.send(message).await.unwrap();
+            } else {
+                error!("Error decoding: {}", message.unwrap_err());
+                error!("Message input: {}", frame);
+            }
+        }
     }
     Ok(())
 }

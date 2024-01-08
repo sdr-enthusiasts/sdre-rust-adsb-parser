@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default, Debug)]
+#[derive(Deserialize, Clone, PartialEq, PartialOrd, Default, Debug)]
 #[serde(try_from = "u8")]
 pub enum SourceIntegrityLevel {
     #[default]
@@ -15,6 +15,20 @@ pub enum SourceIntegrityLevel {
     Level1,
     Level2,
     Level3,
+}
+
+impl Serialize for SourceIntegrityLevel {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            SourceIntegrityLevel::Level0 => serializer.serialize_u8(0),
+            SourceIntegrityLevel::Level1 => serializer.serialize_u8(1),
+            SourceIntegrityLevel::Level2 => serializer.serialize_u8(2),
+            SourceIntegrityLevel::Level3 => serializer.serialize_u8(3),
+        }
+    }
 }
 
 impl TryFrom<u8> for SourceIntegrityLevel {

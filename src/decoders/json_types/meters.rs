@@ -7,13 +7,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(untagged)]
 pub enum Meters {
     MetersAsInteger(i32),
     MetersAsFloat(f32),
     #[default]
     None,
+}
+
+impl Serialize for Meters {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Meters::MetersAsInteger(speed) => serializer.serialize_i32(*speed),
+            Meters::MetersAsFloat(speed) => serializer.serialize_f32(*speed),
+            Meters::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl From<i32> for Meters {
@@ -39,13 +52,26 @@ impl fmt::Display for Meters {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(untagged)]
 pub enum NauticalMiles {
     NauticalMilesAsInteger(i32),
     NauticalMilesAsFloat(f32),
     #[default]
     None,
+}
+
+impl Serialize for NauticalMiles {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            NauticalMiles::NauticalMilesAsInteger(speed) => serializer.serialize_i32(*speed),
+            NauticalMiles::NauticalMilesAsFloat(speed) => serializer.serialize_f32(*speed),
+            NauticalMiles::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl From<i32> for NauticalMiles {

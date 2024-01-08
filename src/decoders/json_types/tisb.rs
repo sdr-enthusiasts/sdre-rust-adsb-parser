@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum TiSB {
     BaroRate,
@@ -29,6 +29,32 @@ pub enum TiSB {
     SILType,
     #[default]
     None,
+}
+
+impl Serialize for TiSB {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            TiSB::BaroRate => serializer.serialize_str("baro_rate"),
+            TiSB::Callsign => serializer.serialize_str("callsign"),
+            TiSB::Altitude => serializer.serialize_str("altitude"),
+            TiSB::AltGeom => serializer.serialize_str("alt_geom"),
+            TiSB::GroundSpeed => serializer.serialize_str("gs"),
+            TiSB::Track => serializer.serialize_str("track"),
+            TiSB::GeomRate => serializer.serialize_str("geom_rate"),
+            TiSB::Latitude => serializer.serialize_str("lat"),
+            TiSB::Longitude => serializer.serialize_str("lon"),
+            TiSB::NIC => serializer.serialize_str("nic"),
+            TiSB::RC => serializer.serialize_str("rc"),
+            TiSB::NACp => serializer.serialize_str("nac_p"),
+            TiSB::NACv => serializer.serialize_str("nac_v"),
+            TiSB::SIL => serializer.serialize_str("sil"),
+            TiSB::SILType => serializer.serialize_str("sil_type"),
+            TiSB::None => serializer.serialize_str("None"),
+        }
+    }
 }
 
 impl fmt::Display for TiSB {

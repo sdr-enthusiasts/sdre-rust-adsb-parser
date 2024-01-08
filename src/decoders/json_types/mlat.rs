@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 
 pub enum MLATFields {
@@ -25,6 +25,29 @@ pub enum MLATFields {
     SilType,
     #[default]
     None,
+}
+
+impl Serialize for MLATFields {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            MLATFields::Altitude => serializer.serialize_str("altitude"),
+            MLATFields::GroundSpeed => serializer.serialize_str("gs"),
+            MLATFields::Track => serializer.serialize_str("track"),
+            MLATFields::BaroRate => serializer.serialize_str("baro_rate"),
+            MLATFields::Latitude => serializer.serialize_str("lat"),
+            MLATFields::Longitude => serializer.serialize_str("lon"),
+            MLATFields::NIC => serializer.serialize_str("nic"),
+            MLATFields::RC => serializer.serialize_str("rc"),
+            MLATFields::NACv => serializer.serialize_str("nac_v"),
+            MLATFields::NACp => serializer.serialize_str("nac_p"),
+            MLATFields::Sil => serializer.serialize_str("sil"),
+            MLATFields::SilType => serializer.serialize_str("sil_type"),
+            MLATFields::None => serializer.serialize_str("none"),
+        }
+    }
 }
 
 impl TryFrom<String> for MLATFields {
@@ -49,27 +72,6 @@ impl TryFrom<String> for MLATFields {
         }
     }
 }
-
-// impl From<String> for MLATFields {
-//     fn from(field: String) -> Self {
-//         match field.as_str() {
-//             "altitude" => MLATFields::Altitude,
-//             "gs" => MLATFields::GroundSpeed,
-//             "track" => MLATFields::Track,
-//             "baro_rate" => MLATFields::BaroRate,
-//             "lat" => MLATFields::Latitude,
-//             "lon" => MLATFields::Longitude,
-//             "nic" => MLATFields::NIC,
-//             "rc" => MLATFields::RC,
-//             "nac_v" => MLATFields::NACv,
-//             "nac_p" => MLATFields::NACp,
-//             "sil" => MLATFields::Sil,
-//             "sil_type" => MLATFields::SilType,
-//             "none" => MLATFields::None,
-//             _ => panic!("Invalid MLAT field: {}", field),
-//         }
-//     }
-// }
 
 impl fmt::Display for MLATFields {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

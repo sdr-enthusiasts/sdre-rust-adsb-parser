@@ -9,7 +9,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum EmitterCategory {
     #[default]
@@ -37,6 +37,40 @@ pub enum EmitterCategory {
     C5,
     C6,
     C7,
+}
+
+impl Serialize for EmitterCategory {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            EmitterCategory::A0 => serializer.serialize_str("A0"),
+            EmitterCategory::A1 => serializer.serialize_str("A1"),
+            EmitterCategory::A2 => serializer.serialize_str("A2"),
+            EmitterCategory::A3 => serializer.serialize_str("A3"),
+            EmitterCategory::A4 => serializer.serialize_str("A4"),
+            EmitterCategory::A5 => serializer.serialize_str("A5"),
+            EmitterCategory::A6 => serializer.serialize_str("A6"),
+            EmitterCategory::A7 => serializer.serialize_str("A7"),
+            EmitterCategory::B0 => serializer.serialize_str("B0"),
+            EmitterCategory::B1 => serializer.serialize_str("B1"),
+            EmitterCategory::B2 => serializer.serialize_str("B2"),
+            EmitterCategory::B3 => serializer.serialize_str("B3"),
+            EmitterCategory::B4 => serializer.serialize_str("B4"),
+            EmitterCategory::B5 => serializer.serialize_str("B5"),
+            EmitterCategory::B6 => serializer.serialize_str("B6"),
+            EmitterCategory::B7 => serializer.serialize_str("B7"),
+            EmitterCategory::C0 => serializer.serialize_str("C0"),
+            EmitterCategory::C1 => serializer.serialize_str("C1"),
+            EmitterCategory::C2 => serializer.serialize_str("C2"),
+            EmitterCategory::C3 => serializer.serialize_str("C3"),
+            EmitterCategory::C4 => serializer.serialize_str("C4"),
+            EmitterCategory::C5 => serializer.serialize_str("C5"),
+            EmitterCategory::C6 => serializer.serialize_str("C6"),
+            EmitterCategory::C7 => serializer.serialize_str("C7"),
+        }
+    }
 }
 
 impl TryFrom<String> for EmitterCategory {

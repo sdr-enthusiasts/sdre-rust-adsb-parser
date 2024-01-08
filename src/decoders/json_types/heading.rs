@@ -7,13 +7,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(untagged)]
 pub enum Heading {
     HeadingAsInteger(i32),
     HeadingAsFloat(f32),
     #[default]
     None,
+}
+
+impl Serialize for Heading {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Heading::HeadingAsInteger(speed) => serializer.serialize_i32(*speed),
+            Heading::HeadingAsFloat(speed) => serializer.serialize_f32(*speed),
+            Heading::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl From<i32> for Heading {

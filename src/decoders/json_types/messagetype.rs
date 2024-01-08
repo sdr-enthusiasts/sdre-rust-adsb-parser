@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum MessageType {
     /// messages from a Mode S or ADS-B transponder, using a 24-bit ICAO address
@@ -49,6 +49,29 @@ pub enum MessageType {
     #[default]
     /// Unknown
     UNKNOWN,
+}
+
+impl Serialize for MessageType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            MessageType::ADSBICAO => serializer.serialize_str("adsb_icao"),
+            MessageType::ADSBICAONONTRANSPONDER => serializer.serialize_str("adsb_icao_nt"),
+            MessageType::ADSBICAOREBROADCAST => serializer.serialize_str("adsr_icao"),
+            MessageType::ADSBICAOSECONDARYSURVEILLANCE => serializer.serialize_str("tisb_icao"),
+            MessageType::ADSC => serializer.serialize_str("adsc"),
+            MessageType::MLAT => serializer.serialize_str("mlat"),
+            MessageType::OTHER => serializer.serialize_str("other"),
+            MessageType::MODES => serializer.serialize_str("mode_s"),
+            MessageType::ADSBOTHER => serializer.serialize_str("adsb_other"),
+            MessageType::ADSBOTHERREBROADCAST => serializer.serialize_str("adsr_other"),
+            MessageType::ADSBOTHERSECONDARYSURVEILLANCE => serializer.serialize_str("tisb_other"),
+            MessageType::ADSBTRACKFILE => serializer.serialize_str("tisb_trackfile"),
+            MessageType::UNKNOWN => serializer.serialize_str("unknown"),
+        }
+    }
 }
 
 impl TryFrom<String> for MessageType {

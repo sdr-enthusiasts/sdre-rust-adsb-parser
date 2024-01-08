@@ -7,11 +7,23 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(untagged)]
 pub enum Altitude {
     I32(i32),
     String(String),
+}
+
+impl Serialize for Altitude {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Altitude::I32(altitude) => serializer.serialize_i32(*altitude),
+            Altitude::String(altitude) => serializer.serialize_str(altitude),
+        }
+    }
 }
 
 impl Default for Altitude {

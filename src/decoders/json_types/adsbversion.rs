@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(try_from = "u8")]
 pub enum ADSBVersion {
     Version0,
@@ -18,6 +18,24 @@ pub enum ADSBVersion {
     Version5,
     Version6,
     Version7,
+}
+
+impl Serialize for ADSBVersion {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            ADSBVersion::Version0 => serializer.serialize_u8(0),
+            ADSBVersion::Version1 => serializer.serialize_u8(1),
+            ADSBVersion::Version2 => serializer.serialize_u8(2),
+            ADSBVersion::Version3 => serializer.serialize_u8(3),
+            ADSBVersion::Version4 => serializer.serialize_u8(4),
+            ADSBVersion::Version5 => serializer.serialize_u8(5),
+            ADSBVersion::Version6 => serializer.serialize_u8(6),
+            ADSBVersion::Version7 => serializer.serialize_u8(7),
+        }
+    }
 }
 
 impl TryFrom<u8> for ADSBVersion {

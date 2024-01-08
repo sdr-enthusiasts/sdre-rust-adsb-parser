@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 // #[serde(untagged)]
 pub enum Emergency {
@@ -20,6 +20,24 @@ pub enum Emergency {
     Unlawful,
     Downed,
     Reserved,
+}
+
+impl Serialize for Emergency {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Emergency::None => serializer.serialize_str("none"),
+            Emergency::General => serializer.serialize_str("general"),
+            Emergency::Lifeguard => serializer.serialize_str("lifeguard"),
+            Emergency::Minfuel => serializer.serialize_str("minfuel"),
+            Emergency::Nordo => serializer.serialize_str("nordo"),
+            Emergency::Unlawful => serializer.serialize_str("unlawful"),
+            Emergency::Downed => serializer.serialize_str("downed"),
+            Emergency::Reserved => serializer.serialize_str("reserved"),
+        }
+    }
 }
 
 impl TryFrom<String> for Emergency {

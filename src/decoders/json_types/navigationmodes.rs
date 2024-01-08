@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum NavigationModes {
     Autopilot,
@@ -18,6 +18,23 @@ pub enum NavigationModes {
     TCAS,
     #[default]
     None,
+}
+
+impl Serialize for NavigationModes {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            NavigationModes::Autopilot => serializer.serialize_str("autopilot"),
+            NavigationModes::VNAV => serializer.serialize_str("vnav"),
+            NavigationModes::AltHold => serializer.serialize_str("althold"),
+            NavigationModes::Approach => serializer.serialize_str("approach"),
+            NavigationModes::LNAV => serializer.serialize_str("lnav"),
+            NavigationModes::TCAS => serializer.serialize_str("tcas"),
+            NavigationModes::None => serializer.serialize_str("none"),
+        }
+    }
 }
 
 impl TryFrom<String> for NavigationModes {

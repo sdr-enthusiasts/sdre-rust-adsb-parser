@@ -15,7 +15,7 @@ use std::fmt;
 // 101 : no alert, SPI, aircraft is airborne or on-ground
 // 110 : reserved
 // 111 : not assigned
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(try_from = "u8")]
 pub enum FlightStatusAlertBit {
     NoAlertNoSPIAirborne,
@@ -26,6 +26,24 @@ pub enum FlightStatusAlertBit {
     NoAlertSPIAirborneOrOnGround,
     Reserved,
     NotAssigned,
+}
+
+impl Serialize for FlightStatusAlertBit {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            FlightStatusAlertBit::NoAlertNoSPIAirborne => serializer.serialize_u8(0b000),
+            FlightStatusAlertBit::NoAlertNoSPIOnGround => serializer.serialize_u8(0b001),
+            FlightStatusAlertBit::AlertNoSPIAirborne => serializer.serialize_u8(0b010),
+            FlightStatusAlertBit::AlertNoSPIOnGround => serializer.serialize_u8(0b011),
+            FlightStatusAlertBit::AlertSPIAirborneOrOnGround => serializer.serialize_u8(0b100),
+            FlightStatusAlertBit::NoAlertSPIAirborneOrOnGround => serializer.serialize_u8(0b101),
+            FlightStatusAlertBit::Reserved => serializer.serialize_u8(0b110),
+            FlightStatusAlertBit::NotAssigned => serializer.serialize_u8(0b111),
+        }
+    }
 }
 
 impl TryFrom<u8> for FlightStatusAlertBit {

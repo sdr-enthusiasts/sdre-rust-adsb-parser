@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "u8")]
 pub enum NavigationAccuracyVelocity {
     #[default]
@@ -16,6 +16,21 @@ pub enum NavigationAccuracyVelocity {
     Category2,
     Category3,
     Category4,
+}
+
+impl Serialize for NavigationAccuracyVelocity {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            NavigationAccuracyVelocity::Category0 => serializer.serialize_u8(0),
+            NavigationAccuracyVelocity::Category1 => serializer.serialize_u8(1),
+            NavigationAccuracyVelocity::Category2 => serializer.serialize_u8(2),
+            NavigationAccuracyVelocity::Category3 => serializer.serialize_u8(3),
+            NavigationAccuracyVelocity::Category4 => serializer.serialize_u8(4),
+        }
+    }
 }
 
 impl TryFrom<u8> for NavigationAccuracyVelocity {

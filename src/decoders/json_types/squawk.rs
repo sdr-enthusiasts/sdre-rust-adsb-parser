@@ -7,13 +7,26 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(try_from = "String")]
 pub struct Squawk {
     code_digit1: u8,
     code_digit2: u8,
     code_digit3: u8,
     code_digit4: u8,
+}
+
+impl Serialize for Squawk {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let squawk = format!(
+            "{}{}{}{}",
+            self.code_digit1, self.code_digit2, self.code_digit3, self.code_digit4
+        );
+        serializer.serialize_str(&squawk)
+    }
 }
 
 impl TryFrom<String> for Squawk {

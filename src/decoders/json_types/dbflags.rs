@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "u8")]
 pub enum DBFlags {
     Military,
@@ -16,6 +16,21 @@ pub enum DBFlags {
     LADD,
     #[default]
     None,
+}
+
+impl Serialize for DBFlags {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            DBFlags::Military => serializer.serialize_u8(1),
+            DBFlags::Interesting => serializer.serialize_u8(2),
+            DBFlags::PIA => serializer.serialize_u8(4),
+            DBFlags::LADD => serializer.serialize_u8(8),
+            DBFlags::None => serializer.serialize_u8(0),
+        }
+    }
 }
 
 impl TryFrom<u8> for DBFlags {

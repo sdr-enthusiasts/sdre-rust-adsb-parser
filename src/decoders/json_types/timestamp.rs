@@ -7,12 +7,24 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(from = "f64")]
 pub enum TimeStamp {
     TimeStampAsF64(f64),
     #[default]
     None,
+}
+
+impl Serialize for TimeStamp {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Self::TimeStampAsF64(seconds) => serializer.serialize_f64(*seconds),
+            Self::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl From<f64> for TimeStamp {

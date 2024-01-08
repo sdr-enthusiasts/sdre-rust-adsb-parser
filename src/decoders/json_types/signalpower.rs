@@ -7,12 +7,24 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
+#[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(from = "f32")]
 pub enum SignalPower {
     Decibels(f32),
     #[default]
     None,
+}
+
+impl Serialize for SignalPower {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match *self {
+            SignalPower::Decibels(rssi) => serializer.serialize_f32(rssi),
+            SignalPower::None => serializer.serialize_none(),
+        }
+    }
 }
 
 impl From<f32> for SignalPower {
