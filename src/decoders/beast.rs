@@ -114,7 +114,7 @@ impl fmt::Display for AdsbBeastMessage {
         write!(
             f,
             "ADSB Beast Message: Type: {}, MLAT Timestamp: {:?}, Signal Level: {}, Message: {:02X?}",
-            self.message_type, self.mlat_timestamp, self.signal_level, self.message
+            self.message_type, self.mlat_timestamp, self.signal_level, self.raw_message
         )
     }
 }
@@ -137,7 +137,7 @@ pub struct AdsbBeastMessage {
     #[deku(bits = "8")]
     signal_level: u8,
     /// 4: Message
-    message: AdsbRawMessage,
+    pub raw_message: AdsbRawMessage,
 }
 
 impl AdsbBeastMessage {
@@ -181,7 +181,7 @@ impl AdsbBeastMessage {
         pretty_print_field("MLAT Timestamp", &self.mlat_timestamp, &mut output);
         pretty_print_field("Signal Level", &self.signal_level, &mut output);
         pretty_print_label("ADS-B Beast Message", &mut output);
-        pretty_print_field("", &self.message, &mut output);
+        pretty_print_field("", &self.raw_message, &mut output);
 
         output
     }
