@@ -37,35 +37,30 @@
 
 #[macro_use]
 extern crate log;
-use generic_async_http_client::Request;
-use generic_async_http_client::Response;
-use sdre_rust_adsb_parser::decoders::aircraftjson::AircraftJSON;
-use sdre_rust_adsb_parser::decoders::aircraftjson::NewAircraftJSONMessage;
-use sdre_rust_adsb_parser::decoders::beast::AdsbBeastMessage;
-use sdre_rust_adsb_parser::decoders::beast::NewAdsbBeastMessage;
-use sdre_rust_adsb_parser::decoders::json::JSONMessage;
-use sdre_rust_adsb_parser::decoders::json::NewJSONMessage;
-use sdre_rust_adsb_parser::decoders::raw::NewAdsbRawMessage;
-use sdre_rust_adsb_parser::error_handling::deserialization_error::DeserializationError;
-use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::format_adsb_beast_frames_from_bytes;
-use sdre_rust_adsb_parser::helpers::encode_adsb_beast_input::ADSBBeastFrames;
-use sdre_rust_adsb_parser::helpers::encode_adsb_json_input::format_adsb_json_frames_from_string;
-use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::format_adsb_raw_frames_from_bytes;
-use sdre_rust_adsb_parser::helpers::encode_adsb_raw_input::ADSBRawFrames;
-use sdre_rust_adsb_parser::ADSBMessage;
-use sdre_rust_adsb_parser::DecodeMessage;
+use generic_async_http_client::{Request, Response};
+use sdre_rust_adsb_parser::{
+    decoders::{
+        aircraftjson::{AircraftJSON, NewAircraftJSONMessage},
+        beast::{AdsbBeastMessage, NewAdsbBeastMessage},
+        json::{JSONMessage, NewJSONMessage},
+        raw::NewAdsbRawMessage,
+    },
+    error_handling::deserialization_error::DeserializationError,
+    helpers::{
+        encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
+        encode_adsb_json_input::format_adsb_json_frames_from_string,
+        encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
+    },
+    ADSBMessage, DecodeMessage,
+};
 use sdre_rust_logging::SetupLogging;
-use sdre_stubborn_io::config::DurationIterator;
-use sdre_stubborn_io::ReconnectOptions;
-use sdre_stubborn_io::StubbornTcpStream;
+use sdre_stubborn_io::{config::DurationIterator, ReconnectOptions, StubbornTcpStream};
 use std::fmt;
 use std::net::SocketAddr;
 use std::process::exit;
 use std::str::FromStr;
-use std::time::Duration;
-use std::time::Instant;
-use tokio::io::AsyncReadExt;
-use tokio::time::sleep;
+use std::time::{Duration, Instant};
+use tokio::{io::AsyncReadExt, time::sleep};
 
 #[derive(Debug)]
 enum Modes {
