@@ -100,6 +100,7 @@ struct Args {
     log_verbosity: String,
     mode: Modes,
     print_state_interval_seconds: u64,
+    print_json: bool,
 }
 
 impl Args {
@@ -111,6 +112,7 @@ impl Args {
         let mut log_verbosity_temp: Option<String> = None;
         let mut mode: Option<String> = None;
         let mut print_state_interval_seconds: u64 = 10;
+        let mut print_json = false;
 
         while let Some(arg) = arg_it.next() {
             match arg.as_str() {
@@ -126,6 +128,9 @@ impl Args {
                 "--help" => {
                     println!("{}", Args::help());
                     exit(0);
+                }
+                "--print-json" => {
+                    print_json = true;
                 }
                 "--print-state-interval" => {
                     print_state_interval_seconds = arg_it
@@ -174,6 +179,7 @@ impl Args {
             log_verbosity: log_verbosity,
             mode: mode,
             print_state_interval_seconds,
+            print_json,
         })
     }
 
@@ -196,6 +202,7 @@ impl Args {
             --url [url:[port]]: URL and optional port to get ADSB data from\n\
             --log-verbosity [0-5]: Set the log verbosity\n\
             --mode [jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast]: Set the mode to use\n\
+            --print-json: Print the JSON to stdout\n\
             --print-state-interval [seconds]: Set the interval to print state in seconds\n\
             --help: Show this help and exit\n\
         "
@@ -213,23 +220,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let url_input: &String = &args.url;
     let mode: &Modes = &args.mode;
     let print_interval_in_seconds: u64 = args.print_state_interval_seconds.clone();
+    let print_json = &args.print_json;
 
     match mode {
         Modes::JSONFromAircraftJSON => {
             info!("Processing as individual messages");
-            process_as_aircraft_json(url_input, print_interval_in_seconds).await?;
+            process_as_aircraft_json(url_input, print_interval_in_seconds, print_json).await?;
         }
         Modes::JSONFromTCP => {
             info!("Processing as JSON from TCP");
-            process_json_from_tcp(url_input, print_interval_in_seconds).await?;
+            process_json_from_tcp(url_input, print_interval_in_seconds, print_json).await?;
         }
         Modes::Raw => {
             info!("Processing as raw frames");
-            process_raw_frames(url_input, print_interval_in_seconds).await?;
+            process_raw_frames(url_input, print_interval_in_seconds, print_json).await?;
         }
         Modes::Beast => {
             info!("Processing as beast frames");
-            process_beast_frames(url_input, print_interval_in_seconds).await?;
+            process_beast_frames(url_input, print_interval_in_seconds, print_json).await?;
         }
     }
 
@@ -239,6 +247,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 async fn process_beast_frames(
     ip: &str,
     print_interval_in_seconds: u64,
+    print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as beast
     let addr = match ip.parse::<SocketAddr>() {
@@ -316,6 +325,7 @@ async fn process_beast_frames(
 async fn process_raw_frames(
     ip: &str,
     print_interval_in_seconds: u64,
+    print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -396,6 +406,7 @@ async fn process_raw_frames(
 async fn process_as_aircraft_json(
     url: &str,
     print_interval_in_seconds: u64,
+    print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mut state_machine = StateMachine::new(90);
     let sender_channel = state_machine.get_sender_channel();
@@ -404,21 +415,27 @@ async fn process_as_aircraft_json(
     let expire_mutex_context = state_machine.get_airplanes_mutex();
     let expire_timeout = state_machine.timeout_in_seconds.clone();
 
-    tokio::spawn(async move {
-        loop {
-            tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds)).await;
-            match generate_aircraft_json(print_mutex_context.clone(), message_count_context.clone())
+    if *print_json {
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
+                    .await;
+                match generate_aircraft_json(
+                    print_mutex_context.clone(),
+                    message_count_context.clone(),
+                )
                 .await
-            {
-                Some(aircraft_json) => {
-                    info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
-                }
-                None => {
-                    error!("Error generating aircraft JSON");
+                {
+                    Some(aircraft_json) => {
+                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                    }
+                    None => {
+                        error!("Error generating aircraft JSON");
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
     tokio::spawn(async move {
         state_machine.process_adsb_message().await;
@@ -463,6 +480,7 @@ async fn process_as_aircraft_json(
 async fn process_json_from_tcp(
     ip: &str,
     print_interval_in_seconds: u64,
+    print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
     let addr = match ip.parse::<SocketAddr>() {
@@ -494,21 +512,27 @@ async fn process_json_from_tcp(
     let expire_mutex_context = state_machine.get_airplanes_mutex();
     let expire_timeout = state_machine.timeout_in_seconds.clone();
 
-    tokio::spawn(async move {
-        loop {
-            tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds)).await;
-            match generate_aircraft_json(print_mutex_context.clone(), message_count_context.clone())
+    if *print_json {
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
+                    .await;
+                match generate_aircraft_json(
+                    print_mutex_context.clone(),
+                    message_count_context.clone(),
+                )
                 .await
-            {
-                Some(aircraft_json) => {
-                    info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
-                }
-                None => {
-                    error!("Error generating aircraft JSON");
+                {
+                    Some(aircraft_json) => {
+                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                    }
+                    None => {
+                        error!("Error generating aircraft JSON");
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
     tokio::spawn(async move {
         state_machine.process_adsb_message().await;

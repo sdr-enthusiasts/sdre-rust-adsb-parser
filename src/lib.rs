@@ -112,7 +112,6 @@ pub mod decoders {
         pub mod sil;
         pub mod sourceintegritylevel;
         pub mod speed;
-        pub mod squawk;
         pub mod timestamp;
         pub mod tisb;
         pub mod transponderhex;

@@ -7,6 +7,7 @@
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports, unused_variables))]
 
 use core::time;
+use serde::de::value;
 use std::collections::{hash_map::Entry, HashMap};
 use std::sync::Arc;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -171,32 +172,33 @@ pub async fn expire_planes(
         // current unix timestamp
         let current_time = chrono::Utc::now().timestamp() as f64;
         let mut airplanes = planes.lock().await;
+        let mut planes_removed = 0;
 
-        let mut planes_to_remove = Vec::new();
-
-        for (key, airplane) in airplanes.iter() {
-            match airplane.timestamp {
-                TimeStamp::TimeStampAsF64(timestamp) => {
-                    if current_time - timestamp > timeout_in_seconds {
-                        planes_to_remove.push(key.clone());
-                    }
-                }
-                TimeStamp::None => {
-                    planes_to_remove.push(key.clone());
+        airplanes.retain(|key, value| match value.timestamp {
+            TimeStamp::TimeStampAsF64(timestamp) => {
+                if current_time - timestamp > timeout_in_seconds {
+                    planes_removed += 1;
+                    false
+                } else {
+                    true
                 }
             }
-        }
+            TimeStamp::None => {
+                planes_removed += 1;
+                false
+            }
+        });
 
         info!(
             "Tracking {} airplane{}. Removing {} for a new total of {}",
-            airplanes.len(),
-            if airplanes.len() == 1 { "" } else { "s" },
-            planes_to_remove.len(),
-            airplanes.len() - planes_to_remove.len()
+            airplanes.len() + planes_removed,
+            if airplanes.len() + planes_removed == 1 {
+                ""
+            } else {
+                "s"
+            },
+            planes_removed,
+            airplanes.len()
         );
-
-        for key in planes_to_remove {
-            airplanes.remove(&key);
-        }
     }
 }

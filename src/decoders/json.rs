@@ -38,7 +38,6 @@ use super::{
         sil::SourceIntegrityLevel,
         sourceintegritylevel::SourceIntegrityLevelType,
         speed::Speed,
-        squawk::Squawk,
         timestamp::TimeStamp,
         tisb::TiSB,
         transponderhex::TransponderHex,
@@ -497,7 +496,7 @@ pub struct JSONMessage {
     pub flight_status_special_position_id_bit: Option<u8>, // FIXME: I doubt this is right
     /// Mode A code (Squawk), encoded as 4 octal digits
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
-    pub transponder_squawk_code: Option<Squawk>,
+    pub transponder_squawk_code: Option<String>,
     /// wiedehopf's aircraft.json aircraft type pulled from database
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
     pub aircraft_type_from_database: Option<String>,
@@ -586,6 +585,8 @@ mod tests {
                                     line_number
                                 );
                                 let json_message = final_message_to_process.to_json();
+
+                                println!("JSONMessage: {:?}", json_message,);
 
                                 assert!(
                                     json_message.is_ok(),
