@@ -148,50 +148,16 @@ impl StateMachine {
     }
 }
 
-pub async fn print_airplanes_at_interval(
+pub async fn generate_aircraft_json(
     planes: Arc<Mutex<HashMap<String, Airplane>>>,
     messages: Arc<Mutex<u64>>,
-    interval_in_seconds: u64,
-) {
-    loop {
-        tokio::time::sleep(tokio::time::Duration::from_secs(interval_in_seconds)).await;
+) -> Option<AircraftJSON> {
+    let airplanes = planes.lock().await;
+    let total_messages = messages.lock().await;
 
-        let airplanes = planes.lock().await;
+    let vec_of_planes = airplanes.values().cloned().collect();
 
-        let mut output = format!(
-            "{{\"now\": {},\n\"messages\": {},\n\"aircraft\": [\n",
-            chrono::Utc::now().timestamp(),
-            messages.lock().await
-        );
-
-        info!(
-            "Tracking {} airplane{}",
-            airplanes.len(),
-            if airplanes.len() == 1 { "" } else { "s" }
-        );
-
-        for (_, airplane) in airplanes.iter() {
-            match airplane.to_string() {
-                Ok(airplane_string) => {
-                    output.push_str(&airplane_string);
-                    output.push_str(",\n");
-                }
-                Err(error) => {
-                    error!("Error converting airplane to string: {}", error);
-                }
-            }
-        }
-
-        // remove the last comma if there are any airplanes
-        if airplanes.len() > 0 {
-            output.pop();
-            output.pop();
-        }
-
-        output.push_str("\n]\n}");
-
-        info!("{}", output);
-    }
+    Some(AircraftJSON::new(vec_of_planes, *total_messages))
 }
 
 pub async fn expire_planes(

@@ -7,10 +7,6 @@
 /// # Examples
 /// This example program shows how to use the library to connect to a source of ADSB frames and generate state from them
 /// To run this example to process tar1090 aircraft.json file individually, run the following command:
-/// ```bash
-/// cargo run --example dump-adsb-frames -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlindividual
-/// ```
-///
 /// To run this example to process readsb JSON, run the following command:
 /// ```bash
 /// cargo run --example dump-adsb-frames -- --url http://localhost:8080/data/aircraft.json --mode jsonfromurlbulk
@@ -36,39 +32,27 @@
 #[macro_use]
 extern crate log;
 use generic_async_http_client::{Request, Response};
-use libm::asin;
 use sdre_rust_adsb_parser::{
-    decoders::{
-        aircraftjson::{AircraftJSON, NewAircraftJSONMessage},
-        beast::{AdsbBeastMessage, NewAdsbBeastMessage},
-        json::{JSONMessage, NewJSONMessage},
-        raw::NewAdsbRawMessage,
-    },
     error_handling::deserialization_error::DeserializationError,
     helpers::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
         encode_adsb_json_input::format_adsb_json_frames_from_string,
         encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
     },
-    state_machine::{
-        self,
-        state::{expire_planes, print_airplanes_at_interval, StateMachine},
-    },
+    state_machine::state::{expire_planes, generate_aircraft_json, StateMachine},
     ADSBMessage, DecodeMessage,
 };
 use sdre_rust_logging::SetupLogging;
 use sdre_stubborn_io::{config::DurationIterator, ReconnectOptions, StubbornTcpStream};
-use std::fmt;
 use std::net::SocketAddr;
 use std::process::exit;
 use std::str::FromStr;
-use std::time::{Duration, Instant};
+use std::{fmt, time::Duration};
 use tokio::{io::AsyncReadExt, time::sleep};
 
 #[derive(Debug)]
 enum Modes {
-    JSONFromURLIndividual,
-    JSONFromUrlBulk,
+    JSONFromAircraftJSON,
     JSONFromTCP,
     Raw,
     Beast,
@@ -76,7 +60,7 @@ enum Modes {
 
 impl Default for Modes {
     fn default() -> Self {
-        Modes::JSONFromURLIndividual
+        Modes::JSONFromAircraftJSON
     }
 }
 
@@ -85,8 +69,7 @@ impl FromStr for Modes {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "jsonfromurlindividual" => Ok(Modes::JSONFromURLIndividual),
-            "jsonfromurlbulk" => Ok(Modes::JSONFromUrlBulk),
+            "jsonfromaircraftjson" => Ok(Modes::JSONFromAircraftJSON),
             "jsonfromtcp" => Ok(Modes::JSONFromTCP),
             "raw" => Ok(Modes::Raw),
             "beast" => Ok(Modes::Beast),
@@ -98,8 +81,7 @@ impl FromStr for Modes {
 impl fmt::Display for Modes {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Modes::JSONFromURLIndividual => write!(f, "JSON from URL, individual"),
-            Modes::JSONFromUrlBulk => write!(f, "JSON from URL, bulk"),
+            Modes::JSONFromAircraftJSON => write!(f, "JSON from aircraft.json"),
             Modes::JSONFromTCP => write!(f, "JSON from tcp"),
             Modes::Raw => write!(f, "raw"),
             Modes::Beast => write!(f, "beast"),
@@ -233,13 +215,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let print_interval_in_seconds: u64 = args.print_state_interval_seconds.clone();
 
     match mode {
-        Modes::JSONFromURLIndividual => {
+        Modes::JSONFromAircraftJSON => {
             info!("Processing as individual messages");
-            process_as_individual_messages(url_input, print_interval_in_seconds).await?;
-        }
-        Modes::JSONFromUrlBulk => {
-            info!("Processing as bulk messages");
-            process_as_bulk_messages(url_input, print_interval_in_seconds).await?;
+            process_as_aircraft_json(url_input, print_interval_in_seconds).await?;
         }
         Modes::JSONFromTCP => {
             info!("Processing as JSON from TCP");
@@ -415,112 +393,69 @@ async fn process_raw_frames(
     Ok(())
 }
 
-async fn process_as_bulk_messages(
+async fn process_as_aircraft_json(
     url: &str,
     print_interval_in_seconds: u64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    loop {
-        let req: Request = Request::get(url);
-        let total_time: String;
-        let mut planes_procesed: usize = 0;
+    let mut state_machine = StateMachine::new(90);
+    let sender_channel = state_machine.get_sender_channel();
+    let print_mutex_context = state_machine.get_airplanes_mutex();
+    let message_count_context = state_machine.get_messages_processed_mutex();
+    let expire_mutex_context = state_machine.get_airplanes_mutex();
+    let expire_timeout = state_machine.timeout_in_seconds.clone();
 
-        let mut resp: Response = req.exec().await?;
-        if resp.status_code() == 200 {
-            let body: String = resp.text().await?;
-            // for now we'll bust apart the response before parsing
-            let now: Instant = Instant::now();
-
-            trace!("Processing: {}", body);
-            // if !direct_decode {
-            //     let message: Result<ADSBMessage, DeserializationError> = body.decode_message();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //         planes_procesed = message.len();
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //     }
-            // } else {
-            //     let message: Result<AircraftJSON, DeserializationError> = body.to_aircraft_json();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //         planes_procesed = message.len();
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //     }
-            // }
-
-            let elapsed: Duration = now.elapsed();
-            total_time = format!("{:.2?}", elapsed);
-        } else {
-            error!("Response status error: {}", resp.status());
-            sleep(Duration::from_secs(10)).await;
-            continue;
+    tokio::spawn(async move {
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds)).await;
+            match generate_aircraft_json(print_mutex_context.clone(), message_count_context.clone())
+                .await
+            {
+                Some(aircraft_json) => {
+                    info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                }
+                None => {
+                    error!("Error generating aircraft JSON");
+                }
+            }
         }
-        info!("Processed {} planes in {}", planes_procesed, total_time);
-        sleep(Duration::from_secs(10)).await;
-    }
-}
+    });
 
-async fn process_as_individual_messages(
-    url: &str,
-    print_interval_in_seconds: u64,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    info!("Error frames will be printed out for every error encountered");
+    tokio::spawn(async move {
+        state_machine.process_adsb_message().await;
+    });
+
+    tokio::spawn(async move {
+        expire_planes(expire_mutex_context, 10, expire_timeout).await;
+    });
+
     loop {
         let req: Request = Request::get(url);
-        let mut planes_procesed = 0;
-        let total_time: String;
 
         let mut resp: Response = req.exec().await?;
         if resp.status_code() == 200 {
             let body: String = resp.text().await?;
             // for now we'll bust apart the response before parsing
-            let now: Instant = Instant::now();
             for line in body.lines() {
                 if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
                     let final_message_to_process: &str = line.trim().trim_end_matches(',');
                     debug!("Decoding: {}", final_message_to_process);
-                    // if !direct_decode {
-                    //     let message: Result<ADSBMessage, DeserializationError> =
-                    //         final_message_to_process.decode_message();
 
-                    //     if let Ok(message) = message {
-                    //         if !only_show_errors {
-                    //             info!("Decoded: {}", message.pretty_print());
-                    //         }
-
-                    //         planes_procesed += 1;
-                    //     } else {
-                    //         error!("Error decoding: {}", message.unwrap_err());
-                    //     }
-                    // } else {
-                    //     let message: Result<JSONMessage, DeserializationError> =
-                    //         final_message_to_process.to_json();
-
-                    //     if let Ok(message) = message {
-                    //         if !only_show_errors {
-                    //             info!("Decoded: {}", message.pretty_print());
-                    //         }
-
-                    //         planes_procesed += 1;
-                    //     } else {
-                    //         error!("Error decoding: {}", message.unwrap_err());
-                    //     }
-                    // }
+                    let message: Result<ADSBMessage, DeserializationError> =
+                        final_message_to_process.decode_message();
+                    if let Ok(message) = message {
+                        sender_channel.send(message).await.unwrap();
+                    } else {
+                        error!("Error decoding: {}", message.unwrap_err());
+                        error!("Message input: {}", final_message_to_process);
+                    }
                 }
             }
-            let elapsed: Duration = now.elapsed();
-            total_time = format!("{:.2?}", elapsed);
         } else {
             error!("Response status error: {}", resp.status());
             sleep(Duration::from_secs(10)).await;
             continue;
         }
-        info!("Processed {} planes in {}", planes_procesed, total_time);
+
         sleep(Duration::from_secs(10)).await;
     }
 }
@@ -560,12 +495,19 @@ async fn process_json_from_tcp(
     let expire_timeout = state_machine.timeout_in_seconds.clone();
 
     tokio::spawn(async move {
-        print_airplanes_at_interval(
-            print_mutex_context,
-            message_count_context,
-            print_interval_in_seconds,
-        )
-        .await;
+        loop {
+            tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds)).await;
+            match generate_aircraft_json(print_mutex_context.clone(), message_count_context.clone())
+                .await
+            {
+                Some(aircraft_json) => {
+                    info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                }
+                None => {
+                    error!("Error generating aircraft JSON");
+                }
+            }
+        }
     });
 
     tokio::spawn(async move {

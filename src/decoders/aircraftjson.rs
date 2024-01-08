@@ -59,11 +59,19 @@ impl NewAircraftJSONMessage for &Vec<u8> {
 pub struct AircraftJSON {
     #[serde(rename = "now")]
     pub timestamp: f32,
-    pub messages: i32,
+    pub messages: u64,
     pub aircraft: Vec<JSONMessage>,
 }
 
 impl AircraftJSON {
+    /// Create a new `AircraftJSON` object from a `Vec<JSONMessage>` and a `u64`.
+    pub fn new(aircraft: Vec<JSONMessage>, total_messages: u64) -> AircraftJSON {
+        AircraftJSON {
+            timestamp: chrono::Utc::now().timestamp() as f32,
+            messages: total_messages,
+            aircraft,
+        }
+    }
     /// Converts `AircraftJSON` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
