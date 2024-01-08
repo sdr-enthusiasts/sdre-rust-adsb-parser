@@ -11,6 +11,7 @@ extern crate log;
 
 use core::fmt;
 
+use data_structures::decoder_common::{ConvertToJSON, UpdateFromJSON};
 use decoders::beast::AdsbBeastMessage;
 use error_handling::deserialization_error::{DeserializationError, WrongType};
 
@@ -138,6 +139,11 @@ pub mod helpers {
 
 pub mod data_structures {
     pub mod airplane;
+    pub mod decoder_common;
+}
+
+pub mod state_machine {
+    pub mod state;
 }
 
 /// Common return type for all serialisation/deserialisation functions.
@@ -423,6 +429,8 @@ impl ADSBMessage {
         }
     }
 
+    /// Returns `true` if the message is empty.
+
     pub fn is_empty(&self) -> bool {
         match self {
             ADSBMessage::JSONMessage(_) => false,
@@ -454,5 +462,29 @@ pub enum ADSBMessage {
 impl Default for ADSBMessage {
     fn default() -> Self {
         ADSBMessage::JSONMessage(JSONMessage::default())
+    }
+}
+
+impl ConvertToJSON for ADSBMessage {
+    fn convert_to_json(&self) -> JSONMessage {
+        match self {
+            ADSBMessage::JSONMessage(json_message) => json_message.clone(),
+            ADSBMessage::AircraftJSON(_aircraft_json) => unimplemented!("AircraftJSON"),
+            ADSBMessage::AdsbRawMessage(_adsb_raw_message) => unimplemented!("RawMessage"),
+            ADSBMessage::AdsbBeastMessage(_adsb_beast_message) => unimplemented!("BeastMessage"),
+        }
+    }
+}
+
+impl UpdateFromJSON for ADSBMessage {
+    fn update_from_json(self, json_message_update: &JSONMessage) {
+        match self {
+            ADSBMessage::JSONMessage(mut json_message) => {
+                json_message.update_from_json(json_message_update)
+            }
+            ADSBMessage::AircraftJSON(_aircraft_json) => unimplemented!("AircraftJSON"),
+            ADSBMessage::AdsbRawMessage(_adsb_raw_message) => unimplemented!("RawMessage"),
+            ADSBMessage::AdsbBeastMessage(_adsb_beast_message) => unimplemented!("BeastMessage"),
+        }
     }
 }

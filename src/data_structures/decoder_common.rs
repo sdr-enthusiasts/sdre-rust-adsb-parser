@@ -5,6 +5,12 @@
 // https://opensource.org/licenses/MIT.
 
 use crate::decoders::json::JSONMessage;
-// use serde::{Deserialize, Serialize};
 
-pub type Airplane = JSONMessage;
+// FIXME: does this need to exist?
+pub trait ConvertToJSON {
+    fn convert_to_json(&self) -> JSONMessage;
+}
+
+pub trait UpdateFromJSON {
+    fn update_from_json(self, json_message: &JSONMessage);
+}

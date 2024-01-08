@@ -168,7 +168,7 @@ impl JSONMessage {
         pretty_print_field_from_option("Ground Speed", &self.ground_speed, &mut output);
         pretty_print_field_from_option(
             "Indicator Air Speed",
-            &self.indicator_air_speed,
+            &self.indicated_air_speed,
             &mut output,
         );
         pretty_print_field_from_option("True Air Speed", &self.true_air_speed, &mut output);
@@ -342,6 +342,10 @@ impl JSONMessage {
             Ok(string) => Ok(string.into_bytes()),
         }
     }
+
+    pub fn update_from_json(&mut self, json_message: &JSONMessage) {
+        *self = json_message.clone();
+    }
 }
 
 // Not all messages have a timestamp, so we'll use the current time if one isn't provided.
@@ -402,7 +406,7 @@ pub struct JSONMessage {
     /// Indicated Air speed.
     // TODO: what is the source of this?
     #[serde(skip_serializing_if = "Option::is_none", rename = "ias")]
-    indicator_air_speed: Option<Speed>,
+    indicated_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
     pub geometric_verticle_accuracy: Option<u8>, // FIXME: I doubt this is right
     /// The transponder hex identifier of the aircraft.
