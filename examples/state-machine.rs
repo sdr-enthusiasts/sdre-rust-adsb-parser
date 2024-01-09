@@ -249,7 +249,7 @@ async fn process_beast_frames(
     print_interval_in_seconds: u64,
     print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // open a TCP connection to ip. Grab the frames and process them as beast
+    // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
         Ok(addr) => addr,
         Err(e) => {
@@ -271,12 +271,58 @@ async fn process_beast_frames(
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
+    let mut state_machine = StateMachine::new(90, 360);
+    let sender_channel = state_machine.get_sender_channel();
+    let print_mutex_context = state_machine.get_airplanes_mutex();
+    let message_count_context = state_machine.get_messages_processed_mutex();
+    let expire_mutex_context = state_machine.get_airplanes_mutex();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+
+    if *print_json {
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
+                    .await;
+                match generate_aircraft_json(
+                    print_mutex_context.clone(),
+                    message_count_context.clone(),
+                )
+                .await
+                {
+                    Some(aircraft_json) => {
+                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                    }
+                    None => {
+                        error!("Error generating aircraft JSON");
+                    }
+                }
+            }
+        });
+    }
+
+    tokio::spawn(async move {
+        state_machine.process_adsb_message().await;
+    });
+
+    tokio::spawn(async move {
+        expire_planes(
+            expire_mutex_context,
+            10,
+            adsb_expire_timeout,
+            adsc_expire_timeout,
+        )
+        .await;
+    });
+
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
             error!("No data read");
             continue;
         }
         trace!("Raw frame: {:02X?}", buffer[0..n].to_vec());
+
+        // append the left over bytes to the buffer
         let processed_buffer: Vec<u8> = [&left_over[..], &buffer[0..n]].concat();
         let frames: ADSBBeastFrames = format_adsb_beast_frames_from_bytes(&processed_buffer);
 
@@ -294,29 +340,17 @@ async fn process_beast_frames(
         left_over = frames.left_over;
 
         trace!("Pre-processed: {:02X?}", frames.frames);
+
         for frame in &frames.frames {
             debug!("Decoding: {:02X?}", frame);
 
-            // if !direct_decode {
-            //     let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //         error!("Message input: {:02X?}", frame);
-            //     }
-            // } else {
-            //     let message: Result<AdsbBeastMessage, DeserializationError> = frame.to_adsb_beast();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //     }
-            // }
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            if let Ok(message) = message {
+                sender_channel.send(message).await.unwrap();
+            } else {
+                error!("Error decoding: {}", message.unwrap_err());
+                error!("Message input: {:02X?}", frame);
+            }
         }
     }
     Ok(())
@@ -349,6 +383,50 @@ async fn process_raw_frames(
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
+    let mut state_machine = StateMachine::new(90, 360);
+    let sender_channel = state_machine.get_sender_channel();
+    let print_mutex_context = state_machine.get_airplanes_mutex();
+    let message_count_context = state_machine.get_messages_processed_mutex();
+    let expire_mutex_context = state_machine.get_airplanes_mutex();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+
+    if *print_json {
+        tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
+                    .await;
+                match generate_aircraft_json(
+                    print_mutex_context.clone(),
+                    message_count_context.clone(),
+                )
+                .await
+                {
+                    Some(aircraft_json) => {
+                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
+                    }
+                    None => {
+                        error!("Error generating aircraft JSON");
+                    }
+                }
+            }
+        });
+    }
+
+    tokio::spawn(async move {
+        state_machine.process_adsb_message().await;
+    });
+
+    tokio::spawn(async move {
+        expire_planes(
+            expire_mutex_context,
+            10,
+            adsb_expire_timeout,
+            adsc_expire_timeout,
+        )
+        .await;
+    });
+
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
             error!("No data read");
@@ -377,27 +455,14 @@ async fn process_raw_frames(
 
         for frame in &frames.frames {
             debug!("Decoding: {:02X?}", frame);
-            // if !direct_decode {
-            //     let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //         error!("Message input: {:02X?}", frame);
-            //     }
-            // } else {
-            //     let message = frame.to_adsb_raw();
-            //     if let Ok(message) = message {
-            //         if !only_show_errors {
-            //             info!("Decoded: {}", message.pretty_print());
-            //         }
-            //     } else {
-            //         error!("Error decoding: {}", message.unwrap_err());
-            //         error!("Message input: {:02X?}", frame);
-            //     }
-            // }
+
+            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
+            if let Ok(message) = message {
+                sender_channel.send(message).await.unwrap();
+            } else {
+                error!("Error decoding: {}", message.unwrap_err());
+                error!("Message input: {:02X?}", frame);
+            }
         }
     }
     Ok(())

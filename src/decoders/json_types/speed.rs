@@ -27,6 +27,12 @@ impl Serialize for Speed {
     }
 }
 
+impl From<f64> for Speed {
+    fn from(speed: f64) -> Self {
+        Self::Knots(speed as f32)
+    }
+}
+
 impl From<f32> for Speed {
     fn from(speed: f32) -> Self {
         Self::Knots(speed)

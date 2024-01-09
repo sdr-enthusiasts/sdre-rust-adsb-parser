@@ -14,7 +14,10 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
 use crate::decoders::json_types::timestamp::TimeStamp;
+use crate::decoders::json_types::transponderhex;
+use crate::decoders::raw_types::df::DF;
 use crate::decoders::raw_types::ke;
+use crate::decoders::raw_types::me::ME;
 use crate::{
     data_structures::airplane::Airplane,
     decoders::{
@@ -144,7 +147,22 @@ impl StateMachine {
     }
 
     pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) {
-        unimplemented!("RawMessage")
+        if let DF::ADSB(adsb) = &message.df {
+            let mut airplanes = self.airplanes.lock().await;
+
+            let transponderhex = adsb.icao.to_string();
+
+            match airplanes.entry(transponderhex.clone()) {
+                Entry::Occupied(mut airplane) => {
+                    airplane.get_mut().update_from_df(&message.df);
+                }
+                Entry::Vacant(airplane) => {
+                    let mut new_airplane = Airplane::new(transponderhex);
+                    new_airplane.update_from_df(&message.df);
+                    airplane.insert(new_airplane);
+                }
+            }
+        }
     }
 
     pub async fn process_aircraft_beast(&mut self, message: AdsbBeastMessage) {

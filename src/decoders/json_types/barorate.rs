@@ -22,6 +22,14 @@ impl Serialize for BaroRate {
     }
 }
 
+impl From<i16> for BaroRate {
+    fn from(baro_rate: i16) -> Self {
+        Self {
+            baro_rate: baro_rate as i32,
+        }
+    }
+}
+
 impl From<i32> for BaroRate {
     fn from(baro_rate: i32) -> Self {
         Self { baro_rate }

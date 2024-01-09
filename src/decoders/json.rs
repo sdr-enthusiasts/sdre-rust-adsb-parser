@@ -42,6 +42,7 @@ use super::{
         tisb::TiSB,
         transponderhex::TransponderHex,
     },
+    raw_types::{df::DF, me::ME},
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -110,6 +111,13 @@ impl fmt::Display for JSONMessage {
 }
 
 impl JSONMessage {
+    pub fn new(icao: String) -> JSONMessage {
+        JSONMessage {
+            transponder_hex: icao.into(),
+            timestamp: get_timestamp(),
+            ..Default::default()
+        }
+    }
     /// Converts `JSONMessage` to `String`.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
@@ -351,6 +359,36 @@ impl JSONMessage {
                 "Not updating JSONMessage because the timestamp is older than the one we have. {} < {}",
                 json_message.timestamp, self.timestamp
             );
+        }
+    }
+
+    pub fn update_from_df(&mut self, raw_adsb: &DF) {
+        if let DF::ADSB(adsb) = raw_adsb {
+            match &adsb.me {
+                ME::AirborneVelocity(velocity) => {
+                    if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
+                        self.true_track_over_ground = Some(heading.into());
+                        self.ground_speed = Some(ground_speed.into());
+                        self.barometric_altitude_rate = Some(vert_speed.into());
+                        // TODO: verify this should be baro rate
+                    }
+                }
+                ME::NoPosition(_) => (),
+                ME::AircraftIdentification(id) => {
+                    self.calculated_best_flight_id = Some(id.cn.clone().into());
+                    // TODO: Verify this field
+                }
+                ME::SurfacePosition(_) => (),
+                ME::AirbornePositionGNSSAltitude(_altitude)
+                | ME::AirbornePositionBaroAltitude(_altitude) => {}
+                ME::Reserved0(_) => (),
+                ME::SurfaceSystemStatus(_) => (),
+                ME::Reserved1(_) => (),
+                ME::AircraftStatus(_) => (),
+                ME::TargetStateAndStatusInformation(_) => (),
+                ME::AircraftOperationalCoordination(_) => (),
+                ME::AircraftOperationStatus(_) => (),
+            }
         }
     }
 }

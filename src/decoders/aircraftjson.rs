@@ -6,7 +6,7 @@
 
 use crate::MessageResult;
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, time::SystemTime};
 
 use super::{
     helpers::prettyprint::{pretty_print_field, pretty_print_label},
@@ -58,7 +58,7 @@ impl NewAircraftJSONMessage for &Vec<u8> {
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq, PartialOrd, Default)]
 pub struct AircraftJSON {
     #[serde(rename = "now")]
-    pub timestamp: f32,
+    pub timestamp: f64,
     pub messages: u64,
     pub aircraft: Vec<JSONMessage>,
 }
@@ -66,10 +66,17 @@ pub struct AircraftJSON {
 impl AircraftJSON {
     /// Create a new `AircraftJSON` object from a `Vec<JSONMessage>` and a `u64`.
     pub fn new(aircraft: Vec<JSONMessage>, total_messages: u64) -> AircraftJSON {
-        AircraftJSON {
-            timestamp: chrono::Utc::now().timestamp() as f32,
-            messages: total_messages,
-            aircraft,
+        match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
+            Ok(n) => AircraftJSON {
+                timestamp: n.as_secs_f64(),
+                messages: total_messages,
+                aircraft,
+            },
+            Err(_) => AircraftJSON {
+                timestamp: 0.0,
+                messages: total_messages,
+                aircraft,
+            },
         }
     }
     /// Converts `AircraftJSON` to `String`.
