@@ -12,18 +12,6 @@ Compact Position Reporting for [`Position`] Reporting
 reference: ICAO 9871 (D.2.4.7)
 !*/
 
-#[cfg(feature = "alloc")]
-use core::{
-    clone::Clone,
-    cmp,
-    cmp::PartialEq,
-    convert::From,
-    fmt::Debug,
-    marker::Copy,
-    option::Option::{self, None, Some},
-    prelude::rust_2021::derive,
-};
-#[cfg(not(feature = "alloc"))]
 use std::cmp;
 
 use crate::decoders::raw_types::{altitude::Altitude, cprheaders::CPRFormat};
