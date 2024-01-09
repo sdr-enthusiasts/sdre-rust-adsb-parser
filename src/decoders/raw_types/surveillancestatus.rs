@@ -8,7 +8,9 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
 /// SPI Condition
-#[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[derive(
+    Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
+)]
 #[deku(type = "u8", bits = "2")]
 pub enum SurveillanceStatus {
     #[default]

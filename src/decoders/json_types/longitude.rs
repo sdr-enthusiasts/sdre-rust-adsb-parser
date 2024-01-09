@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(from = "f32")]
+#[serde(from = "f64")]
 pub struct Longitude {
-    longitude: f32,
+    longitude: f64,
 }
 
-impl From<f32> for Longitude {
-    fn from(lat: f32) -> Self {
+impl From<f64> for Longitude {
+    fn from(lat: f64) -> Self {
         Longitude { longitude: lat }
     }
 }
@@ -30,16 +30,16 @@ impl Serialize for Longitude {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_f32(self.longitude)
+        serializer.serialize_f64(self.longitude)
     }
 }
 
 impl fmt::Display for Longitude {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // format the longitude in DMS
-        let lon_deg: f32 = self.longitude.abs().floor();
-        let lon_min: f32 = (self.longitude.abs() - lon_deg) * 60.0;
-        let lon_sec: f32 = (lon_min - lon_min.floor()) * 60.0;
+        let lon_deg: f64 = self.longitude.abs().floor();
+        let lon_min: f64 = (self.longitude.abs() - lon_deg) * 60.0;
+        let lon_sec: f64 = (lon_min - lon_min.floor()) * 60.0;
         let lon_dir: &str = if self.longitude >= 0.0 { "E" } else { "W" };
         write!(
             f,

@@ -8,13 +8,13 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
-#[serde(from = "f32")]
+#[serde(from = "f64")]
 pub struct Latitude {
-    latitude: f32,
+    latitude: f64,
 }
 
-impl From<f32> for Latitude {
-    fn from(lat: f32) -> Self {
+impl From<f64> for Latitude {
+    fn from(lat: f64) -> Self {
         Latitude { latitude: lat }
     }
 }
@@ -24,7 +24,7 @@ impl Serialize for Latitude {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_f32(self.latitude)
+        serializer.serialize_f64(self.latitude)
     }
 }
 
@@ -37,9 +37,9 @@ impl Default for Latitude {
 impl fmt::Display for Latitude {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         // format the latitude in DMS
-        let lat_deg: f32 = self.latitude.abs().floor();
-        let lat_min: f32 = (self.latitude.abs() - lat_deg) * 60.0;
-        let lat_sec: f32 = (lat_min - lat_min.floor()) * 60.0;
+        let lat_deg: f64 = self.latitude.abs().floor();
+        let lat_min: f64 = (self.latitude.abs() - lat_deg) * 60.0;
+        let lat_sec: f64 = (lat_min - lat_min.floor()) * 60.0;
         let lat_dir: &str = if self.latitude >= 0.0 { "N" } else { "S" };
         write!(
             f,

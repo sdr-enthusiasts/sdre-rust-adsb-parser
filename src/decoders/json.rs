@@ -9,8 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::{
-    helpers::prettyprint::{
-        pretty_print_field, pretty_print_field_from_option, pretty_print_label,
+    helpers::{
+        cpr_calculators::get_position,
+        prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
     },
     json_types::{
         adsbversion::ADSBVersion,
@@ -42,7 +43,7 @@ use super::{
         tisb::TiSB,
         transponderhex::TransponderHex,
     },
-    raw_types::{df::DF, me::ME},
+    raw_types::{cprheaders::CPRFormat, df::DF, me::ME},
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -115,6 +116,8 @@ impl JSONMessage {
         JSONMessage {
             transponder_hex: icao.into(),
             timestamp: get_timestamp(),
+            last_time_seen: (0.0).into(),
+            message_type: MessageType::ADSBICAO, // FIXME: this feels wrong. How do we handle data that is UAT?
             ..Default::default()
         }
     }
@@ -286,7 +289,7 @@ impl JSONMessage {
             &self.radius_of_containment,
             &mut output,
         );
-        pretty_print_field("RSSI", &self.rssi, &mut output);
+        pretty_print_field_from_option("RSSI", &self.rssi, &mut output);
         pretty_print_field_from_option(
             "System Design Assurance",
             &self.system_design_assurance,
@@ -379,8 +382,62 @@ impl JSONMessage {
                     // TODO: Verify this field
                 }
                 ME::SurfacePosition(_) => (),
-                ME::AirbornePositionGNSSAltitude(_altitude)
-                | ME::AirbornePositionBaroAltitude(_altitude) => {}
+                ME::AirbornePositionGNSSAltitude(altitude)
+                | ME::AirbornePositionBaroAltitude(altitude) => {
+                    if let Some(alt) = &altitude.alt {
+                        // check the ME type to see if we have baro or GNSS altitude
+                        // TODO: can we do this better? We've already checked the type above and
+                        // Ended up here. The lat/lon positioning is the same for both, so we
+                        // need to use the same code for both.
+
+                        if let ME::AirbornePositionBaroAltitude(_) = &adsb.me {
+                            self.barometric_altitude = Some((*alt).into());
+                        } else {
+                            self.geometric_altitude = Some((*alt).into());
+                        }
+                    }
+
+                    match altitude.odd_flag {
+                        CPRFormat::Even => {
+                            self.cpr_even = Some(*altitude);
+                        }
+                        CPRFormat::Odd => {
+                            self.cpr_odd = Some(*altitude);
+                        }
+                    }
+
+                    // if we have both even and odd, calculate the position
+                    if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even, &self.cpr_odd) {
+                        if let Some(position) = get_position((&odd_frame, &even_frame)) {
+                            // Very the lat lon are sane
+                            if position.latitude > 90.0 || position.latitude < -90.0 {
+                                warn!(
+                                    "{} Invalid latitude {}",
+                                    self.transponder_hex, position.latitude
+                                );
+                                warn!("{} {:?}", self.transponder_hex, self.cpr_even);
+                                warn!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                            } else if position.longitude > 180.0 || position.longitude < -180.0 {
+                                warn!(
+                                    "{} Invalid longitude {}",
+                                    self.transponder_hex, position.longitude
+                                );
+                                warn!("{} {:?}", self.transponder_hex, self.cpr_even);
+                                warn!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                            } else {
+                                info!("good!");
+
+                                // only update the lat/lon if they are different
+                                if self.latitude != Some(position.latitude.into())
+                                    || self.longitude != Some(position.longitude.into())
+                                {
+                                    self.latitude = Some(position.latitude.into());
+                                    self.longitude = Some(position.longitude.into());
+                                }
+                            }
+                        }
+                    }
+                }
                 ME::Reserved0(_) => (),
                 ME::SurfaceSystemStatus(_) => (),
                 ME::Reserved1(_) => (),
@@ -390,6 +447,9 @@ impl JSONMessage {
                 ME::AircraftOperationStatus(_) => (),
             }
         }
+
+        // Reset the last time seen to "now". When the serializer is fixed properly
+        self.last_time_seen = (0.0).into();
     }
 }
 
@@ -513,13 +573,16 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "rc")]
     pub radius_of_containment: Option<Meters>,
     /// recent average RSSI (signal power), in dbFS; this will always be negative.
-    pub rssi: SignalPower,
+    /// This value is always (?) present in payloads from readsb, but will be missing in payloads we generate
+    /// from raw/beast data
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rssi: Option<SignalPower>,
     /// System Design Assurance (2.2.3.2.7.2.4.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
     pub system_design_assurance: Option<i32>, // FIXME: I doubt this is right
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
-    pub last_time_seen: SecondsAgo,
+    pub last_time_seen: SecondsAgo, // FIXME: when doing any serialization this value needs to be referenced to the current time
     /// how long ago (in seconds before "now") the position was last updated
     #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
     pub last_time_seen_pos_and_alt: Option<f32>,
@@ -581,6 +644,13 @@ pub struct JSONMessage {
     ws: Option<u32>, // TODO: print this out
     #[serde(skip_serializing_if = "Option::is_none")]
     wd: Option<u32>, // TODO: print this out
+
+    /// These are internal values that should never get serialized, but used for tracking raw even/odd positions
+
+    #[serde(skip_serializing)]
+    cpr_even: Option<super::raw_types::altitude::Altitude>,
+    #[serde(skip_serializing)]
+    cpr_odd: Option<super::raw_types::altitude::Altitude>,
 }
 
 #[cfg(test)]

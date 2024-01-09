@@ -119,6 +119,7 @@ pub mod decoders {
     #[cfg(feature = "raw")]
     pub mod raw;
     pub mod helpers {
+        pub mod cpr_calculators;
         pub mod prettyprint;
     }
 }

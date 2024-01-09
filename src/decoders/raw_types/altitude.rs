@@ -13,7 +13,9 @@ use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
 use super::{cprheaders::CPRFormat, surveillancestatus::SurveillanceStatus};
 
 /// Latitude, Longitude and Altitude information
-#[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, Default)]
+#[derive(
+    Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
+)]
 pub struct Altitude {
     #[deku(bits = "5")]
     pub tc: u8,

@@ -10,8 +10,14 @@ use std::fmt;
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(untagged)]
 pub enum Altitude {
-    I32(i32),
+    U16(u16),
     String(String),
+}
+
+impl From<u16> for Altitude {
+    fn from(altitude: u16) -> Self {
+        Altitude::U16(altitude)
+    }
 }
 
 impl Serialize for Altitude {
@@ -20,7 +26,7 @@ impl Serialize for Altitude {
         S: serde::Serializer,
     {
         match self {
-            Altitude::I32(altitude) => serializer.serialize_i32(*altitude),
+            Altitude::U16(altitude) => serializer.serialize_u16(*altitude),
             Altitude::String(altitude) => serializer.serialize_str(altitude),
         }
     }
@@ -28,14 +34,14 @@ impl Serialize for Altitude {
 
 impl Default for Altitude {
     fn default() -> Self {
-        Self::I32(0)
+        Self::U16(0)
     }
 }
 
 impl fmt::Display for Altitude {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            Altitude::I32(altitude) => write!(f, "{} ft", altitude),
+            Altitude::U16(altitude) => write!(f, "{} ft", altitude),
             Altitude::String(_) => write!(f, "On Ground"),
         }
     }
