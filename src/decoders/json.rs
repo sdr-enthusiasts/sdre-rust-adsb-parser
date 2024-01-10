@@ -393,6 +393,7 @@ impl JSONMessage {
                         if let ME::AirbornePositionBaroAltitude(_) = &adsb.me {
                             self.barometric_altitude = Some((*alt).into());
                         } else {
+                            info!("Updating Geometric Altitude");
                             self.geometric_altitude = Some((*alt).into());
                         }
                     }
@@ -408,25 +409,22 @@ impl JSONMessage {
 
                     // if we have both even and odd, calculate the position
                     if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even, &self.cpr_odd) {
-                        if let Some(position) = get_position((&odd_frame, &even_frame)) {
+                        if let Some(position) =
+                            get_position(even_frame, odd_frame, altitude.odd_flag)
+                        {
                             // Very the lat lon are sane
-                            if position.latitude > 90.0 || position.latitude < -90.0 {
-                                warn!(
-                                    "{} Invalid latitude {}",
-                                    self.transponder_hex, position.latitude
-                                );
-                                warn!("{} {:?}", self.transponder_hex, self.cpr_even);
-                                warn!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                            } else if position.longitude > 180.0 || position.longitude < -180.0 {
-                                warn!(
-                                    "{} Invalid longitude {}",
-                                    self.transponder_hex, position.longitude
-                                );
-                                warn!("{} {:?}", self.transponder_hex, self.cpr_even);
-                                warn!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                            } else {
-                                info!("good!");
 
+                            let mut update = true;
+
+                            if position.latitude > 90.0 || position.latitude < -90.0 {
+                                update = false;
+                            }
+
+                            if position.longitude > 180.0 || position.longitude < -180.0 {
+                                update = false;
+                            }
+
+                            if update {
                                 // only update the lat/lon if they are different
                                 if self.latitude != Some(position.latitude.into())
                                     || self.longitude != Some(position.longitude.into())
@@ -434,6 +432,11 @@ impl JSONMessage {
                                     self.latitude = Some(position.latitude.into());
                                     self.longitude = Some(position.longitude.into());
                                 }
+                            } else {
+                                error!("Position was invalid.");
+                                error!("{} {:?}", self.transponder_hex, self.cpr_even);
+                                error!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                                error!("{} {:?}", self.transponder_hex, position);
                             }
                         }
                     }

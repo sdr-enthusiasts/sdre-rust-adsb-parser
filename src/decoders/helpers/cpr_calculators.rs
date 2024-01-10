@@ -12,8 +12,6 @@ Compact Position Reporting for [`Position`] Reporting
 reference: ICAO 9871 (D.2.4.7)
 !*/
 
-use std::cmp;
-
 use crate::decoders::raw_types::{altitude::Altitude, cprheaders::CPRFormat};
 
 const NZ: f64 = 15.0;
@@ -219,47 +217,30 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     1
 }
 
+pub fn calc_modulo(x: f64, y: f64) -> f64 {
+    x - y * libm::floor(x / y)
+}
+
 /// Calculate Globally unambiguous position decoding
 ///
 /// Using both an Odd and Even `Altitude`, calculate the latitude/longitude
 ///
 /// reference: ICAO 9871 (D.2.4.7.7)
-#[must_use]
-pub fn get_position(cpr_frames: (&Altitude, &Altitude)) -> Option<Position> {
-    let latest_frame = cpr_frames.1;
-    let (even_frame, odd_frame) = match cpr_frames {
-        (
-            even @ Altitude {
-                odd_flag: CPRFormat::Even,
-                ..
-            },
-            odd @ Altitude {
-                odd_flag: CPRFormat::Odd,
-                ..
-            },
-        )
-        | (
-            odd @ Altitude {
-                odd_flag: CPRFormat::Odd,
-                ..
-            },
-            even @ Altitude {
-                odd_flag: CPRFormat::Even,
-                ..
-            },
-        ) => (even, odd),
-        _ => return None,
-    };
 
+pub fn get_position(
+    even_frame: &Altitude,
+    odd_frame: &Altitude,
+    latest_frame_flag: CPRFormat,
+) -> Option<Position> {
     let cpr_lat_even = f64::from(even_frame.lat_cpr) / CPR_MAX;
-    let cpr_lon_even = f64::from(even_frame.lon_cpr) / CPR_MAX;
     let cpr_lat_odd = f64::from(odd_frame.lat_cpr) / CPR_MAX;
+    let cpr_lon_even = f64::from(even_frame.lon_cpr) / CPR_MAX;
     let cpr_lon_odd = f64::from(odd_frame.lon_cpr) / CPR_MAX;
 
     let j = libm::floor(59.0 * cpr_lat_even - 60.0 * cpr_lat_odd + 0.5);
 
-    let mut lat_even = D_LAT_EVEN * (j % 60.0 + cpr_lat_even);
-    let mut lat_odd = D_LAT_ODD * (j % 59.0 + cpr_lat_odd);
+    let mut lat_even = D_LAT_EVEN * (calc_modulo(j, 60.0) + cpr_lat_even);
+    let mut lat_odd = D_LAT_ODD * (calc_modulo(j, 59.0) + cpr_lat_odd);
 
     if lat_even >= 270.0 {
         lat_even -= 360.0;
@@ -268,46 +249,50 @@ pub fn get_position(cpr_frames: (&Altitude, &Altitude)) -> Option<Position> {
     if lat_odd >= 270.0 {
         lat_odd -= 360.0;
     }
+    // are the frame zones the same?
 
-    let lat = if latest_frame == even_frame {
+    let nl_even = cpr_nl(lat_even);
+    let nl_odd = cpr_nl(lat_odd);
+
+    if nl_even != nl_odd {
+        warn!("NL even and NL odd are not the same");
+        warn!("NL even: {}", nl_even);
+        warn!("NL odd: {}", nl_odd);
+        return None;
+    }
+
+    // the final latitude position
+    let lat = if latest_frame_flag == CPRFormat::Even {
         lat_even
     } else {
         lat_odd
     };
 
-    let (lat, lon) = get_lat_lon(lat, cpr_lon_even, cpr_lon_odd, &latest_frame.odd_flag);
+    let m = libm::floor(cpr_lon_even * (nl_even as f64 - 1.0) - cpr_lon_odd * nl_even as f64 + 0.5);
+
+    let n_even = libm::fmax(nl_even as f64, 1.0);
+    let n_odd = libm::fmax(nl_odd as f64 - 1.0, 1.0);
+
+    let d_lon_even = 360.0 / n_even;
+    let d_lon_odd = 360.0 / n_odd;
+
+    let lon_even = d_lon_even * (calc_modulo(m, n_even) + cpr_lon_even);
+    let lon_odd = d_lon_odd * (calc_modulo(m, n_odd) + cpr_lon_odd);
+
+    let mut lon = if latest_frame_flag == CPRFormat::Even {
+        lon_even
+    } else {
+        lon_odd
+    };
+
+    if lon >= 180.0 {
+        lon -= 360.0;
+    }
 
     Some(Position {
         latitude: lat,
         longitude: lon,
     })
-}
-
-fn get_lat_lon(
-    lat: f64,
-    cpr_lon_even: f64,
-    cpr_lon_odd: f64,
-    cpr_format: &CPRFormat,
-) -> (f64, f64) {
-    let (p, c) = if cpr_format == &CPRFormat::Even {
-        (0, cpr_lon_even)
-    } else {
-        (1, cpr_lon_odd)
-    };
-    let ni = cmp::max(cpr_nl(lat) - p, 1) as f64;
-    let m = libm::floor(
-        cpr_lon_even * (cpr_nl(lat) - 1) as f64 - cpr_lon_odd * cpr_nl(lat) as f64 + 0.5,
-    );
-
-    // rem_euclid
-    let r = m % ni;
-    let r = if r < 0.0 { r + libm::fabs(ni) } else { r };
-
-    let mut lon = (360.0 / ni) * (r + c);
-    if lon >= 180.0 {
-        lon -= 360.0;
-    }
-    (lat, lon)
 }
 
 #[cfg(test)]
@@ -337,9 +322,19 @@ mod tests {
             ..Altitude::default()
         };
 
-        let position = get_position((&odd, &even)).unwrap();
-        assert!((position.latitude - 52.257_202_148_437_5).abs() < f64::EPSILON);
-        assert!((position.longitude - 3.919_372_558_593_75).abs() < f64::EPSILON);
+        let position = get_position(&even, &odd, even.odd_flag).unwrap();
+        let expected_lat = 52.257_202_148_437_5;
+        let expected_lon = 3.919_372_558_593_75;
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -356,9 +351,19 @@ mod tests {
             lon_cpr: 36_777,
             ..Altitude::default()
         };
-        let position = get_position((&even, &odd)).unwrap();
-        assert!((position.latitude - 88.917_474_261_784_96).abs() < f64::EPSILON);
-        assert!((position.longitude - 101.011_047_363_281_25).abs() < f64::EPSILON);
+        let position = get_position(&even, &odd, odd.odd_flag).unwrap();
+        let expected_lat = 88.917_474_261_784_96;
+        let expected_lon = 101.011_047_363_281_25;
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -382,8 +387,18 @@ mod tests {
             lon_cpr: 81_316,
             ..Altitude::default()
         };
-        let position = get_position((&even, &odd)).unwrap();
-        assert!((position.latitude - -35.840_195_478_019_07).abs() < f64::EPSILON);
-        assert!((position.longitude - 150.283_852_435_172_9).abs() < f64::EPSILON);
+        let position = get_position(&even, &odd, odd.odd_flag).unwrap();
+        let expected_lat = -35.840_195_478_019_07;
+        let expected_lon = 150.283_852_435_172_9;
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
     }
 }
