@@ -217,6 +217,36 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     1
 }
 
+pub fn haversine_distance_position(position: &Position, other: &Position) -> f64 {
+    let lat1 = position.latitude;
+    let lat2 = other.latitude;
+    let long1 = position.longitude;
+    let long2 = other.longitude;
+    haversine_distance((lat1, long1), (lat2, long2))
+}
+
+// https://en.wikipedia.org/wiki/Haversine_formula
+pub fn haversine_distance(s: (f64, f64), other: (f64, f64)) -> f64 {
+    // kilometers
+    let lat1_rad = s.0.to_radians();
+    let lat2_rad = other.0.to_radians();
+    let long1_rad = s.1.to_radians();
+    let long2_rad = other.1.to_radians();
+
+    let x_lat = libm::sin((lat2_rad - lat1_rad) / 2.00);
+    let x_long = libm::sin((long2_rad - long1_rad) / 2.00);
+
+    let a = x_lat * x_lat
+        + libm::cos(lat1_rad)
+            * libm::cos(lat2_rad)
+            * f64::from(libm::powf(libm::sin(x_long) as f32, 2.0));
+
+    let c = 2.0 * libm::atan2(libm::sqrt(a), libm::sqrt(1.0 - a));
+
+    let r = 6371.00;
+    r * c
+}
+
 pub fn calc_modulo(x: f64, y: f64) -> f64 {
     x - y * libm::floor(x / y)
 }

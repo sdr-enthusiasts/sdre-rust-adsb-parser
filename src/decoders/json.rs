@@ -4,7 +4,10 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use crate::{decoders::helpers::cpr_calculators::Position, MessageResult};
+use crate::{
+    decoders::helpers::cpr_calculators::{haversine_distance_position, Position},
+    MessageResult,
+};
 use radix_fmt::radix;
 use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
@@ -476,16 +479,20 @@ impl JSONMessage {
             debug!("{} Reference position {:?}", self.transponder_hex, position);
             if is_lat_lon_sane(position) {
                 debug!("{} {:?}", self.transponder_hex, position);
-                // only update the lat/lon if they are different
-                if self.latitude != Some(position.latitude.into())
-                    || self.longitude != Some(position.longitude.into())
-                {
-                    self.latitude = Some(position.latitude.into());
-                    self.longitude = Some(position.longitude.into());
-                }
+                // validate the haversine distance between the reference position and the calculated position is reasonable
+                if haversine_distance_position(&position, reference_position) < 500.0 {
+                    if self.latitude != Some(position.latitude.into())
+                        || self.longitude != Some(position.longitude.into())
+                    {
+                        self.latitude = Some(position.latitude.into());
+                        self.longitude = Some(position.longitude.into());
 
-                // Success! We have a position. Time to bail out.
-                return;
+                        // Success! We have a position. Time to bail out.
+                        return;
+                    }
+                } else {
+                    warn!("{}: Reference position is too far away from calculated position. Not updating.", self.transponder_hex);
+                }
             } else {
                 debug!("Position from reference antenna was invalid.");
                 debug!("{} {:?}", self.transponder_hex, self.cpr_even);
@@ -509,17 +516,71 @@ impl JSONMessage {
                 self.transponder_hex, position
             );
             if is_lat_lon_sane(position) {
-                info!("{} {:?}", self.transponder_hex, position);
+                let mut update = true;
+                // get the haversine distance between the reference position and the calculated position
+                let distance = haversine_distance_position(&position, &reference_position);
+
+                // validate the haversine distance between the reference position and the calculated position is reasonable
+                // We'll factor in the timestamp of the OLDEST of the two positions (self.last_cpr_even_update_time / self.last_cpr_odd_update_time) + aircraft speed to get a rough idea of how far the aircraft could have moved since the last position was received.
+
+                let mut oldest_timestamp = 0.0;
+
+                if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time {
+                    oldest_timestamp = last_cpr_even_update_time.get_time();
+                }
+
+                if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time {
+                    if last_cpr_odd_update_time.get_time() < oldest_timestamp {
+                        oldest_timestamp = last_cpr_odd_update_time.get_time();
+                    }
+                }
+
+                // get the time delta between the oldest timestamp and now
+                let time_delta = current_time - oldest_timestamp;
+
+                // get the speed of the aircraft in knots
+                let speed = match &self.ground_speed {
+                    Some(speed) => speed.get_speed(),
+                    None => 0.0,
+                };
+
+                // get the distance the aircraft could have traveled in the time delta only if speed is not 0
+
+                let distance_traveled = if speed != 0.0 {
+                    speed * time_delta
+                } else {
+                    0.0
+                };
+
+                // if the distance travelled is within 10% of the distance between the reference position and the calculated position, we'll update the position
+
+                if speed != 0.0 && distance_traveled != 0.0 {
+                    if distance_traveled <= distance * 1.1 && distance_traveled >= distance * 0.9 {
+                        info!(
+                        "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
+                        self.transponder_hex, distance_traveled, distance
+                    );
+                    } else {
+                        info!(
+                        "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
+                        self.transponder_hex, distance_traveled, distance
+                    );
+
+                        update = false;
+                    }
+                }
+
                 // only update the lat/lon if they are different
-                if self.latitude != Some(position.latitude.into())
-                    || self.longitude != Some(position.longitude.into())
+                if update
+                    && (self.latitude != Some(position.latitude.into())
+                        || self.longitude != Some(position.longitude.into()))
                 {
                     self.latitude = Some(position.latitude.into());
                     self.longitude = Some(position.longitude.into());
-                }
 
-                // Success! We have a position. Time to bail out.
-                return;
+                    // Success! We have a position. Time to bail out.
+                    return;
+                }
             } else {
                 debug!("Position from last known position was invalid.");
                 debug!("{} {:?}", self.transponder_hex, self.cpr_even);

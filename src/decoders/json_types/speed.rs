@@ -15,6 +15,15 @@ pub enum Speed {
     None,
 }
 
+impl Speed {
+    pub fn get_speed(&self) -> f64 {
+        match self {
+            Self::Knots(speed) => *speed as f64,
+            Self::None => 0.0,
+        }
+    }
+}
+
 impl Serialize for Speed {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

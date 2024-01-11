@@ -22,6 +22,13 @@ impl TimeStamp {
             Self::None => 0.0,
         }
     }
+
+    pub fn get_time(&self) -> f64 {
+        match self {
+            Self::TimeStampAsF64(current_time) => *current_time,
+            Self::None => 0.0,
+        }
+    }
 }
 
 impl Serialize for TimeStamp {
