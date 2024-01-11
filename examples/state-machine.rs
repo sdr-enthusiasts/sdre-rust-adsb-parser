@@ -101,6 +101,8 @@ struct Args {
     mode: Modes,
     print_state_interval_seconds: u64,
     print_json: bool,
+    lat: Option<f64>,
+    lon: Option<f64>,
 }
 
 impl Args {
@@ -113,6 +115,8 @@ impl Args {
         let mut mode: Option<String> = None;
         let mut print_state_interval_seconds: u64 = 10;
         let mut print_json = false;
+        let mut lat = None;
+        let mut lon = None;
 
         while let Some(arg) = arg_it.next() {
             match arg.as_str() {
@@ -137,6 +141,12 @@ impl Args {
                         .next()
                         .map(|s| s.parse::<u64>().unwrap_or(10))
                         .unwrap_or(10);
+                }
+                "--lat" => {
+                    lat = arg_it.next().map(|s| s.parse::<f64>().unwrap_or(90.0));
+                }
+                "--lon" => {
+                    lon = arg_it.next().map(|s| s.parse::<f64>().unwrap_or(360.0));
                 }
                 s => {
                     println!("Invalid argument: {s}");
@@ -174,12 +184,28 @@ impl Args {
             Modes::default()
         };
 
+        // make sure lat/lon are both None or both Some
+
+        if lat.is_some() && lon.is_none() {
+            println!("Latitude specified but not longitude");
+            println!("{}", Args::help());
+            exit(1);
+        }
+
+        if lat.is_none() && lon.is_some() {
+            println!("Longitude specified but not latitude");
+            println!("{}", Args::help());
+            exit(1);
+        }
+
         Ok(Args {
             url: url,
             log_verbosity: log_verbosity,
             mode: mode,
             print_state_interval_seconds,
             print_json,
+            lat,
+            lon,
         })
     }
 
@@ -204,6 +230,8 @@ impl Args {
             --mode [jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast]: Set the mode to use\n\
             --print-json: Print the JSON to stdout\n\
             --print-state-interval [seconds]: Set the interval to print state in seconds\n\
+            --lat [latitude]: Set the latitude to use for distance calculations. Only used for raw/beast frames\n\
+            --lon [longitude]: Set the longitude to use for distance calculations. Only used for raw/beast frames\n\
             --help: Show this help and exit\n\
         "
         .to_string()
@@ -221,6 +249,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mode: &Modes = &args.mode;
     let print_interval_in_seconds: u64 = args.print_state_interval_seconds.clone();
     let print_json = &args.print_json;
+    let lat = args.lat;
+    let lon = args.lon;
 
     match mode {
         Modes::JSONFromAircraftJSON => {
@@ -233,11 +263,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         }
         Modes::Raw => {
             info!("Processing as raw frames");
-            process_raw_frames(url_input, print_interval_in_seconds, print_json).await?;
+            process_raw_frames(url_input, print_interval_in_seconds, print_json, lat, lon).await?;
         }
         Modes::Beast => {
             info!("Processing as beast frames");
-            process_beast_frames(url_input, print_interval_in_seconds, print_json).await?;
+            process_beast_frames(url_input, print_interval_in_seconds, print_json, lat, lon)
+                .await?;
         }
     }
 
@@ -248,6 +279,8 @@ async fn process_beast_frames(
     ip: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
+    lat: Option<f64>,
+    lon: Option<f64>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -271,7 +304,7 @@ async fn process_beast_frames(
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
-    let mut state_machine = StateMachine::new(90, 360);
+    let mut state_machine = StateMachine::new(90, 360, lat, lon);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
@@ -360,6 +393,8 @@ async fn process_raw_frames(
     ip: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
+    lat: Option<f64>,
+    lon: Option<f64>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -383,7 +418,7 @@ async fn process_raw_frames(
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
 
-    let mut state_machine = StateMachine::new(90, 360);
+    let mut state_machine = StateMachine::new(90, 360, lat, lon);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
@@ -473,7 +508,7 @@ async fn process_as_aircraft_json(
     print_interval_in_seconds: u64,
     print_json: &bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut state_machine = StateMachine::new(90, 360);
+    let mut state_machine = StateMachine::new(90, 360, None, None);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
@@ -577,7 +612,7 @@ async fn process_json_from_tcp(
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
 
-    let mut state_machine = StateMachine::new(90, 360);
+    let mut state_machine = StateMachine::new(90, 360, None, None);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();

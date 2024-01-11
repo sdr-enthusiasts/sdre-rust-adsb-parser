@@ -221,13 +221,47 @@ pub fn calc_modulo(x: f64, y: f64) -> f64 {
     x - y * libm::floor(x / y)
 }
 
+pub fn get_position_from_locally_unabiguous(
+    aircraft_frame: &Altitude,
+    local: &Position,
+) -> Position {
+    let mut i = 0;
+    let d_lat = match aircraft_frame.odd_flag {
+        CPRFormat::Even => D_LAT_EVEN,
+        CPRFormat::Odd => {
+            i = 1;
+            D_LAT_ODD
+        }
+    };
+
+    let lat_cpr = aircraft_frame.lat_cpr as f64 / CPR_MAX;
+    let lon_cpr = aircraft_frame.lon_cpr as f64 / CPR_MAX;
+
+    let j = libm::floor(local.latitude / d_lat)
+        + libm::floor(calc_modulo(local.latitude, d_lat) / d_lat - lat_cpr + 0.5);
+
+    let lat = d_lat * (j + lat_cpr);
+
+    let d_lon = 360.0 / libm::fmax((cpr_nl(lat) - i) as f64, 1.0);
+
+    let m = libm::floor(local.longitude / d_lon)
+        + libm::floor(calc_modulo(local.longitude, d_lon) / d_lon - lon_cpr + 0.5);
+
+    let lon = d_lon * (m + lon_cpr);
+
+    Position {
+        latitude: lat,
+        longitude: lon,
+    }
+}
+
 /// Calculate Globally unambiguous position decoding
 ///
 /// Using both an Odd and Even `Altitude`, calculate the latitude/longitude
 ///
 /// reference: ICAO 9871 (D.2.4.7.7)
 
-pub fn get_position(
+pub fn get_position_from_even_odd_cpr_positions(
     even_frame: &Altitude,
     odd_frame: &Altitude,
     latest_frame_flag: CPRFormat,
@@ -295,6 +329,13 @@ pub fn get_position(
     })
 }
 
+pub fn is_lat_lon_sane(position: Position) -> bool {
+    position.latitude >= -90.0
+        && position.latitude <= 90.0
+        && position.longitude >= -180.0
+        && position.longitude <= 180.0
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -305,6 +346,33 @@ mod tests {
         assert_eq!(cpr_nl(-89.9), 1);
         assert_eq!(cpr_nl(86.9), 2);
         assert_eq!(cpr_nl(-86.9), 2);
+    }
+
+    #[test]
+    fn calculate_local_unambiguous() {
+        let aircraft_frame = Altitude {
+            odd_flag: CPRFormat::Even,
+            lat_cpr: 93000,
+            lon_cpr: 51372,
+            ..Altitude::default()
+        };
+        let local = Position {
+            latitude: 52.258,
+            longitude: 3.919,
+        };
+        let expected_lat = 52.257_202_148_437_5;
+        let expected_lon = 3.919_372_558_593_75;
+        let position = get_position_from_locally_unabiguous(&aircraft_frame, &local);
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -322,7 +390,8 @@ mod tests {
             ..Altitude::default()
         };
 
-        let position = get_position(&even, &odd, even.odd_flag).unwrap();
+        let position =
+            get_position_from_even_odd_cpr_positions(&even, &odd, even.odd_flag).unwrap();
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
         println!("Calculated position: {:?}", position);
@@ -351,7 +420,7 @@ mod tests {
             lon_cpr: 36_777,
             ..Altitude::default()
         };
-        let position = get_position(&even, &odd, odd.odd_flag).unwrap();
+        let position = get_position_from_even_odd_cpr_positions(&even, &odd, odd.odd_flag).unwrap();
         let expected_lat = 88.917_474_261_784_96;
         let expected_lon = 101.011_047_363_281_25;
         println!("Calculated position: {:?}", position);
@@ -387,7 +456,7 @@ mod tests {
             lon_cpr: 81_316,
             ..Altitude::default()
         };
-        let position = get_position(&even, &odd, odd.odd_flag).unwrap();
+        let position = get_position_from_even_odd_cpr_positions(&even, &odd, odd.odd_flag).unwrap();
         let expected_lat = -35.840_195_478_019_07;
         let expected_lon = 150.283_852_435_172_9;
         println!("Calculated position: {:?}", position);

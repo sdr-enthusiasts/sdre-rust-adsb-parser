@@ -13,6 +13,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
+use crate::decoders::helpers::cpr_calculators::Position;
 use crate::decoders::json_types::timestamp::TimeStamp;
 use crate::decoders::json_types::transponderhex;
 use crate::decoders::raw_types::df::DF;
@@ -34,10 +35,16 @@ pub struct StateMachine {
     input_channel: Sender<ADSBMessage>,
     output_channel: Receiver<ADSBMessage>,
     messages_processed: Arc<Mutex<u64>>,
+    position: Option<Position>,
 }
 
 impl StateMachine {
-    pub fn new(adsb_timeout_in_seconds: u32, adsc_timeout_in_seconds: u32) -> StateMachine {
+    pub fn new(
+        adsb_timeout_in_seconds: u32,
+        adsc_timeout_in_seconds: u32,
+        lat: Option<f64>,
+        lon: Option<f64>,
+    ) -> StateMachine {
         let (sender_channel, receiver_channel) = tokio::sync::mpsc::channel(100);
         StateMachine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
@@ -46,6 +53,13 @@ impl StateMachine {
             input_channel: sender_channel,
             output_channel: receiver_channel,
             messages_processed: Arc::new(Mutex::new(0)),
+            position: match lat {
+                Some(lat) => lon.map(|lon| Position {
+                    latitude: lat,
+                    longitude: lon,
+                }),
+                None => None,
+            },
         }
     }
 
@@ -154,11 +168,13 @@ impl StateMachine {
 
             match airplanes.entry(transponderhex.clone()) {
                 Entry::Occupied(mut airplane) => {
-                    airplane.get_mut().update_from_df(&message.df);
+                    airplane
+                        .get_mut()
+                        .update_from_df(&message.df, &self.position);
                 }
                 Entry::Vacant(airplane) => {
                     let mut new_airplane = Airplane::new(transponderhex);
-                    new_airplane.update_from_df(&message.df);
+                    new_airplane.update_from_df(&message.df, &self.position);
                     airplane.insert(new_airplane);
                 }
             }

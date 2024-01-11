@@ -4,13 +4,17 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use crate::MessageResult;
+use crate::{decoders::helpers::cpr_calculators::Position, MessageResult};
+use radix_fmt::radix;
 use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::{
     helpers::{
-        cpr_calculators::get_position,
+        cpr_calculators::{
+            get_position_from_even_odd_cpr_positions, get_position_from_locally_unabiguous,
+            is_lat_lon_sane,
+        },
         prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
     },
     json_types::{
@@ -43,7 +47,10 @@ use super::{
         tisb::TiSB,
         transponderhex::TransponderHex,
     },
-    raw_types::{cprheaders::CPRFormat, df::DF, me::ME},
+    raw_types::{
+        airbornevelocity::AirborneVelocity, cprheaders::CPRFormat, df::DF,
+        identification::Identification, me::ME,
+    },
 };
 
 /// Trait for performing a decode if you wish to apply it to types other than the defaults done in this library.
@@ -365,86 +372,188 @@ impl JSONMessage {
         }
     }
 
-    pub fn update_from_df(&mut self, raw_adsb: &DF) {
+    pub fn update_airborne_velocity(&mut self, velocity: &AirborneVelocity) {
+        if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
+            self.true_track_over_ground = Some(heading.into());
+            self.ground_speed = Some(ground_speed.into());
+            self.barometric_altitude_rate = Some(vert_speed.into());
+            // TODO: verify this should be baro rate
+        }
+    }
+
+    pub fn update_aircraft_identification(&mut self, id: &Identification) {
+        // TODO: Type coding?
+        self.calculated_best_flight_id = Some(id.cn.clone().into());
+        // TODO: Verify this field
+    }
+
+    pub fn update_aircraft_position(
+        &mut self,
+        altitude: &super::raw_types::altitude::Altitude,
+        baro_altitude: bool,
+        reference_position: &Option<Position>,
+    ) {
+        if let Some(alt) = &altitude.alt {
+            // check the ME type to see if we have baro or GNSS altitude
+            // TODO: can we do this better? We've already checked the type above and
+            // Ended up here. The lat/lon positioning is the same for both, so we
+            // need to use the same code for both.
+
+            // TODO: Decode position based on reference frame of antenna position and or aircraft position from before
+
+            if baro_altitude {
+                self.barometric_altitude = Some((*alt).into());
+            } else {
+                self.geometric_altitude = Some((*alt).into());
+            }
+        }
+
+        let current_time = match get_timestamp() {
+            TimeStamp::TimeStampAsF64(current_time) => current_time,
+            TimeStamp::None => 0.0,
+        };
+
+        match altitude.odd_flag {
+            CPRFormat::Even => {
+                self.cpr_even = Some(*altitude);
+                self.last_cpr_even_update_time = Some(get_timestamp());
+
+                // if self.cpr_odd is older than 10 seconds we don't have a valid position
+
+                if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time {
+                    // get the f64 value of the timestamp
+                    if last_cpr_odd_update_time.add_time(10.0) < current_time {
+                        self.cpr_odd = None;
+                        debug!("{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.", self.transponder_hex, current_time - last_cpr_odd_update_time.add_time(10.0));
+                    }
+                }
+            }
+            CPRFormat::Odd => {
+                self.cpr_odd = Some(*altitude);
+                self.last_cpr_odd_update_time = Some(get_timestamp());
+
+                // if self.cpr_even is older than 10 seconds we don't have a valid position
+
+                if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time {
+                    if last_cpr_even_update_time.add_time(10.0) < current_time {
+                        self.cpr_even = None;
+                        debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", self.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));
+                    }
+                }
+            }
+        }
+
+        // if we have both even and odd, calculate the position
+        if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even, &self.cpr_odd) {
+            if let Some(position) =
+                get_position_from_even_odd_cpr_positions(even_frame, odd_frame, altitude.odd_flag)
+            {
+                debug!("{} Even/Odd position {:?}", self.transponder_hex, position);
+                if is_lat_lon_sane(position) {
+                    // only update the lat/lon if they are different
+                    if self.latitude != Some(position.latitude.into())
+                        || self.longitude != Some(position.longitude.into())
+                    {
+                        self.latitude = Some(position.latitude.into());
+                        self.longitude = Some(position.longitude.into());
+                    }
+
+                    // Success! We have a position. Time to bail out.
+                    return;
+                } else {
+                    debug!("Position from even/odd was invalid.");
+                    debug!("{} {:?}", self.transponder_hex, self.cpr_even);
+                    debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                    debug!("{} {:?}", self.transponder_hex, position);
+                }
+            }
+        }
+
+        // we ended up here because even/odd failed or we didn't have both even and odd
+        // if we have a reference position from the user, try to use that to calculate the position
+        if let Some(reference_position) = reference_position {
+            let position = get_position_from_locally_unabiguous(altitude, reference_position);
+            debug!("{} Reference position {:?}", self.transponder_hex, position);
+            if is_lat_lon_sane(position) {
+                debug!("{} {:?}", self.transponder_hex, position);
+                // only update the lat/lon if they are different
+                if self.latitude != Some(position.latitude.into())
+                    || self.longitude != Some(position.longitude.into())
+                {
+                    self.latitude = Some(position.latitude.into());
+                    self.longitude = Some(position.longitude.into());
+                }
+
+                // Success! We have a position. Time to bail out.
+                return;
+            } else {
+                debug!("Position from reference antenna was invalid.");
+                debug!("{} {:?}", self.transponder_hex, self.cpr_even);
+                debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                debug!("{} {:?}", self.transponder_hex, position);
+            }
+        }
+
+        // we ended up here because everything else failed. The last try is to use the last known position
+
+        if let (Some(lat), Some(lon)) = (&self.latitude, &self.longitude) {
+            let reference_position = Position {
+                latitude: lat.latitude,
+                longitude: lon.longitude,
+            };
+
+            let position = get_position_from_locally_unabiguous(altitude, &reference_position);
+
+            debug!(
+                "{} Last known position calculated {:?}",
+                self.transponder_hex, position
+            );
+            if is_lat_lon_sane(position) {
+                info!("{} {:?}", self.transponder_hex, position);
+                // only update the lat/lon if they are different
+                if self.latitude != Some(position.latitude.into())
+                    || self.longitude != Some(position.longitude.into())
+                {
+                    self.latitude = Some(position.latitude.into());
+                    self.longitude = Some(position.longitude.into());
+                }
+
+                // Success! We have a position. Time to bail out.
+                return;
+            } else {
+                debug!("Position from last known position was invalid.");
+                debug!("{} {:?}", self.transponder_hex, self.cpr_even);
+                debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
+                debug!("{} {:?}", self.transponder_hex, position);
+            }
+        }
+
+        // we ended up here because everything else failed.
+        warn!("{}: Unable to calculate position.", self.transponder_hex);
+    }
+
+    pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Option<Position>) {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
-                    if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
-                        self.true_track_over_ground = Some(heading.into());
-                        self.ground_speed = Some(ground_speed.into());
-                        self.barometric_altitude_rate = Some(vert_speed.into());
-                        // TODO: verify this should be baro rate
-                    }
+                    self.update_airborne_velocity(velocity);
                 }
                 ME::NoPosition(_) => (),
                 ME::AircraftIdentification(id) => {
-                    self.calculated_best_flight_id = Some(id.cn.clone().into());
-                    // TODO: Verify this field
+                    self.update_aircraft_identification(id);
                 }
                 ME::SurfacePosition(_) => (),
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
-                    if let Some(alt) = &altitude.alt {
-                        // check the ME type to see if we have baro or GNSS altitude
-                        // TODO: can we do this better? We've already checked the type above and
-                        // Ended up here. The lat/lon positioning is the same for both, so we
-                        // need to use the same code for both.
-
-                        if let ME::AirbornePositionBaroAltitude(_) = &adsb.me {
-                            self.barometric_altitude = Some((*alt).into());
-                        } else {
-                            info!("Updating Geometric Altitude");
-                            self.geometric_altitude = Some((*alt).into());
-                        }
-                    }
-
-                    match altitude.odd_flag {
-                        CPRFormat::Even => {
-                            self.cpr_even = Some(*altitude);
-                        }
-                        CPRFormat::Odd => {
-                            self.cpr_odd = Some(*altitude);
-                        }
-                    }
-
-                    // if we have both even and odd, calculate the position
-                    if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even, &self.cpr_odd) {
-                        if let Some(position) =
-                            get_position(even_frame, odd_frame, altitude.odd_flag)
-                        {
-                            // Very the lat lon are sane
-
-                            let mut update = true;
-
-                            if position.latitude > 90.0 || position.latitude < -90.0 {
-                                update = false;
-                            }
-
-                            if position.longitude > 180.0 || position.longitude < -180.0 {
-                                update = false;
-                            }
-
-                            if update {
-                                // only update the lat/lon if they are different
-                                if self.latitude != Some(position.latitude.into())
-                                    || self.longitude != Some(position.longitude.into())
-                                {
-                                    self.latitude = Some(position.latitude.into());
-                                    self.longitude = Some(position.longitude.into());
-                                }
-                            } else {
-                                error!("Position was invalid.");
-                                error!("{} {:?}", self.transponder_hex, self.cpr_even);
-                                error!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                                error!("{} {:?}", self.transponder_hex, position);
-                            }
-                        }
-                    }
+                    let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
+                    self.update_aircraft_position(altitude, baro_altitude, reference_positon);
                 }
                 ME::Reserved0(_) => (),
                 ME::SurfaceSystemStatus(_) => (),
                 ME::Reserved1(_) => (),
-                ME::AircraftStatus(_) => (),
+                ME::AircraftStatus(status) => {
+                    self.transponder_squawk_code = Some(format!("{:04}", radix(status.squawk, 16)));
+                }
                 ME::TargetStateAndStatusInformation(_) => (),
                 ME::AircraftOperationalCoordination(_) => (),
                 ME::AircraftOperationStatus(_) => (),
@@ -453,6 +562,7 @@ impl JSONMessage {
 
         // Reset the last time seen to "now". When the serializer is fixed properly
         self.last_time_seen = (0.0).into();
+        self.timestamp = get_timestamp();
     }
 }
 
@@ -654,6 +764,10 @@ pub struct JSONMessage {
     cpr_even: Option<super::raw_types::altitude::Altitude>,
     #[serde(skip_serializing)]
     cpr_odd: Option<super::raw_types::altitude::Altitude>,
+    #[serde(skip_serializing)]
+    last_cpr_even_update_time: Option<TimeStamp>,
+    #[serde(skip_serializing)]
+    last_cpr_odd_update_time: Option<TimeStamp>,
 }
 
 #[cfg(test)]

@@ -15,6 +15,15 @@ pub enum TimeStamp {
     None,
 }
 
+impl TimeStamp {
+    pub fn add_time(&self, seconds: f64) -> f64 {
+        match self {
+            Self::TimeStampAsF64(current_time) => *current_time + seconds,
+            Self::None => 0.0,
+        }
+    }
+}
+
 impl Serialize for TimeStamp {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

@@ -10,7 +10,7 @@ use std::fmt;
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(from = "f64")]
 pub struct Latitude {
-    latitude: f64,
+    pub latitude: f64,
 }
 
 impl From<f64> for Latitude {
