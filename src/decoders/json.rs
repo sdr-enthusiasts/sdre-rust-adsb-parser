@@ -402,8 +402,6 @@ impl JSONMessage {
             // Ended up here. The lat/lon positioning is the same for both, so we
             // need to use the same code for both.
 
-            // TODO: Decode position based on reference frame of antenna position and or aircraft position from before
-
             if baro_altitude {
                 self.barometric_altitude = Some((*alt).into());
             } else {
@@ -771,7 +769,7 @@ pub struct JSONMessage {
     pub flight_status_special_position_id_bit: Option<u8>, // FIXME: I doubt this is right
     /// Mode A code (Squawk), encoded as 4 octal digits
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
-    pub transponder_squawk_code: Option<String>,
+    pub transponder_squawk_code: Option<String>, // TODO: This does not serialize with leading 0s right. It should always be at least 4 digits
     /// wiedehopf's aircraft.json aircraft type pulled from database
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
     pub aircraft_type_from_database: Option<String>,

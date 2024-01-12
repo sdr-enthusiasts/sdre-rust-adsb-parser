@@ -327,6 +327,8 @@ async fn process_beast_frames(
 
     tokio::spawn(async move {
         rocket().await;
+        // stop the program if the rocket server stops
+        exit(0);
     });
 
     if *print_json {
@@ -452,6 +454,8 @@ async fn process_raw_frames(
 
     tokio::spawn(async move {
         rocket().await;
+        // stop the program if the rocket server stops
+        exit(0);
     });
 
     if *print_json {
@@ -553,6 +557,8 @@ async fn process_as_aircraft_json(
 
     tokio::spawn(async move {
         rocket().await;
+        // stop the program if the rocket server stops
+        exit(0);
     });
 
     if *print_json {
@@ -668,6 +674,8 @@ async fn process_json_from_tcp(
 
     tokio::spawn(async move {
         rocket().await;
+        // stop the program if the rocket server stops
+        exit(0);
     });
 
     if *print_json {
@@ -772,6 +780,7 @@ async fn aircraft_json() -> Json<AircraftJSON> {
 
 async fn rocket() {
     match rocket::build()
+        .configure(rocket::Config::figment().merge(("address", "0.0.0.0")))
         .mount("/", routes![aircraft_json])
         .launch()
         .await
