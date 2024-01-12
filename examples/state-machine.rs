@@ -28,11 +28,13 @@
 /// ```
 ///
 /// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
+use log::{debug, error, info, trace};
+use rocket::{get, routes};
 
-#[macro_use]
-extern crate log;
 use generic_async_http_client::{Request, Response};
+use rocket::serde::json::Json;
 use sdre_rust_adsb_parser::{
+    decoders::aircraftjson::AircraftJSON,
     error_handling::deserialization_error::DeserializationError,
     helpers::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
@@ -50,18 +52,22 @@ use std::str::FromStr;
 use std::{fmt, time::Duration};
 use tokio::{io::AsyncReadExt, time::sleep};
 
-#[derive(Debug)]
+static mut PRINT_CONTEXT: Option<
+    std::sync::Arc<
+        tokio::sync::Mutex<
+            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
+        >,
+    >,
+> = None;
+static mut MESSAGE_COUNT_CONTEXT: Option<std::sync::Arc<tokio::sync::Mutex<u64>>> = None;
+
+#[derive(Debug, Default)]
 enum Modes {
+    #[default]
     JSONFromAircraftJSON,
     JSONFromTCP,
     Raw,
     Beast,
-}
-
-impl Default for Modes {
-    fn default() -> Self {
-        Modes::JSONFromAircraftJSON
-    }
 }
 
 impl FromStr for Modes {
@@ -199,9 +205,9 @@ impl Args {
         }
 
         Ok(Args {
-            url: url,
-            log_verbosity: log_verbosity,
-            mode: mode,
+            url,
+            log_verbosity,
+            mode,
             print_state_interval_seconds,
             print_json,
             lat,
@@ -247,7 +253,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // loop and connect to the URL given
     let url_input: &String = &args.url;
     let mode: &Modes = &args.mode;
-    let print_interval_in_seconds: u64 = args.print_state_interval_seconds.clone();
+    let print_interval_in_seconds: u64 = args.print_state_interval_seconds;
     let print_json = &args.print_json;
     let lat = args.lat;
     let lon = args.lon;
@@ -309,8 +315,19 @@ async fn process_beast_frames(
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
+
+    // start the rocket server
+
+    unsafe {
+        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
+        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
+    }
+
+    tokio::spawn(async move {
+        rocket().await;
+    });
 
     if *print_json {
         tokio::spawn(async move {
@@ -423,8 +440,19 @@ async fn process_raw_frames(
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
+
+    // start the rocket server
+
+    unsafe {
+        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
+        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
+    }
+
+    tokio::spawn(async move {
+        rocket().await;
+    });
 
     if *print_json {
         tokio::spawn(async move {
@@ -513,8 +541,19 @@ async fn process_as_aircraft_json(
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
+
+    // start the rocket server
+
+    unsafe {
+        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
+        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
+    }
+
+    tokio::spawn(async move {
+        rocket().await;
+    });
 
     if *print_json {
         tokio::spawn(async move {
@@ -617,8 +656,19 @@ async fn process_json_from_tcp(
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
     let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds.clone();
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds.clone();
+    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
+    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
+
+    // start the rocket server
+
+    unsafe {
+        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
+        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
+    }
+
+    tokio::spawn(async move {
+        rocket().await;
+    });
 
     if *print_json {
         tokio::spawn(async move {
@@ -700,6 +750,39 @@ async fn process_json_from_tcp(
         }
     }
     Ok(())
+}
+
+#[get("/data/aircraft.json")]
+async fn aircraft_json() -> Json<AircraftJSON> {
+    unsafe {
+        if PRINT_CONTEXT.is_some() {
+            let print_context = PRINT_CONTEXT.as_ref().unwrap().clone();
+            let message_count_context = MESSAGE_COUNT_CONTEXT.as_ref().unwrap().clone();
+            let aircraft_json = generate_aircraft_json(print_context, message_count_context).await;
+            if let Some(aircraft_json) = aircraft_json {
+                Json(aircraft_json)
+            } else {
+                Json(AircraftJSON::default())
+            }
+        } else {
+            Json(AircraftJSON::default())
+        }
+    }
+}
+
+async fn rocket() {
+    match rocket::build()
+        .mount("/", routes![aircraft_json])
+        .launch()
+        .await
+    {
+        Ok(_) => {
+            println!("Rocket launched!");
+        }
+        Err(e) => {
+            println!("Error launching rocket: {}", e);
+        }
+    }
 }
 
 // create ReconnectOptions. We want the TCP stuff that goes out and connects to clients
