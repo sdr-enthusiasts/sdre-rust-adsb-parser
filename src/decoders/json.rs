@@ -52,7 +52,8 @@ use super::{
     },
     raw_types::{
         airbornevelocity::AirborneVelocity, cprheaders::CPRFormat, df::DF,
-        identification::Identification, me::ME,
+        identification::Identification, me::ME, operationstatus::OperationStatus,
+        statusforgroundtrack::StatusForGroundTrack, surfaceposition::SurfacePosition,
     },
 };
 
@@ -591,6 +592,21 @@ impl JSONMessage {
         warn!("{}: Unable to calculate position.", self.transponder_hex);
     }
 
+    fn update_operational_status(&mut self, operation_status: &OperationStatus) {
+        if let OperationStatus::Surface(_) = operation_status {
+            self.barometric_altitude = Some("ground".into());
+        }
+    }
+
+    fn update_surface_position(&mut self, surfaceposition: &SurfacePosition) {
+        // if surface position is valid, process
+
+        if surfaceposition.s == StatusForGroundTrack::Valid {
+            self.barometric_altitude = Some("ground".into());
+            //self.true_track_over_ground = Some(surfaceposition.trk.into());
+        }
+    }
+
     pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Option<Position>) {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
@@ -601,7 +617,9 @@ impl JSONMessage {
                 ME::AircraftIdentification(id) => {
                     self.update_aircraft_identification(id);
                 }
-                ME::SurfacePosition(_) => (),
+                ME::SurfacePosition(surfaceposition) => {
+                    self.update_surface_position(surfaceposition);
+                }
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
@@ -615,7 +633,9 @@ impl JSONMessage {
                 }
                 ME::TargetStateAndStatusInformation(_) => (),
                 ME::AircraftOperationalCoordination(_) => (),
-                ME::AircraftOperationStatus(_) => (),
+                ME::AircraftOperationStatus(operation_status) => {
+                    self.update_operational_status(operation_status);
+                }
             }
         }
 
@@ -777,7 +797,7 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "desc")]
     pub aircraft_type_from_database_long_name: Option<String>,
     /// list of fields derived from TIS-B data
-    pub tisb: Vec<TiSB>, // TODO: this should def be an enum
+    pub tisb: Vec<TiSB>,
     /// true track over ground in degrees (0-359)
     #[serde(skip_serializing_if = "Option::is_none", rename = "track")]
     pub true_track_over_ground: Option<Heading>,

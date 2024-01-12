@@ -20,6 +20,12 @@ impl From<u16> for Altitude {
     }
 }
 
+impl From<&str> for Altitude {
+    fn from(altitude: &str) -> Self {
+        Altitude::String(altitude.to_string())
+    }
+}
+
 impl Serialize for Altitude {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
