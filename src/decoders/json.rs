@@ -604,6 +604,7 @@ impl JSONMessage {
         if surfaceposition.s == StatusForGroundTrack::Valid {
             self.barometric_altitude = Some("ground".into());
             //self.true_track_over_ground = Some(surfaceposition.trk.into());
+            // TODO: pull the position out
         }
     }
 
