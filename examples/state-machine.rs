@@ -780,13 +780,17 @@ async fn aircraft_json() -> Json<AircraftJSON> {
 
 async fn rocket() {
     match rocket::build()
-        .configure(rocket::Config::figment().merge(("address", "0.0.0.0")))
+        .configure(
+            rocket::Config::figment()
+                .merge(("address", "0.0.0.0"))
+                .merge(("log_level", rocket::config::LogLevel::Critical)),
+        )
         .mount("/", routes![aircraft_json])
         .launch()
         .await
     {
         Ok(_) => {
-            println!("Rocket launched!");
+            println!("Rocket exited");
         }
         Err(e) => {
             println!("Error launching rocket: {}", e);
