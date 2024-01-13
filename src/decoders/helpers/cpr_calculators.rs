@@ -12,7 +12,7 @@ Compact Position Reporting for [`Position`] Reporting
 reference: ICAO 9871 (D.2.4.7)
 !*/
 
-use crate::decoders::raw_types::{altitude::Altitude, cprheaders::CPRFormat};
+use crate::decoders::raw_types::cprheaders::CPRFormat;
 
 const NZ: f64 = 15.0;
 const D_LAT_EVEN: f64 = 360.0 / (4.0 * NZ);
@@ -252,11 +252,12 @@ pub fn calc_modulo(x: f64, y: f64) -> f64 {
 }
 
 pub fn get_position_from_locally_unabiguous(
-    aircraft_frame: &Altitude,
+    aircraft_frame: &Position,
     local: &Position,
+    cpr_flag: CPRFormat,
 ) -> Position {
     let mut i = 0;
-    let d_lat = match aircraft_frame.odd_flag {
+    let d_lat = match cpr_flag {
         CPRFormat::Even => D_LAT_EVEN,
         CPRFormat::Odd => {
             i = 1;
@@ -264,8 +265,8 @@ pub fn get_position_from_locally_unabiguous(
         }
     };
 
-    let lat_cpr = aircraft_frame.lat_cpr as f64 / CPR_MAX;
-    let lon_cpr = aircraft_frame.lon_cpr as f64 / CPR_MAX;
+    let lat_cpr = aircraft_frame.latitude / CPR_MAX;
+    let lon_cpr = aircraft_frame.longitude / CPR_MAX;
 
     let j = libm::floor(local.latitude / d_lat)
         + libm::floor(calc_modulo(local.latitude, d_lat) / d_lat - lat_cpr + 0.5);
@@ -292,14 +293,14 @@ pub fn get_position_from_locally_unabiguous(
 /// reference: ICAO 9871 (D.2.4.7.7)
 
 pub fn get_position_from_even_odd_cpr_positions(
-    even_frame: &Altitude,
-    odd_frame: &Altitude,
+    even_frame: &Position,
+    odd_frame: &Position,
     latest_frame_flag: CPRFormat,
 ) -> Option<Position> {
-    let cpr_lat_even = f64::from(even_frame.lat_cpr) / CPR_MAX;
-    let cpr_lat_odd = f64::from(odd_frame.lat_cpr) / CPR_MAX;
-    let cpr_lon_even = f64::from(even_frame.lon_cpr) / CPR_MAX;
-    let cpr_lon_odd = f64::from(odd_frame.lon_cpr) / CPR_MAX;
+    let cpr_lat_even = even_frame.latitude / CPR_MAX;
+    let cpr_lat_odd = odd_frame.latitude / CPR_MAX;
+    let cpr_lon_even = even_frame.longitude / CPR_MAX;
+    let cpr_lon_odd = odd_frame.longitude / CPR_MAX;
 
     let j = libm::floor(59.0 * cpr_lat_even - 60.0 * cpr_lat_odd + 0.5);
 
@@ -319,9 +320,9 @@ pub fn get_position_from_even_odd_cpr_positions(
     let nl_odd = cpr_nl(lat_odd);
 
     if nl_even != nl_odd {
-        warn!("NL even and NL odd are not the same");
-        warn!("NL even: {}", nl_even);
-        warn!("NL odd: {}", nl_odd);
+        debug!("NL even and NL odd are not the same");
+        debug!("NL even: {}", nl_even);
+        debug!("NL odd: {}", nl_odd);
         return None;
     }
 
@@ -380,19 +381,19 @@ mod tests {
 
     #[test]
     fn calculate_local_unambiguous() {
-        let aircraft_frame = Altitude {
-            odd_flag: CPRFormat::Even,
-            lat_cpr: 93000,
-            lon_cpr: 51372,
-            ..Altitude::default()
+        let aircraft_frame = Position {
+            latitude: 93000.0,
+            longitude: 51372.0,
         };
         let local = Position {
             latitude: 52.258,
             longitude: 3.919,
         };
+
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
-        let position = get_position_from_locally_unabiguous(&aircraft_frame, &local);
+        let position =
+            get_position_from_locally_unabiguous(&aircraft_frame, &local, CPRFormat::Even);
         println!("Calculated position: {:?}", position);
         println!(
             "Expected position: {:?}",
@@ -407,21 +408,17 @@ mod tests {
 
     #[test]
     fn cpr_calculate_position() {
-        let odd = Altitude {
-            odd_flag: CPRFormat::Odd,
-            lat_cpr: 74158,
-            lon_cpr: 50194,
-            ..Altitude::default()
+        let odd = Position {
+            latitude: 74158.0,
+            longitude: 50194.0,
         };
-        let even = Altitude {
-            odd_flag: CPRFormat::Even,
-            lat_cpr: 93000,
-            lon_cpr: 51372,
-            ..Altitude::default()
+        let even = Position {
+            latitude: 93000.0,
+            longitude: 51372.0,
         };
 
         let position =
-            get_position_from_even_odd_cpr_positions(&even, &odd, even.odd_flag).unwrap();
+            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Even).unwrap();
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
         println!("Calculated position: {:?}", position);
@@ -438,19 +435,16 @@ mod tests {
 
     #[test]
     fn cpr_calculate_position_high_lat() {
-        let even = Altitude {
-            odd_flag: CPRFormat::Even,
-            lat_cpr: 108_011,
-            lon_cpr: 110_088,
-            ..Altitude::default()
+        let even = Position {
+            latitude: 108_011.0,
+            longitude: 110_088.0,
         };
-        let odd = Altitude {
-            odd_flag: CPRFormat::Odd,
-            lat_cpr: 75_050,
-            lon_cpr: 36_777,
-            ..Altitude::default()
+        let odd = Position {
+            latitude: 75_050.0,
+            longitude: 36_777.0,
         };
-        let position = get_position_from_even_odd_cpr_positions(&even, &odd, odd.odd_flag).unwrap();
+        let position =
+            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = 88.917_474_261_784_96;
         let expected_lon = 101.011_047_363_281_25;
         println!("Calculated position: {:?}", position);
@@ -473,20 +467,17 @@ mod tests {
          */
 
         // *8f7c0017581bb01b3e135e818c6f;
-        let even = Altitude {
-            odd_flag: CPRFormat::Even,
-            lat_cpr: 3_487,
-            lon_cpr: 4_958,
-            ..Altitude::default()
+        let even = Position {
+            latitude: 3_487.0,
+            longitude: 4_958.0,
         };
         // *8f7c0017581bb481393da48aef5d;
-        let odd = Altitude {
-            odd_flag: CPRFormat::Odd,
-            lat_cpr: 16_540,
-            lon_cpr: 81_316,
-            ..Altitude::default()
+        let odd = Position {
+            latitude: 16_540.0,
+            longitude: 81_316.0,
         };
-        let position = get_position_from_even_odd_cpr_positions(&even, &odd, odd.odd_flag).unwrap();
+        let position =
+            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = -35.840_195_478_019_07;
         let expected_lon = 150.283_852_435_172_9;
         println!("Calculated position: {:?}", position);

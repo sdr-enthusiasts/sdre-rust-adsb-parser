@@ -7,7 +7,7 @@
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
 #[deku(type = "u8", bits = "1")]
 pub enum StatusForGroundTrack {
     Invalid = 0,

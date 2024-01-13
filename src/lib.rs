@@ -24,6 +24,7 @@ use decoders::raw::AdsbRawMessage;
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 pub mod decoders {
+    pub mod rawtojson;
     #[cfg(feature = "raw")]
     pub mod raw_types {
         pub mod ac13field;
@@ -50,6 +51,7 @@ pub mod decoders {
         pub mod downlinkrequest;
         pub mod emergencystate;
         pub mod flightstatus;
+        pub mod groundspeed;
         pub mod groundspeeddecoding;
         pub mod helper_functions;
         pub mod icao;

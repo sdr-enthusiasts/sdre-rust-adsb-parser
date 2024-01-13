@@ -4,21 +4,14 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use crate::{
-    decoders::helpers::cpr_calculators::{haversine_distance_position, Position},
-    MessageResult,
-};
-use radix_fmt::radix;
+use crate::{decoders::helpers::cpr_calculators::Position, MessageResult};
+
 use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::{
-    helpers::{
-        cpr_calculators::{
-            get_position_from_even_odd_cpr_positions, get_position_from_locally_unabiguous,
-            is_lat_lon_sane,
-        },
-        prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
+    helpers::prettyprint::{
+        pretty_print_field, pretty_print_field_from_option, pretty_print_label,
     },
     json_types::{
         adsbversion::ADSBVersion,
@@ -50,10 +43,11 @@ use super::{
         tisb::TiSB,
         transponderhex::TransponderHex,
     },
-    raw_types::{
-        airbornevelocity::AirborneVelocity, cprheaders::CPRFormat, df::DF,
-        identification::Identification, me::ME, operationstatus::OperationStatus,
-        statusforgroundtrack::StatusForGroundTrack, surfaceposition::SurfacePosition,
+    raw_types::{df::DF, me::ME},
+    rawtojson::{
+        update_airborne_velocity, update_aircraft_identification,
+        update_aircraft_position_airborne, update_aircraft_position_surface,
+        update_aircraft_status, update_operational_status,
     },
 };
 
@@ -376,266 +370,259 @@ impl JSONMessage {
         }
     }
 
-    pub fn update_airborne_velocity(&mut self, velocity: &AirborneVelocity) {
-        if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
-            self.true_track_over_ground = Some(heading.into());
-            self.ground_speed = Some(ground_speed.into());
-            self.barometric_altitude_rate = Some(vert_speed.into());
-            // TODO: verify this should be baro rate
-        }
-    }
+    // fn update_surface_position(
+    //     &mut self,
+    //     surfaceposition: &SurfacePosition,
+    //     reference_position: &Option<Position>,
+    // ) {
+    //     // if surface position is valid, process
+    //     info!("{} Surface position", self.transponder_hex);
 
-    pub fn update_aircraft_identification(&mut self, id: &Identification) {
-        // TODO: Type coding?
-        self.calculated_best_flight_id = Some(id.cn.clone().into());
-        // TODO: Verify this field
-    }
+    //     self.barometric_altitude = Some("ground".into());
 
-    pub fn update_aircraft_position(
-        &mut self,
-        altitude: &super::raw_types::altitude::Altitude,
-        baro_altitude: bool,
-        reference_position: &Option<Position>,
-    ) {
-        if let Some(alt) = &altitude.alt {
-            // check the ME type to see if we have baro or GNSS altitude
-            // TODO: can we do this better? We've already checked the type above and
-            // Ended up here. The lat/lon positioning is the same for both, so we
-            // need to use the same code for both.
+    //     // TODO: I can't figure out what tar1090 is doing for what values it's using for ground speed and track, and if it factors in the validity of the surface position. I'm going to assume it does for now.
+    //     // Also there seems to be some fucked up thing where I may or may not be factoring in setting speed to 0 properly. Or tar1090 isn't. Well it def isn't at some point but who knows
 
-            if baro_altitude {
-                self.barometric_altitude = Some((*alt).into());
-            } else {
-                self.geometric_altitude = Some((*alt).into());
-            }
-        }
+    //     match surfaceposition.s {
+    //         StatusForGroundTrack::Valid => {
+    //             match surfaceposition.mov {
+    //                 GroundSpeed::None => self.ground_speed = None,
+    //                 super::raw_types::groundspeed::GroundSpeed::Stopped => {
+    //                     self.ground_speed = Some(0.0.into())
+    //                 }
+    //                 GroundSpeed::Speed { speed: _ } => {
+    //                     self.ground_speed = surfaceposition.mov.calculate().map(|v| v.into());
+    //                 }
+    //             }
 
-        let current_time = match get_timestamp() {
-            TimeStamp::TimeStampAsF64(current_time) => current_time,
-            TimeStamp::None => 0.0,
-        };
+    //             self.true_track_over_ground = surfaceposition.get_heading().map(|v| v.into());
+    //         }
+    //         StatusForGroundTrack::Invalid => {
+    //             self.ground_speed = Some(0.0.into());
+    //         }
+    //     }
 
-        match altitude.odd_flag {
-            CPRFormat::Even => {
-                self.cpr_even = Some(*altitude);
-                self.last_cpr_even_update_time = Some(get_timestamp());
+    //     // update the position
 
-                // if self.cpr_odd is older than 10 seconds we don't have a valid position
+    //     let current_time = match get_timestamp() {
+    //         TimeStamp::TimeStampAsF64(current_time) => current_time,
+    //         TimeStamp::None => 0.0,
+    //     };
 
-                if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time {
-                    // get the f64 value of the timestamp
-                    if last_cpr_odd_update_time.add_time(10.0) < current_time {
-                        self.cpr_odd = None;
-                        debug!("{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.", self.transponder_hex, current_time - last_cpr_odd_update_time.add_time(10.0));
-                    }
-                }
-            }
-            CPRFormat::Odd => {
-                self.cpr_odd = Some(*altitude);
-                self.last_cpr_odd_update_time = Some(get_timestamp());
+    //     match surfaceposition.f {
+    //         CPRFormat::Even => {
+    //             self.cpr_even_surface = Some(*surfaceposition);
+    //             self.last_cpr_even_update_time_surface = Some(get_timestamp());
 
-                // if self.cpr_even is older than 10 seconds we don't have a valid position
+    //             // if self.cpr_odd is older than 10 seconds we don't have a valid position
 
-                if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time {
-                    if last_cpr_even_update_time.add_time(10.0) < current_time {
-                        self.cpr_even = None;
-                        debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", self.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));
-                    }
-                }
-            }
-        }
+    //             if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time_surface {
+    //                 // get the f64 value of the timestamp
+    //                 if last_cpr_odd_update_time.add_time(10.0) < current_time {
+    //                     self.cpr_odd_surface = None;
+    //                     debug!("{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.", self.transponder_hex, current_time - last_cpr_odd_update_time.add_time(10.0));
+    //                 }
+    //             }
+    //         }
+    //         CPRFormat::Odd => {
+    //             self.cpr_odd_surface = Some(*surfaceposition);
+    //             self.last_cpr_odd_update_time_surface = Some(get_timestamp());
 
-        // if we have both even and odd, calculate the position
-        if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even, &self.cpr_odd) {
-            if let Some(position) =
-                get_position_from_even_odd_cpr_positions(even_frame, odd_frame, altitude.odd_flag)
-            {
-                debug!("{} Even/Odd position {:?}", self.transponder_hex, position);
-                if is_lat_lon_sane(position) {
-                    // only update the lat/lon if they are different
-                    if self.latitude != Some(position.latitude.into())
-                        || self.longitude != Some(position.longitude.into())
-                    {
-                        self.latitude = Some(position.latitude.into());
-                        self.longitude = Some(position.longitude.into());
-                    }
+    //             // if self.cpr_even is older than 10 seconds we don't have a valid position
 
-                    // Success! We have a position. Time to bail out.
-                    return;
-                } else {
-                    debug!("Position from even/odd was invalid.");
-                    debug!("{} {:?}", self.transponder_hex, self.cpr_even);
-                    debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                    debug!("{} {:?}", self.transponder_hex, position);
-                }
-            }
-        }
+    //             if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time_surface {
+    //                 if last_cpr_even_update_time.add_time(10.0) < current_time {
+    //                     self.cpr_even_surface = None;
+    //                     debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", self.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        // we ended up here because even/odd failed or we didn't have both even and odd
-        // if we have a reference position from the user, try to use that to calculate the position
-        if let Some(reference_position) = reference_position {
-            let position = get_position_from_locally_unabiguous(altitude, reference_position);
-            debug!("{} Reference position {:?}", self.transponder_hex, position);
-            if is_lat_lon_sane(position) {
-                debug!("{} {:?}", self.transponder_hex, position);
-                // validate the haversine distance between the reference position and the calculated position is reasonable
-                if haversine_distance_position(&position, reference_position) < 500.0 {
-                    if self.latitude != Some(position.latitude.into())
-                        || self.longitude != Some(position.longitude.into())
-                    {
-                        self.latitude = Some(position.latitude.into());
-                        self.longitude = Some(position.longitude.into());
+    //     // if we have both even and odd, calculate the position
 
-                        // Success! We have a position. Time to bail out.
-                        return;
-                    }
-                } else {
-                    warn!("{}: Reference position is too far away from calculated position. Not updating.", self.transponder_hex);
-                }
-            } else {
-                debug!("Position from reference antenna was invalid.");
-                debug!("{} {:?}", self.transponder_hex, self.cpr_even);
-                debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                debug!("{} {:?}", self.transponder_hex, position);
-            }
-        }
+    //     if let (Some(even_frame), Some(odd_frame)) = (&self.cpr_even_surface, &self.cpr_odd_surface)
+    //     {
+    //         if let Some(position) =
+    //             get_position_from_even_odd_cpr_surface(even_frame, odd_frame, surfaceposition.f)
+    //         {
+    //             debug!("{} Even/Odd position {:?}", self.transponder_hex, position);
+    //             if is_lat_lon_sane(position) {
+    //                 // only update the lat/lon if they are different
+    //                 if self.latitude != Some(position.latitude.into())
+    //                     || self.longitude != Some(position.longitude.into())
+    //                 {
+    //                     self.latitude = Some(position.latitude.into());
+    //                     self.longitude = Some(position.longitude.into());
+    //                 }
 
-        // we ended up here because everything else failed. The last try is to use the last known position
+    //                 // Success! We have a position. Time to bail out.
+    //                 return;
+    //             } else {
+    //                 debug!("Position from even/odd was invalid.");
+    //                 debug!("{} {:?}", self.transponder_hex, self.cpr_even_airborne);
+    //                 debug!("{} {:?}", self.transponder_hex, self.cpr_odd_airborne);
+    //                 debug!("{} {:?}", self.transponder_hex, position);
+    //             }
+    //         }
+    //     }
 
-        if let (Some(lat), Some(lon)) = (&self.latitude, &self.longitude) {
-            let reference_position = Position {
-                latitude: lat.latitude,
-                longitude: lon.longitude,
-            };
+    //     // we ended up here because even/odd failed or we didn't have both even and odd
 
-            let position = get_position_from_locally_unabiguous(altitude, &reference_position);
+    //     // if we have a reference position from the user, try to use that to calculate the position
 
-            debug!(
-                "{} Last known position calculated {:?}",
-                self.transponder_hex, position
-            );
-            if is_lat_lon_sane(position) {
-                let mut update = true;
-                // get the haversine distance between the reference position and the calculated position
-                let distance = haversine_distance_position(&position, &reference_position);
+    //     // we ended up here because even/odd failed or we didn't have both even and odd
+    //     // if we have a reference position from the user, try to use that to calculate the position
+    //     if let Some(reference_position) = reference_position {
+    //         let position =
+    //             get_position_from_locally_unabiguous_surface(surfaceposition, reference_position);
+    //         debug!("{} Reference position {:?}", self.transponder_hex, position);
+    //         if is_lat_lon_sane(position) {
+    //             debug!("{} {:?}", self.transponder_hex, position);
+    //             // validate the haversine distance between the reference position and the calculated position is reasonable
+    //             if haversine_distance_position(&position, reference_position) < 500.0 {
+    //                 if self.latitude != Some(position.latitude.into())
+    //                     || self.longitude != Some(position.longitude.into())
+    //                 {
+    //                     self.latitude = Some(position.latitude.into());
+    //                     self.longitude = Some(position.longitude.into());
 
-                // validate the haversine distance between the reference position and the calculated position is reasonable
-                // We'll factor in the timestamp of the OLDEST of the two positions (self.last_cpr_even_update_time / self.last_cpr_odd_update_time) + aircraft speed to get a rough idea of how far the aircraft could have moved since the last position was received.
+    //                     // Success! We have a position. Time to bail out.
+    //                     return;
+    //                 }
+    //             } else {
+    //                 warn!("{}: Reference position is too far away from calculated position. Not updating.", self.transponder_hex);
+    //             }
+    //         } else {
+    //             debug!("Position from reference antenna was invalid.");
+    //             debug!("{} {:?}", self.transponder_hex, self.cpr_even_airborne);
+    //             debug!("{} {:?}", self.transponder_hex, self.cpr_odd_airborne);
+    //             debug!("{} {:?}", self.transponder_hex, position);
+    //         }
+    //     }
 
-                let mut oldest_timestamp = 0.0;
+    //     // we ended up here because everything else failed. The last try is to use the last known position
 
-                if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time {
-                    oldest_timestamp = last_cpr_even_update_time.get_time();
-                }
+    //     if let (Some(lat), Some(lon)) = (&self.latitude, &self.longitude) {
+    //         let reference_position = Position {
+    //             latitude: lat.latitude,
+    //             longitude: lon.longitude,
+    //         };
 
-                if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time {
-                    if last_cpr_odd_update_time.get_time() < oldest_timestamp {
-                        oldest_timestamp = last_cpr_odd_update_time.get_time();
-                    }
-                }
+    //         let position =
+    //             get_position_from_locally_unabiguous_surface(surfaceposition, &reference_position);
 
-                // get the time delta between the oldest timestamp and now
-                let time_delta = current_time - oldest_timestamp;
+    //         debug!(
+    //             "{} Last known position calculated {:?}",
+    //             self.transponder_hex, position
+    //         );
+    //         if is_lat_lon_sane(position) {
+    //             let mut update = true;
+    //             // get the haversine distance between the reference position and the calculated position
+    //             let distance = haversine_distance_position(&position, &reference_position);
 
-                // get the speed of the aircraft in knots
-                let speed = match &self.ground_speed {
-                    Some(speed) => speed.get_speed(),
-                    None => 0.0,
-                };
+    //             // validate the haversine distance between the reference position and the calculated position is reasonable
+    //             // We'll factor in the timestamp of the OLDEST of the two positions (self.last_cpr_even_update_time / self.last_cpr_odd_update_time) + aircraft speed to get a rough idea of how far the aircraft could have moved since the last position was received.
 
-                // get the distance the aircraft could have traveled in the time delta only if speed is not 0
+    //             let mut oldest_timestamp = 0.0;
 
-                let distance_traveled = if speed != 0.0 {
-                    speed * time_delta
-                } else {
-                    0.0
-                };
+    //             if let Some(last_cpr_even_update_time) = &self.last_cpr_even_update_time_surface {
+    //                 oldest_timestamp = last_cpr_even_update_time.get_time();
+    //             }
 
-                // if the distance travelled is within 10% of the distance between the reference position and the calculated position, we'll update the position
+    //             if let Some(last_cpr_odd_update_time) = &self.last_cpr_odd_update_time_surface {
+    //                 if last_cpr_odd_update_time.get_time() < oldest_timestamp {
+    //                     oldest_timestamp = last_cpr_odd_update_time.get_time();
+    //                 }
+    //             }
 
-                if speed != 0.0 && distance_traveled != 0.0 {
-                    if distance_traveled <= distance * 1.1 && distance_traveled >= distance * 0.9 {
-                        info!(
-                        "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
-                        self.transponder_hex, distance_traveled, distance
-                    );
-                    } else {
-                        info!(
-                        "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
-                        self.transponder_hex, distance_traveled, distance
-                    );
+    //             // get the time delta between the oldest timestamp and now
+    //             let time_delta = current_time - oldest_timestamp;
 
-                        update = false;
-                    }
-                }
+    //             // get the speed of the aircraft in knots
+    //             let speed = match &self.ground_speed {
+    //                 Some(speed) => speed.get_speed(),
+    //                 None => 0.0,
+    //             };
 
-                // only update the lat/lon if they are different
-                if update
-                    && (self.latitude != Some(position.latitude.into())
-                        || self.longitude != Some(position.longitude.into()))
-                {
-                    self.latitude = Some(position.latitude.into());
-                    self.longitude = Some(position.longitude.into());
+    //             // get the distance the aircraft could have traveled in the time delta only if speed is not 0
 
-                    // Success! We have a position. Time to bail out.
-                    return;
-                }
-            } else {
-                debug!("Position from last known position was invalid.");
-                debug!("{} {:?}", self.transponder_hex, self.cpr_even);
-                debug!("{} {:?}", self.transponder_hex, self.cpr_odd);
-                debug!("{} {:?}", self.transponder_hex, position);
-            }
-        }
+    //             let distance_traveled = if speed != 0.0 {
+    //                 speed * time_delta
+    //             } else {
+    //                 0.0
+    //             };
 
-        // we ended up here because everything else failed.
-        warn!("{}: Unable to calculate position.", self.transponder_hex);
-    }
+    //             // if the distance travelled is within 10% of the distance between the reference position and the calculated position, we'll update the position
 
-    fn update_operational_status(&mut self, operation_status: &OperationStatus) {
-        if let OperationStatus::Surface(_) = operation_status {
-            self.barometric_altitude = Some("ground".into());
-        }
-    }
+    //             if speed != 0.0 && distance_traveled != 0.0 {
+    //                 if distance_traveled <= distance * 1.1 && distance_traveled >= distance * 0.9 {
+    //                     info!(
+    //                     "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
+    //                     self.transponder_hex, distance_traveled, distance
+    //                 );
+    //                 } else {
+    //                     info!(
+    //                     "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
+    //                     self.transponder_hex, distance_traveled, distance
+    //                 );
 
-    fn update_surface_position(&mut self, surfaceposition: &SurfacePosition) {
-        // if surface position is valid, process
+    //                     update = false;
+    //                 }
+    //             }
 
-        if surfaceposition.s == StatusForGroundTrack::Valid {
-            self.barometric_altitude = Some("ground".into());
-            //self.true_track_over_ground = Some(surfaceposition.trk.into());
-            // TODO: pull the position out
-        }
-    }
+    //             // only update the lat/lon if they are different
+    //             if update
+    //                 && (self.latitude != Some(position.latitude.into())
+    //                     || self.longitude != Some(position.longitude.into()))
+    //             {
+    //                 self.latitude = Some(position.latitude.into());
+    //                 self.longitude = Some(position.longitude.into());
+    //             }
+    //         } else {
+    //             debug!("Position from last known position was invalid.");
+    //             debug!("{} {:?}", self.transponder_hex, self.cpr_even_airborne);
+    //             debug!("{} {:?}", self.transponder_hex, self.cpr_odd_airborne);
+    //             debug!("{} {:?}", self.transponder_hex, position);
+    //         }
+    //     }
+    // }
 
     pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Option<Position>) {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
-                    self.update_airborne_velocity(velocity);
+                    update_airborne_velocity(self, velocity);
                 }
                 ME::NoPosition(_) => (),
                 ME::AircraftIdentification(id) => {
-                    self.update_aircraft_identification(id);
+                    update_aircraft_identification(self, id);
                 }
                 ME::SurfacePosition(surfaceposition) => {
-                    self.update_surface_position(surfaceposition);
+                    info!(
+                        "{} Surface position {:?}",
+                        self.transponder_hex, surfaceposition
+                    );
+                    update_aircraft_position_surface(self, surfaceposition, reference_positon);
                 }
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
-                    self.update_aircraft_position(altitude, baro_altitude, reference_positon);
+                    update_aircraft_position_airborne(
+                        self,
+                        altitude,
+                        baro_altitude,
+                        reference_positon,
+                    );
                 }
                 ME::Reserved0(_) => (),
                 ME::SurfaceSystemStatus(_) => (),
                 ME::Reserved1(_) => (),
-                ME::AircraftStatus(status) => {
-                    self.transponder_squawk_code = Some(format!("{:04}", radix(status.squawk, 16)));
-                }
+                ME::AircraftStatus(status) => update_aircraft_status(self, status),
                 ME::TargetStateAndStatusInformation(_) => (),
                 ME::AircraftOperationalCoordination(_) => (),
                 ME::AircraftOperationStatus(operation_status) => {
-                    self.update_operational_status(operation_status);
+                    update_operational_status(self, operation_status)
                 }
             }
         }
@@ -647,7 +634,7 @@ impl JSONMessage {
 }
 
 // Not all messages have a timestamp, so we'll use the current time if one isn't provided.
-fn get_timestamp() -> TimeStamp {
+pub fn get_timestamp() -> TimeStamp {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => TimeStamp::from(n.as_secs_f64()),
         Err(_) => TimeStamp::default(),
@@ -713,6 +700,7 @@ pub struct JSONMessage {
     /// {lat, lon, nic, rc, seen_pos} when the regular lat and lon are older than 60 seconds they are no longer considered valid,
     /// this will provide the last position and show the age for the last position. aircraft will only be in the aircraft json
     /// if a position has been received in the last 60 seconds or if any message has been received in the last 30 seconds.
+    /// TODO: set this during pruning of data
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastPosition")]
     pub last_known_position: Option<LastKnownPosition>,
     /// The aircraft latitude
@@ -830,24 +818,33 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "tas")]
     pub true_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    track_rate: Option<f32>, // TODO: print this out
+    pub track_rate: Option<f32>, // TODO: print this out
     #[serde(skip_serializing_if = "Option::is_none")]
-    roll: Option<f32>, // TODO: print this out
+    pub roll: Option<f32>, // TODO: print this out
     #[serde(skip_serializing_if = "Option::is_none")]
-    ws: Option<u32>, // TODO: print this out
+    pub ws: Option<u32>, // TODO: print this out
     #[serde(skip_serializing_if = "Option::is_none")]
-    wd: Option<u32>, // TODO: print this out
+    pub wd: Option<u32>, // TODO: print this out
 
     /// These are internal values that should never get serialized, but used for tracking raw even/odd positions
 
     #[serde(skip_serializing)]
-    cpr_even: Option<super::raw_types::altitude::Altitude>,
+    pub cpr_even_airborne: Option<super::raw_types::altitude::Altitude>,
     #[serde(skip_serializing)]
-    cpr_odd: Option<super::raw_types::altitude::Altitude>,
+    pub cpr_odd_airborne: Option<super::raw_types::altitude::Altitude>,
     #[serde(skip_serializing)]
-    last_cpr_even_update_time: Option<TimeStamp>,
+    pub last_cpr_even_update_time_airborne: Option<TimeStamp>,
     #[serde(skip_serializing)]
-    last_cpr_odd_update_time: Option<TimeStamp>,
+    pub last_cpr_odd_update_time_airborne: Option<TimeStamp>,
+
+    #[serde(skip_serializing)]
+    pub cpr_even_surface: Option<super::raw_types::surfaceposition::SurfacePosition>,
+    #[serde(skip_serializing)]
+    pub cpr_odd_surface: Option<super::raw_types::surfaceposition::SurfacePosition>,
+    #[serde(skip_serializing)]
+    pub last_cpr_even_update_time_surface: Option<TimeStamp>,
+    #[serde(skip_serializing)]
+    pub last_cpr_odd_update_time_surface: Option<TimeStamp>,
 }
 
 #[cfg(test)]
