@@ -2,7 +2,8 @@ use radix_fmt::radix;
 
 use crate::decoders::{
     helpers::cpr_calculators::{
-        get_position_from_even_odd_cpr_positions, get_position_from_locally_unabiguous,
+        get_position_from_even_odd_cpr_positions_airborne,
+        get_position_from_even_odd_cpr_positions_surface, get_position_from_locally_unabiguous,
         haversine_distance_position, is_lat_lon_sane,
     },
     json::get_timestamp,
@@ -58,16 +59,25 @@ fn update_position(
     json: &mut JSONMessage,
     even_frame: &Option<Position>,
     odd_frame: &Option<Position>,
-    reference_position: &Option<Position>,
+    reference_position: &Position,
     cpr_flag: CPRFormat,
     current_time: f64,
     position_type: PositionType,
 ) {
     // if we have both even and odd, calculate the position
     if let (Some(even_frame), Some(odd_frame)) = (&even_frame, &odd_frame) {
-        if let Some(position) =
-            get_position_from_even_odd_cpr_positions(even_frame, odd_frame, cpr_flag)
-        {
+        let calculated_position = if position_type == PositionType::Airborne {
+            get_position_from_even_odd_cpr_positions_airborne(even_frame, odd_frame, cpr_flag)
+        } else {
+            get_position_from_even_odd_cpr_positions_surface(
+                even_frame,
+                odd_frame,
+                cpr_flag,
+                reference_position,
+            )
+        };
+
+        if let Some(position) = calculated_position {
             debug!("{} Even/Odd position {:?}", json.transponder_hex, position);
             if is_lat_lon_sane(position) {
                 // only update the lat/lon if they are different
@@ -105,41 +115,43 @@ fn update_position(
 
     // we ended up here because even/odd failed or we didn't have both even and odd
     // if we have a reference position from the user, try to use that to calculate the position
-    if let Some(reference_position) = reference_position {
-        let position =
-            get_position_from_locally_unabiguous(aircraft_frame, reference_position, cpr_flag);
 
-        debug!("{} Reference position {:?}", json.transponder_hex, position);
-        if is_lat_lon_sane(position) {
-            debug!("{} {:?}", json.transponder_hex, position);
-            // validate the haversine distance between the reference position and the calculated position is reasonable
-            if haversine_distance_position(&position, reference_position) < 500.0 {
-                if json.latitude != Some(position.latitude.into())
-                    || json.longitude != Some(position.longitude.into())
-                {
-                    json.latitude = Some(position.latitude.into());
-                    json.longitude = Some(position.longitude.into());
+    let position =
+        get_position_from_locally_unabiguous(aircraft_frame, reference_position, cpr_flag);
 
-                    // Success! We have a position. Time to bail out.
-                    return;
-                }
-            } else {
-                warn!("{}: Reference position is too far away from calculated position. Not updating.", json.transponder_hex);
+    debug!("{} Reference position {:?}", json.transponder_hex, position);
+    if is_lat_lon_sane(position) {
+        debug!("{} {:?}", json.transponder_hex, position);
+        // validate the haversine distance between the reference position and the calculated position is reasonable
+        if haversine_distance_position(&position, reference_position) < 500.0 {
+            if json.latitude != Some(position.latitude.into())
+                || json.longitude != Some(position.longitude.into())
+            {
+                json.latitude = Some(position.latitude.into());
+                json.longitude = Some(position.longitude.into());
+
+                // Success! We have a position. Time to bail out.
+                return;
             }
         } else {
-            debug!("Position from reference antenna was invalid.");
-            match position_type {
-                PositionType::Airborne => {
-                    debug!("{} {:?}", json.transponder_hex, json.cpr_even_airborne);
-                    debug!("{} {:?}", json.transponder_hex, json.cpr_odd_airborne);
-                }
-                PositionType::Surface => {
-                    debug!("{} {:?}", json.transponder_hex, json.cpr_even_surface);
-                    debug!("{} {:?}", json.transponder_hex, json.cpr_odd_surface);
-                }
-            }
-            debug!("{} {:?}", json.transponder_hex, position);
+            warn!(
+                "{}: Reference position is too far away from calculated position. Not updating.",
+                json.transponder_hex
+            );
         }
+    } else {
+        debug!("Position from reference antenna was invalid.");
+        match position_type {
+            PositionType::Airborne => {
+                debug!("{} {:?}", json.transponder_hex, json.cpr_even_airborne);
+                debug!("{} {:?}", json.transponder_hex, json.cpr_odd_airborne);
+            }
+            PositionType::Surface => {
+                debug!("{} {:?}", json.transponder_hex, json.cpr_even_surface);
+                debug!("{} {:?}", json.transponder_hex, json.cpr_odd_surface);
+            }
+        }
+        debug!("{} {:?}", json.transponder_hex, position);
     }
 
     // we ended up here because everything else failed. The last try is to use the last known position
@@ -253,7 +265,7 @@ fn update_position(
 pub fn update_aircraft_position_surface(
     json: &mut JSONMessage,
     surface_position: &SurfacePosition,
-    reference_position: &Option<Position>,
+    reference_position: &Position,
 ) {
     // if surface position is valid, process
     info!("{} Surface position", json.transponder_hex);
@@ -356,7 +368,7 @@ pub fn update_aircraft_position_airborne(
     json: &mut JSONMessage,
     altitude: &super::raw_types::altitude::Altitude,
     baro_altitude: bool,
-    reference_position: &Option<Position>,
+    reference_position: &Position,
 ) {
     if let Some(alt) = &altitude.alt {
         // check the ME type to see if we have baro or GNSS altitude

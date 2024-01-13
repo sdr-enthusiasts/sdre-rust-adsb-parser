@@ -12,11 +12,15 @@ Compact Position Reporting for [`Position`] Reporting
 reference: ICAO 9871 (D.2.4.7)
 !*/
 
+// FIXME: surface position decoding needs verification, especially in southern hemisphere
+
 use crate::decoders::raw_types::cprheaders::CPRFormat;
 
 const NZ: f64 = 15.0;
-const D_LAT_EVEN: f64 = 360.0 / (4.0 * NZ);
-const D_LAT_ODD: f64 = 360.0 / (4.0 * NZ - 1.0);
+const D_LAT_EVEN_AIRBORNE: f64 = 360.0 / (4.0 * NZ);
+const D_LAT_ODD_AIRBORNE: f64 = 360.0 / (4.0 * NZ - 1.0);
+const D_LAT_EVEN_SURFACE: f64 = 90.0 / (4.0 * NZ);
+const D_LAT_ODD_SURFACE: f64 = 90.0 / (4.0 * NZ - 1.0);
 
 /// 2^17 (Max of 17 bits)
 const CPR_MAX: f64 = 131_072.0;
@@ -258,10 +262,10 @@ pub fn get_position_from_locally_unabiguous(
 ) -> Position {
     let mut i = 0;
     let d_lat = match cpr_flag {
-        CPRFormat::Even => D_LAT_EVEN,
+        CPRFormat::Even => D_LAT_EVEN_AIRBORNE,
         CPRFormat::Odd => {
             i = 1;
-            D_LAT_ODD
+            D_LAT_ODD_AIRBORNE
         }
     };
 
@@ -292,7 +296,7 @@ pub fn get_position_from_locally_unabiguous(
 ///
 /// reference: ICAO 9871 (D.2.4.7.7)
 
-pub fn get_position_from_even_odd_cpr_positions(
+pub fn get_position_from_even_odd_cpr_positions_airborne(
     even_frame: &Position,
     odd_frame: &Position,
     latest_frame_flag: CPRFormat,
@@ -304,8 +308,8 @@ pub fn get_position_from_even_odd_cpr_positions(
 
     let j = libm::floor(59.0 * cpr_lat_even - 60.0 * cpr_lat_odd + 0.5);
 
-    let mut lat_even = D_LAT_EVEN * (calc_modulo(j, 60.0) + cpr_lat_even);
-    let mut lat_odd = D_LAT_ODD * (calc_modulo(j, 59.0) + cpr_lat_odd);
+    let mut lat_even = D_LAT_EVEN_AIRBORNE * (calc_modulo(j, 60.0) + cpr_lat_even);
+    let mut lat_odd = D_LAT_ODD_AIRBORNE * (calc_modulo(j, 59.0) + cpr_lat_odd);
 
     if lat_even >= 270.0 {
         lat_even -= 360.0;
@@ -360,6 +364,129 @@ pub fn get_position_from_even_odd_cpr_positions(
     })
 }
 
+pub fn get_position_from_even_odd_cpr_positions_surface(
+    even_frame: &Position,
+    odd_frame: &Position,
+    latest_frame_flag: CPRFormat,
+    reference_position: &Position,
+) -> Option<Position> {
+    let cpr_lat_even = even_frame.latitude / CPR_MAX;
+    let cpr_lat_odd = odd_frame.latitude / CPR_MAX;
+    let cpr_lon_even = even_frame.longitude / CPR_MAX;
+    let cpr_lon_odd = odd_frame.longitude / CPR_MAX;
+
+    let j = libm::floor(59.0 * cpr_lat_even - 60.0 * cpr_lat_odd + 0.5);
+
+    let lat_even = D_LAT_EVEN_SURFACE * (calc_modulo(j, 60.0) + cpr_lat_even);
+    let lat_odd = D_LAT_ODD_SURFACE * (calc_modulo(j, 59.0) + cpr_lat_odd);
+
+    // validate the NZ values are the same
+
+    let nl_even = cpr_nl(lat_even);
+    let nl_odd = cpr_nl(lat_odd);
+
+    if nl_even != nl_odd {
+        debug!("NL even and NL odd are not the same");
+        debug!("NL even: {}", nl_even);
+        debug!("NL odd: {}", nl_odd);
+        return None;
+    }
+
+    let lat_northern = if latest_frame_flag == CPRFormat::Even {
+        lat_odd
+    } else {
+        lat_even // the fuck? This matches the solution in the mode-s.org work....
+    };
+
+    let lat_southern = &lat_northern - 90.0;
+
+    let m = libm::floor(cpr_lon_even * (nl_even as f64 - 1.0) - cpr_lon_odd * nl_even as f64 + 0.5);
+
+    let n = if latest_frame_flag == CPRFormat::Even {
+        libm::fmax(nl_even as f64, 1.0)
+    } else {
+        libm::fmax(nl_odd as f64 - 1.0, 1.0)
+    };
+
+    let d_lon = 90.0 / n;
+
+    let use_lon = if latest_frame_flag == CPRFormat::Even {
+        cpr_lon_even
+    } else {
+        cpr_lon_odd
+    };
+
+    let lon_one = d_lon * (calc_modulo(m, n) + use_lon);
+    let lon_two = &lon_one + 90.0;
+    let lon_three = &lon_one + 180.0;
+    let lon_four = &lon_one + 270.0;
+
+    // find the closest latitude to the reference position
+
+    let lat = if (reference_position.latitude - lat_northern).abs()
+        < (reference_position.latitude - lat_southern).abs()
+    {
+        lat_northern
+    } else {
+        lat_southern
+    };
+
+    // using haversign distance, now that we have a lat, find the closest lat/lon pair from lon_one, lon_two, lon_three, lon_four to the reference position
+
+    let mut lon = lon_one;
+
+    let mut min_distance = haversine_distance_position(
+        reference_position,
+        &Position {
+            latitude: lat,
+            longitude: lon_one,
+        },
+    );
+
+    let distance_two = haversine_distance_position(
+        reference_position,
+        &Position {
+            latitude: lat,
+            longitude: lon_two,
+        },
+    );
+
+    let distance_three = haversine_distance_position(
+        reference_position,
+        &Position {
+            latitude: lat,
+            longitude: lon_three,
+        },
+    );
+
+    let distance_four = haversine_distance_position(
+        reference_position,
+        &Position {
+            latitude: lat,
+            longitude: lon_four,
+        },
+    );
+
+    if distance_two < min_distance {
+        min_distance = distance_two;
+        lon = lon_two;
+    }
+
+    if distance_three < min_distance {
+        min_distance = distance_three;
+        lon = lon_three;
+    }
+
+    if distance_four < min_distance {
+        lon = lon_four;
+    }
+
+    Some(Position {
+        latitude: lat,
+        longitude: lon,
+    })
+}
+
 pub fn is_lat_lon_sane(position: Position) -> bool {
     position.latitude >= -90.0
         && position.latitude <= 90.0
@@ -377,6 +504,41 @@ mod tests {
         assert_eq!(cpr_nl(-89.9), 1);
         assert_eq!(cpr_nl(86.9), 2);
         assert_eq!(cpr_nl(-86.9), 2);
+    }
+
+    #[test]
+    fn calculate_surface_position() {
+        let even = Position {
+            latitude: 115609.0,
+            longitude: 116941.0,
+        };
+        let odd = Position {
+            latitude: 39199.0,
+            longitude: 110269.0,
+        };
+        let reference_position = Position {
+            latitude: 51.990,
+            longitude: 4.375,
+        };
+        let position = get_position_from_even_odd_cpr_positions_surface(
+            &even,
+            &odd,
+            CPRFormat::Even,
+            &reference_position,
+        )
+        .unwrap();
+        let expected_lat = 52.320607072215964;
+        let expected_lon = 4.730472564697266;
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
     }
 
     #[test]
@@ -418,7 +580,8 @@ mod tests {
         };
 
         let position =
-            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Even).unwrap();
+            get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Even)
+                .unwrap();
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
         println!("Calculated position: {:?}", position);
@@ -444,7 +607,7 @@ mod tests {
             longitude: 36_777.0,
         };
         let position =
-            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Odd).unwrap();
+            get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = 88.917_474_261_784_96;
         let expected_lon = 101.011_047_363_281_25;
         println!("Calculated position: {:?}", position);
@@ -477,7 +640,7 @@ mod tests {
             longitude: 81_316.0,
         };
         let position =
-            get_position_from_even_odd_cpr_positions(&even, &odd, CPRFormat::Odd).unwrap();
+            get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = -35.840_195_478_019_07;
         let expected_lon = 150.283_852_435_172_9;
         println!("Calculated position: {:?}", position);

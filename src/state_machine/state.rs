@@ -35,15 +35,15 @@ pub struct StateMachine {
     input_channel: Sender<ADSBMessage>,
     output_channel: Receiver<ADSBMessage>,
     messages_processed: Arc<Mutex<u64>>,
-    position: Option<Position>,
+    position: Position,
 }
 
 impl StateMachine {
     pub fn new(
         adsb_timeout_in_seconds: u32,
         adsc_timeout_in_seconds: u32,
-        lat: Option<f64>,
-        lon: Option<f64>,
+        lat: f64,
+        lon: f64,
     ) -> StateMachine {
         let (sender_channel, receiver_channel) = tokio::sync::mpsc::channel(100);
         StateMachine {
@@ -53,12 +53,9 @@ impl StateMachine {
             input_channel: sender_channel,
             output_channel: receiver_channel,
             messages_processed: Arc::new(Mutex::new(0)),
-            position: match lat {
-                Some(lat) => lon.map(|lon| Position {
-                    latitude: lat,
-                    longitude: lon,
-                }),
-                None => None,
+            position: Position {
+                latitude: lat,
+                longitude: lon,
             },
         }
     }

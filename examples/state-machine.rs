@@ -107,8 +107,8 @@ struct Args {
     mode: Modes,
     print_state_interval_seconds: u64,
     print_json: bool,
-    lat: Option<f64>,
-    lon: Option<f64>,
+    lat: f64,
+    lon: f64,
 }
 
 impl Args {
@@ -190,17 +190,14 @@ impl Args {
             Modes::default()
         };
 
-        // make sure lat/lon are both None or both Some
-
-        if lat.is_some() && lon.is_none() {
-            println!("Latitude specified but not longitude");
-            println!("{}", Args::help());
+        // make sure lat/lon are both some
+        if lat.is_none() {
+            println!("Latitude not set.");
             exit(1);
         }
 
-        if lat.is_none() && lon.is_some() {
-            println!("Longitude specified but not latitude");
-            println!("{}", Args::help());
+        if lon.is_none() {
+            println!("Longitude not set.");
             exit(1);
         }
 
@@ -210,8 +207,8 @@ impl Args {
             mode,
             print_state_interval_seconds,
             print_json,
-            lat,
-            lon,
+            lat: lat.unwrap(),
+            lon: lon.unwrap(),
         })
     }
 
@@ -261,11 +258,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     match mode {
         Modes::JSONFromAircraftJSON => {
             info!("Processing as Aircraft JSON");
-            process_as_aircraft_json(url_input, print_interval_in_seconds, print_json).await?;
+            process_as_aircraft_json(url_input, print_interval_in_seconds, print_json, lat, lon)
+                .await?;
         }
         Modes::JSONFromTCP => {
             info!("Processing as JSON from TCP");
-            process_json_from_tcp(url_input, print_interval_in_seconds, print_json).await?;
+            process_json_from_tcp(url_input, print_interval_in_seconds, print_json, lat, lon)
+                .await?;
         }
         Modes::Raw => {
             info!("Processing as raw frames");
@@ -285,8 +284,8 @@ async fn process_beast_frames(
     ip: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
-    lat: Option<f64>,
-    lon: Option<f64>,
+    lat: f64,
+    lon: f64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -412,8 +411,8 @@ async fn process_raw_frames(
     ip: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
-    lat: Option<f64>,
-    lon: Option<f64>,
+    lat: f64,
+    lon: f64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -539,8 +538,10 @@ async fn process_as_aircraft_json(
     url: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
+    lat: f64,
+    lon: f64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut state_machine = StateMachine::new(90, 360, None, None);
+    let mut state_machine = StateMachine::new(90, 360, lat, lon);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
@@ -633,6 +634,8 @@ async fn process_json_from_tcp(
     ip: &str,
     print_interval_in_seconds: u64,
     print_json: &bool,
+    lat: f64,
+    lon: f64,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
     let addr = match ip.parse::<SocketAddr>() {
@@ -657,7 +660,7 @@ async fn process_json_from_tcp(
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
 
-    let mut state_machine = StateMachine::new(90, 360, None, None);
+    let mut state_machine = StateMachine::new(90, 360, lat, lon);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();

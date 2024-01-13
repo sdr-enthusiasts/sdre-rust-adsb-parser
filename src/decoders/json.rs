@@ -588,7 +588,7 @@ impl JSONMessage {
     //     }
     // }
 
-    pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Option<Position>) {
+    pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Position) {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
