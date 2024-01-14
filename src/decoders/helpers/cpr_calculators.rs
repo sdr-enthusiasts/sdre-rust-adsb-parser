@@ -255,7 +255,42 @@ pub fn calc_modulo(x: f64, y: f64) -> f64 {
     x - y * libm::floor(x / y)
 }
 
-pub fn get_position_from_locally_unabiguous(
+pub fn get_position_from_locally_unabiguous_surface(
+    aircraft_frame: &Position,
+    local: &Position,
+    cpr_flag: CPRFormat,
+) -> Position {
+    let mut i = 0;
+    let d_lat = match cpr_flag {
+        CPRFormat::Even => D_LAT_EVEN_SURFACE,
+        CPRFormat::Odd => {
+            i = 1;
+            D_LAT_ODD_SURFACE
+        }
+    };
+
+    let lat_cpr = aircraft_frame.latitude / CPR_MAX;
+    let lon_cpr = aircraft_frame.longitude / CPR_MAX;
+
+    let j = libm::floor(local.latitude / d_lat)
+        + libm::floor(calc_modulo(local.latitude, d_lat) / d_lat - lat_cpr + 0.5);
+
+    let lat = d_lat * (j + lat_cpr);
+
+    let d_lon = 90.0 / libm::fmax((cpr_nl(lat) - i) as f64, 1.0);
+
+    let m = libm::floor(local.longitude / d_lon)
+        + libm::floor(calc_modulo(local.longitude, d_lon) / d_lon - lon_cpr + 0.5);
+
+    let lon = d_lon * (m + lon_cpr);
+
+    Position {
+        latitude: lat,
+        longitude: lon,
+    }
+}
+
+pub fn get_position_from_locally_unabiguous_airborne(
     aircraft_frame: &Position,
     local: &Position,
     cpr_flag: CPRFormat,
@@ -542,6 +577,35 @@ mod tests {
     }
 
     #[test]
+    fn calculate_surface_position_from_local() {
+        let aircraft_frame = Position {
+            latitude: 8055.0,
+            longitude: 8756.0,
+        };
+
+        let local = Position {
+            latitude: 35.18,
+            longitude: -106.57,
+        };
+
+        let expected_lat = 35.180_000_305_175_78;
+        let expected_lon = -106.569_999_694_824_22;
+
+        let position =
+            get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Even);
+
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+    }
+
+    #[test]
     fn calculate_local_unambiguous() {
         let aircraft_frame = Position {
             latitude: 93000.0,
@@ -555,7 +619,7 @@ mod tests {
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
         let position =
-            get_position_from_locally_unabiguous(&aircraft_frame, &local, CPRFormat::Even);
+            get_position_from_locally_unabiguous_airborne(&aircraft_frame, &local, CPRFormat::Even);
         println!("Calculated position: {:?}", position);
         println!(
             "Expected position: {:?}",

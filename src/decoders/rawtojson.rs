@@ -3,8 +3,9 @@ use radix_fmt::radix;
 use crate::decoders::{
     helpers::cpr_calculators::{
         get_position_from_even_odd_cpr_positions_airborne,
-        get_position_from_even_odd_cpr_positions_surface, get_position_from_locally_unabiguous,
-        haversine_distance_position, is_lat_lon_sane,
+        get_position_from_even_odd_cpr_positions_surface,
+        get_position_from_locally_unabiguous_airborne,
+        get_position_from_locally_unabiguous_surface, haversine_distance_position, is_lat_lon_sane,
     },
     json::get_timestamp,
     json_types::timestamp::TimeStamp,
@@ -116,8 +117,11 @@ fn update_position(
     // we ended up here because even/odd failed or we didn't have both even and odd
     // if we have a reference position from the user, try to use that to calculate the position
 
-    let position =
-        get_position_from_locally_unabiguous(aircraft_frame, reference_position, cpr_flag);
+    let position = if position_type == PositionType::Airborne {
+        get_position_from_locally_unabiguous_airborne(aircraft_frame, reference_position, cpr_flag)
+    } else {
+        get_position_from_locally_unabiguous_surface(aircraft_frame, reference_position, cpr_flag)
+    };
 
     debug!("{} Reference position {:?}", json.transponder_hex, position);
     if is_lat_lon_sane(position) {
@@ -162,8 +166,19 @@ fn update_position(
             longitude: lon.longitude,
         };
 
-        let position =
-            get_position_from_locally_unabiguous(aircraft_frame, &reference_position, cpr_flag);
+        let position = if position_type == PositionType::Airborne {
+            get_position_from_locally_unabiguous_airborne(
+                aircraft_frame,
+                &reference_position,
+                cpr_flag,
+            )
+        } else {
+            get_position_from_locally_unabiguous_surface(
+                aircraft_frame,
+                &reference_position,
+                cpr_flag,
+            )
+        };
 
         debug!(
             "{} Last known position calculated {:?}",
