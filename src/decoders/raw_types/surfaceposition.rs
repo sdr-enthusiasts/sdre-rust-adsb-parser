@@ -13,7 +13,10 @@ use super::{
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
 pub struct SurfacePosition {
-    pub mov: GroundSpeed,
+    #[deku(bits = "5")]
+    pub type_code: u8,
+    #[deku(bits = "7")]
+    pub mov: u8,
     pub s: StatusForGroundTrack,
     #[deku(bits = "7")]
     pub trk: u8,
@@ -35,9 +38,16 @@ impl SurfacePosition {
                 if self.trk == 0 {
                     Some(360.0)
                 } else {
-                    Some(360.0 * (self.trk as f32 / 128.0))
+                    Some((360.0 * self.trk as f32) / 128.0)
                 }
             }
+        }
+    }
+
+    pub fn get_ground_speed(&self) -> Option<GroundSpeed> {
+        match self.s {
+            StatusForGroundTrack::Invalid => None,
+            StatusForGroundTrack::Valid => Some(GroundSpeed::from(self.mov)),
         }
     }
 }

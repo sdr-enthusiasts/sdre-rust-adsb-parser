@@ -274,19 +274,12 @@ pub fn get_position_from_locally_unabiguous_surface(
 
     let j = libm::floor(local.latitude / d_lat)
         + libm::floor(calc_modulo(local.latitude, d_lat) / d_lat - lat_cpr + 0.5);
-    println!("j: {}", j);
-
     let lat = d_lat * (j + lat_cpr);
-    println!("lat: {}", lat);
 
     let d_lon = 90.0 / libm::fmax((cpr_nl(lat) - i) as f64, 1.0);
 
-    println!("d_lon: {}", d_lon);
-
     let m = libm::floor(local.longitude / d_lon)
         + libm::floor(calc_modulo(local.longitude, d_lon) / d_lon - lon_cpr + 0.5);
-
-    println!("m: {}", m);
 
     let lon = d_lon * (m + lon_cpr);
 
@@ -538,6 +531,10 @@ pub fn is_lat_lon_sane(position: Position) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::decoders::{
+        raw::NewAdsbRawMessage,
+        raw_types::{df::DF, groundspeed::GroundSpeed},
+    };
 
     #[test]
     fn cpr_nl_high_low_lat() {
@@ -641,6 +638,106 @@ mod tests {
     }
 
     #[test]
+    fn calculate_surface_position_from_local_kabq() {
+        let aircraft_frame = Position {
+            latitude: 126995.0,
+            longitude: 18218.0,
+        };
+
+        let local = Position {
+            latitude: 35.0402777778,
+            longitude: -106.6091666667,
+        };
+
+        let expected_lat = 35.03729739431607;
+        let expected_lon = -106.61438941955566;
+
+        let position =
+            get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
+
+        println!("Calculated position: {:?}", position);
+        println!(
+            "Expected position: {:?}",
+            Position {
+                latitude: expected_lat,
+                longitude: expected_lon,
+            }
+        );
+        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn decode_from_raw_surface_position() {
+        let message = "8CAAC4BB401C0175F7E88A134707";
+
+        // DF: 10001 (17/ADSB)
+        // Capability: 100 (4/Level 2 xponder)
+        // ICAO: 101010101100010010111011
+
+        // Type Code: 01000 (8/Surface Position)
+        // Movement: 0000001 (1/Stopped)
+        // Heading/Track Status: 1 (Valid)
+        // Heading/Ground Track: 1000000 (64, using maths 180*)
+        // Reserved: 0
+        // CPR Format: 0 (Even)
+        // CPR Lat: 01011101011111011 (47867)
+        // CPR Lon: 11110100010001010 (125066)
+
+        // CRC: 000100110100011100000111
+
+        let position = message.to_adsb_raw().unwrap();
+        assert_eq!(position.crc, 0);
+
+        // print the ICAO
+        if let DF::ADSB(adsb) = &position.df {
+            let transponderhex = adsb.icao.to_string();
+            assert_eq!(transponderhex, "AAC4BB");
+            // make sure it's decoded as a surface position
+
+            match adsb.me {
+                crate::decoders::raw_types::me::ME::SurfacePosition(surface_position) => {
+                    println!("Surface position: {:?}", surface_position);
+                    //assert_eq!(surface_position.mov.calculate(), Some(17.0));
+                    //assert_eq!(surface_position.get_heading(), Some(14.1));
+                    let local = Position {
+                        latitude: 35.0402777778,
+                        longitude: -106.6091666667,
+                    };
+
+                    let aircraft_frame = Position {
+                        latitude: surface_position.lat_cpr as f64,
+                        longitude: surface_position.lon_cpr as f64,
+                    };
+
+                    let expected_lat = 35.047794342041016;
+                    let expected_lon = -106.61477536571269;
+
+                    let position = get_position_from_locally_unabiguous_surface(
+                        &aircraft_frame,
+                        &local,
+                        CPRFormat::Even,
+                    );
+                    println!("Calculated position: {:?}", position);
+                    println!(
+                        "Expected position: {:?}",
+                        Position {
+                            latitude: expected_lat,
+                            longitude: expected_lon,
+                        }
+                    );
+                    assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+                    assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+                    assert!(surface_position.get_ground_speed() == Some(GroundSpeed::Stopped));
+                }
+                _ => {
+                    // return an error
+                    println!("Not a surface position");
+                }
+            }
+        }
+    }
+
+    #[test]
     fn calculate_local_unambiguous() {
         let aircraft_frame = Position {
             latitude: 93000.0,
@@ -740,7 +837,7 @@ mod tests {
         };
         let position =
             get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
-        let expected_lat = -35.840_195_478_019_07;
+        let expected_lat = -35.840_195_478_019_1;
         let expected_lon = 150.283_852_435_172_9;
         println!("Calculated position: {:?}", position);
         println!(

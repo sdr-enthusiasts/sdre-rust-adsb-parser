@@ -9,9 +9,7 @@ use crate::decoders::{
     },
     json::get_timestamp,
     json_types::timestamp::TimeStamp,
-    raw_types::{
-        cprheaders::CPRFormat, groundspeed::GroundSpeed, statusforgroundtrack::StatusForGroundTrack,
-    },
+    raw_types::{cprheaders::CPRFormat, statusforgroundtrack::StatusForGroundTrack},
 };
 
 use super::{
@@ -292,11 +290,10 @@ pub fn update_aircraft_position_surface(
 
     match surface_position.s {
         StatusForGroundTrack::Valid => {
-            match surface_position.mov {
-                GroundSpeed::None => json.ground_speed = None,
-                GroundSpeed::Stopped => json.ground_speed = Some(0.0.into()),
-                GroundSpeed::Speed { speed: _ } => {
-                    json.ground_speed = surface_position.mov.calculate().map(|v| v.into());
+            if let Some(groundspeed) = surface_position.get_ground_speed() {
+                match groundspeed.calculate() {
+                    Some(speed) => json.ground_speed = Some(speed.into()),
+                    None => json.ground_speed = None,
                 }
             }
 
