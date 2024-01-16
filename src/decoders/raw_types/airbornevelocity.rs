@@ -58,3 +58,50 @@ impl AirborneVelocity {
         Some((heading as f32, libm::hypot(v_ew, v_ns), vrate))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::decoders::{
+        raw::NewAdsbRawMessage,
+        raw_types::{df::DF, groundspeeddecoding::GroundSpeedDecoding},
+    };
+
+    #[test]
+    fn test_airborne_velocity() {
+        let message = "8DC05BCF9909CF0DD00417286F1E";
+        let decoded = message.to_adsb_raw().unwrap();
+
+        let expected = AirborneVelocity {
+            st: 1,
+            nac_v: 1,
+            sub_type: AirborneVelocitySubType::GroundSpeedDecoding(GroundSpeedDecoding {
+                ew_sign: Sign::Positive,
+                ew_vel: 463,
+                ns_sign: Sign::Positive,
+                ns_vel: 110,
+            }),
+            vrate_src: VerticalRateSource::GeometricAltitude,
+            vrate_sign: Sign::Positive,
+            vrate_value: 0b000000001,
+            reverved: 0b00,
+            gnss_sign: Sign::Positive,
+            gnss_baro_diff: 550,
+        };
+
+        println!("Decoded Message: {:?}", &decoded);
+
+        if let DF::ADSB(adsb) = decoded.df {
+            match adsb.me {
+                crate::decoders::raw_types::me::ME::AirborneVelocity(me) => {
+                    assert_eq!(me, expected);
+                    let (heading, ground_speed, vertical_rate) = me.calculate().unwrap();
+                    assert_eq!(heading, 76.72492);
+                    assert_eq!(ground_speed, 474.68410548490033);
+                    assert_eq!(vertical_rate, 0);
+                }
+                _ => panic!("Expected AirborneVelocity"),
+            }
+        }
+    }
+}
