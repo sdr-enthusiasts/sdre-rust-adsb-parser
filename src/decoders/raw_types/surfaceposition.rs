@@ -51,3 +51,5 @@ impl SurfacePosition {
         }
     }
 }
+
+// We would do tests here but we're doing that in the cpr module, where we also test decoding the position
