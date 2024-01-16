@@ -13,22 +13,22 @@ use std::fmt::{self, Formatter};
 pub struct OperationalMode {
     /// (0, 0) in Version 2, reserved for other values
     #[deku(bits = "2", assert_eq = "0")]
-    reserved: u8,
+    pub reserved: u8,
 
     #[deku(bits = "1")]
-    tcas_ra_active: bool,
+    pub tcas_ra_active: bool,
 
     #[deku(bits = "1")]
-    ident_switch_active: bool,
+    pub ident_switch_active: bool,
 
     #[deku(bits = "1")]
-    reserved_recv_atc_service: bool,
+    pub reserved_recv_atc_service: bool,
 
     #[deku(bits = "1")]
-    single_antenna_flag: bool,
+    pub single_antenna_flag: bool,
 
     #[deku(bits = "2")]
-    system_design_assurance: u8,
+    pub system_design_assurance: u8,
 }
 
 impl fmt::Display for OperationalMode {

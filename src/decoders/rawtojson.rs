@@ -280,9 +280,6 @@ pub fn update_aircraft_position_surface(
     surface_position: &SurfacePosition,
     reference_position: &Position,
 ) {
-    // if surface position is valid, process
-    info!("{} Surface position", json.transponder_hex);
-
     json.barometric_altitude = Some("ground".into());
 
     // TODO: I can't figure out what tar1090 is doing for what values it's using for ground speed and track, and if it factors in the validity of the surface position. I'm going to assume it does for now.
@@ -367,12 +364,6 @@ pub fn update_aircraft_position_surface(
         surface_position.f,
         current_time,
         PositionType::Surface,
-    );
-
-    // print the position
-    info!(
-        "{} Surface position {:?} {:?}",
-        json.transponder_hex, json.latitude, json.longitude
     );
 }
 
