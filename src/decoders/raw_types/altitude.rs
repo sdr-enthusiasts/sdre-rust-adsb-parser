@@ -77,3 +77,40 @@ impl Altitude {
         }
     }
 }
+
+#[cfg(test)]
+
+pub mod test {
+    use super::*;
+    use crate::decoders::raw::NewAdsbRawMessage;
+    use crate::decoders::raw_types::df::DF;
+    use crate::decoders::raw_types::surveillancestatus::SurveillanceStatus;
+
+    #[test]
+    fn decode_altitude() {
+        let message = "8FA4955D597D8288F8C756559A37";
+        let decoded = message.to_adsb_raw().unwrap();
+
+        let expected = Altitude {
+            tc: 11,
+            ss: SurveillanceStatus::NoCondition,
+            saf_or_imf: 1,
+            alt: Some(24000),
+            t: false,
+            odd_flag: CPRFormat::Even,
+            lat_cpr: 83068,
+            lon_cpr: 51030,
+        };
+
+        println!("Decoded Message: {:?}", &decoded);
+
+        if let DF::ADSB(adsb) = decoded.df {
+            match adsb.me {
+                crate::decoders::raw_types::me::ME::AirbornePositionBaroAltitude(altitude) => {
+                    assert_eq!(altitude, expected);
+                }
+                _ => panic!("Wrong ME type"),
+            }
+        }
+    }
+}
