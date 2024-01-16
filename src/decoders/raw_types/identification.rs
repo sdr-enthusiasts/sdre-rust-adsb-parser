@@ -20,3 +20,36 @@ pub struct Identification {
     #[deku(reader = "aircraft_identification_read(deku::rest)")]
     pub cn: String,
 }
+
+#[cfg(test)]
+
+pub mod test {
+    use super::*;
+    use crate::decoders::raw::NewAdsbRawMessage;
+    use crate::decoders::raw_types::df::DF;
+    use crate::decoders::raw_types::identification::Identification;
+
+    #[test]
+    fn decode_identification() {
+        let message = "8DA69B9C223B5CB5082820C97A87";
+        let decoded = message.to_adsb_raw().unwrap();
+
+        println!("{:?}", decoded);
+
+        let expected = Identification {
+            tc: TypeCoding::A,
+            ca: 2,
+            cn: "N525BB".to_string(),
+        };
+
+        match decoded.df {
+            DF::ADSB(adsb) => match adsb.me {
+                crate::decoders::raw_types::me::ME::AircraftIdentification(id) => {
+                    assert_eq!(id, expected);
+                }
+                _ => panic!("Wrong ME"),
+            },
+            _ => panic!("Wrong DF"),
+        }
+    }
+}
