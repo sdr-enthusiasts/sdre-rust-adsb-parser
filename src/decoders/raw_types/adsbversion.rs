@@ -15,11 +15,15 @@ use std::fmt::{self, Formatter};
 #[deku(type = "u8", bits = "3")]
 pub enum ADSBVersion {
     #[deku(id = "0")]
-    DOC9871AppendixA,
+    ADSBVersion0,
     #[deku(id = "1")]
-    DOC9871AppendixB,
+    ADSBVersion1,
     #[deku(id = "2")]
-    DOC9871AppendixC,
+    ADSBVersion2,
+    #[deku(id = "3")]
+    ADSBVersion3,
+    #[deku(id_pat = "_")]
+    Unknown,
 }
 
 impl fmt::Display for ADSBVersion {

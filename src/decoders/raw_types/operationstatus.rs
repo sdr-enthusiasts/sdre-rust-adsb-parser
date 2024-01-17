@@ -61,7 +61,7 @@ mod test {
                 single_antenna_flag: true,
                 system_design_assurance: 2,
             },
-            version_number: ADSBVersion::DOC9871AppendixC,
+            version_number: ADSBVersion::ADSBVersion2,
             nic_supplement_a: 0,
             navigational_accuracy_category: 10,
             geometric_vertical_accuracy: 2,
