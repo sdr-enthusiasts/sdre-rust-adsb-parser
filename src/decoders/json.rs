@@ -377,9 +377,7 @@ impl JSONMessage {
     ) -> Result<(), String> {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
-                ME::AirborneVelocity(velocity) => {
-                    update_airborne_velocity(self, velocity);
-                }
+                ME::AirborneVelocity(velocity) => update_airborne_velocity(self, velocity),
                 ME::NoPosition(_) => warn!("NoPosition is not implemented...."),
                 ME::AircraftIdentification(id) => {
                     update_aircraft_identification(self, id);
@@ -404,7 +402,7 @@ impl JSONMessage {
                 ME::Reserved1(_) => warn!("Reserved1 is not implemented...."),
                 ME::AircraftStatus(status) => update_aircraft_status(self, status),
                 ME::TargetStateAndStatusInformation(_) => {
-                    warn!("TargetStateAndStatusInformation is not implemented....")
+                    //warn!("TargetStateAndStatusInformation is not implemented....")
                 }
                 ME::AircraftOperationalCoordination(_) => {
                     warn!("AircraftOperationalCoordination is not implemented....")
