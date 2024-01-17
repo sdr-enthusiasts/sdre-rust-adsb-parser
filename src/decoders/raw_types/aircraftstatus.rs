@@ -12,6 +12,9 @@ use super::{
     helper_functions::decode_id13_field,
 };
 
+// FIXME: there appear to be 4 different variants of this message type. We don't deserialize the one
+// we support properly, let alone the others.
+
 /// Table: A-2-97
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct AircraftStatus {
@@ -23,4 +26,37 @@ pub struct AircraftStatus {
         map = "|squawk: u32| -> Result<_, DekuError> {Ok(decode_id13_field(squawk))}"
     )]
     pub squawk: u32,
+}
+
+#[cfg(test)]
+
+pub mod test {
+    use super::*;
+    use crate::decoders::raw::NewAdsbRawMessage;
+    use crate::decoders::raw_types::aircraftstatus::AircraftStatus;
+    use crate::decoders::raw_types::df::DF;
+
+    #[test]
+    fn decode_aircraftstatus() {
+        let message = "8DAB44A7E10289000000008922C1";
+        let decoded = message.to_adsb_raw().unwrap();
+
+        println!("{:?}", decoded);
+
+        let expected = AircraftStatus {
+            sub_type: AircraftStatusType::NoInformation,
+            emergency_state: EmergencyState::None,
+            squawk: 1200,
+        };
+
+        match decoded.df {
+            DF::ADSB(adsb) => match adsb.me {
+                crate::decoders::raw_types::me::ME::AircraftStatus(status) => {
+                    assert_eq!(status, expected);
+                }
+                _ => panic!("Wrong ME"),
+            },
+            _ => panic!("Wrong DF"),
+        }
+    }
 }
