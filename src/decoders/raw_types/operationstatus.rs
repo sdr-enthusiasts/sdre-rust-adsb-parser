@@ -32,13 +32,14 @@ mod test {
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::adsbversion::ADSBVersion;
     use crate::decoders::raw_types::capabilityclassairborne::CapabilityClassAirborne;
+    use crate::decoders::raw_types::capabilityclasssurface::CapabilityClassSurface;
     use crate::decoders::raw_types::df::DF;
     use crate::decoders::raw_types::me::ME;
     use crate::decoders::raw_types::operationalmode::OperationalMode;
     use crate::decoders::raw_types::operationstatusairborne::OperationStatusAirborne;
 
     #[test]
-    fn test_operation_status() {
+    fn test_operation_status_airborne() {
         let message = "8DABBD47F8230006004AB87B5E9E";
         let decoded = message.to_adsb_raw().unwrap();
         println!("Decoded {:?}", decoded);
@@ -70,6 +71,54 @@ mod test {
             horizontal_reference_direction: 0,
             sil_supplement: 0,
         });
+
+        match decoded.df {
+            DF::ADSB(adsb) => match adsb.me {
+                ME::AircraftOperationStatus(operation_status) => {
+                    assert_eq!(operation_status, expected);
+                }
+                _ => panic!("ME is not OperationStatus"),
+            },
+            _ => panic!("DF is not ADSB"),
+        }
+    }
+
+    #[test]
+    fn test_operational_status_surface() {
+        let message = "8CA231A6F9004402874A38F61073";
+
+        let decoded = message.to_adsb_raw().unwrap();
+
+        let expected = OperationStatus::Surface(OperationStatusSurface {
+            capability_class: CapabilityClassSurface {
+                reserved0: 0,
+                poe: 0,
+                es1090: 0,
+                b2_low: 0,
+                uat_in: 0,
+                nac_v: 2,
+                nic_supplement_c: 0,
+            },
+            lw_codes: 4,
+            operational_mode: OperationalMode {
+                reserved: 0,
+                tcas_ra_active: false,
+                ident_switch_active: false,
+                reserved_recv_atc_service: false,
+                single_antenna_flag: false,
+                system_design_assurance: 2,
+            },
+            gps_antenna_offset: 135,
+            version_number: ADSBVersion::ADSBVersion2,
+            nic_supplement_a: 0,
+            navigational_accuracy_category: 10,
+            source_integrity_level: 3,
+            barometric_altitude_integrity: 1,
+            horizontal_reference_direction: 0,
+            sil_supplement: 0,
+        });
+
+        println!("Decoded {:?}", decoded);
 
         match decoded.df {
             DF::ADSB(adsb) => match adsb.me {
