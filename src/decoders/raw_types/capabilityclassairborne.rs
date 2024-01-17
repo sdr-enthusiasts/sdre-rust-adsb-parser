@@ -24,13 +24,13 @@ pub struct CapabilityClassAirborne {
     #[deku(bits = "1")]
     pub cdti: u8,
 
-    // #[deku(bits = "2", assert_eq = "0")]
+    #[deku(bits = "2", assert_eq = "0")]
     // FIXME???
     // This SHOULD be 0, but it's not always
     // The best I can tell the military will broadcast ADSB
     // but mangle some fields they shouldn't play with
     // so that "normal" ADSB receivers will ignore them
-    #[deku(bits = "2")]
+    // #[deku(bits = "2")]
     pub reserved1: u8,
 
     #[deku(bits = "1")]

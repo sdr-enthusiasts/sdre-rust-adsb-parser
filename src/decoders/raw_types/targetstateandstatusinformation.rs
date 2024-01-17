@@ -60,3 +60,49 @@ pub struct TargetStateAndStatusInformation {
     #[deku(pad_bits_after = "2")] // reserved
     pub lnav: bool,
 }
+
+#[cfg(test)]
+mod test {
+    use crate::decoders::raw::NewAdsbRawMessage;
+    use crate::decoders::raw_types::df::DF;
+    use crate::decoders::raw_types::me::ME;
+
+    use super::*;
+
+    #[test]
+    fn test_status_information() {
+        let message = "8DABEBE0EA36C866DD5C082732C5";
+        let decoded = message.to_adsb_raw().unwrap();
+        println!("Decoded {:?}", decoded);
+
+        let expected = TargetStateAndStatusInformation {
+            subtype: 1,
+            is_fms: false,
+            altitude: 28000,
+            qnh: 1013.6,
+            is_heading: true,
+            heading: 257.34375,
+            nacp: 10,
+            nicbaro: 1,
+            sil: 3,
+            mode_validity: false,
+            autopilot: false,
+            vnac: false,
+            alt_hold: false,
+            imf: false,
+            approach: false,
+            tcas: true,
+            lnav: false,
+        };
+
+        match decoded.df {
+            DF::ADSB(adsb) => match adsb.me {
+                ME::TargetStateAndStatusInformation(state) => {
+                    assert_eq!(state, expected);
+                }
+                _ => panic!("ME is not Target and state information"),
+            },
+            _ => panic!("DF is not ADSB"),
+        }
+    }
+}
