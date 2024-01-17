@@ -15,6 +15,7 @@ use crate::decoders::{
 use super::{
     helpers::cpr_calculators::Position,
     json::JSONMessage,
+    json_types::emmittercategory::EmitterCategory,
     raw_types::{
         airbornevelocity::AirborneVelocity, aircraftstatus::AircraftStatus,
         identification::Identification, operationstatus::OperationStatus,
@@ -38,9 +39,10 @@ pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVeloc
 }
 
 pub fn update_aircraft_identification(json: &mut JSONMessage, id: &Identification) {
-    // TODO: Type coding?
     json.calculated_best_flight_id = Some(id.cn.clone().into());
-    // TODO: Verify this field
+    if let Ok(emitter_category) = EmitterCategory::new(id.tc, id.ca) {
+        json.category = Some(emitter_category);
+    }
 }
 
 pub fn update_operational_status(json: &mut JSONMessage, operation_status: &OperationStatus) {

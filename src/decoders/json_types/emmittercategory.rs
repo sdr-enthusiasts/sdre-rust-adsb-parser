@@ -9,6 +9,8 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
+use crate::decoders::raw_types::typecoding::TypeCoding;
+
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
 pub enum EmitterCategory {
@@ -37,6 +39,14 @@ pub enum EmitterCategory {
     C5,
     C6,
     C7,
+    D0,
+    D1,
+    D2,
+    D3,
+    D4,
+    D5,
+    D6,
+    D7,
 }
 
 impl Serialize for EmitterCategory {
@@ -69,6 +79,14 @@ impl Serialize for EmitterCategory {
             EmitterCategory::C5 => serializer.serialize_str("C5"),
             EmitterCategory::C6 => serializer.serialize_str("C6"),
             EmitterCategory::C7 => serializer.serialize_str("C7"),
+            EmitterCategory::D0 => serializer.serialize_str("D0"),
+            EmitterCategory::D1 => serializer.serialize_str("D1"),
+            EmitterCategory::D2 => serializer.serialize_str("D2"),
+            EmitterCategory::D3 => serializer.serialize_str("D3"),
+            EmitterCategory::D4 => serializer.serialize_str("D4"),
+            EmitterCategory::D5 => serializer.serialize_str("D5"),
+            EmitterCategory::D6 => serializer.serialize_str("D6"),
+            EmitterCategory::D7 => serializer.serialize_str("D7"),
         }
     }
 }
@@ -102,7 +120,66 @@ impl TryFrom<String> for EmitterCategory {
             "C5" => Ok(EmitterCategory::C5),
             "C6" => Ok(EmitterCategory::C6),
             "C7" => Ok(EmitterCategory::C7),
+            "D0" => Ok(EmitterCategory::D0),
+            "D1" => Ok(EmitterCategory::D1),
+            "D2" => Ok(EmitterCategory::D2),
+            "D3" => Ok(EmitterCategory::D3),
+            "D4" => Ok(EmitterCategory::D4),
+            "D5" => Ok(EmitterCategory::D5),
+            "D6" => Ok(EmitterCategory::D6),
+            "D7" => Ok(EmitterCategory::D7),
             _ => Err(format!("Invalid emitter category: {}", emitter_category)),
+        }
+    }
+}
+
+impl EmitterCategory {
+    pub fn new(tc: TypeCoding, ca: u8) -> Result<Self, String> {
+        match tc {
+            TypeCoding::A => match ca {
+                0 => Ok(EmitterCategory::A0),
+                1 => Ok(EmitterCategory::A1),
+                2 => Ok(EmitterCategory::A2),
+                3 => Ok(EmitterCategory::A3),
+                4 => Ok(EmitterCategory::A4),
+                5 => Ok(EmitterCategory::A5),
+                6 => Ok(EmitterCategory::A6),
+                7 => Ok(EmitterCategory::A7),
+                _ => Err(format!("Invalid emitter category: A{}", ca)),
+            },
+            TypeCoding::B => match ca {
+                0 => Ok(EmitterCategory::B0),
+                1 => Ok(EmitterCategory::B1),
+                2 => Ok(EmitterCategory::B2),
+                3 => Ok(EmitterCategory::B3),
+                4 => Ok(EmitterCategory::B4),
+                5 => Ok(EmitterCategory::B5),
+                6 => Ok(EmitterCategory::B6),
+                7 => Ok(EmitterCategory::B7),
+                _ => Err(format!("Invalid emitter category: B{}", ca)),
+            },
+            TypeCoding::C => match ca {
+                0 => Ok(EmitterCategory::C0),
+                1 => Ok(EmitterCategory::C1),
+                2 => Ok(EmitterCategory::C2),
+                3 => Ok(EmitterCategory::C3),
+                4 => Ok(EmitterCategory::C4),
+                5 => Ok(EmitterCategory::C5),
+                6 => Ok(EmitterCategory::C6),
+                7 => Ok(EmitterCategory::C7),
+                _ => Err(format!("Invalid emitter category: C{}", ca)),
+            },
+            TypeCoding::D => match ca {
+                0 => Ok(EmitterCategory::D0),
+                1 => Ok(EmitterCategory::D1),
+                2 => Ok(EmitterCategory::D2),
+                3 => Ok(EmitterCategory::D3),
+                4 => Ok(EmitterCategory::D4),
+                5 => Ok(EmitterCategory::D5),
+                6 => Ok(EmitterCategory::D6),
+                7 => Ok(EmitterCategory::D7),
+                _ => Err(format!("Invalid emitter category: D{}", ca)),
+            },
         }
     }
 }
@@ -114,7 +191,7 @@ impl fmt::Display for EmitterCategory {
             EmitterCategory::A1 => write!(f, "A1 : Light (< 15500 lbs)"),
             EmitterCategory::A2 => write!(f, "A2 : Small (15500 to 75000 lbs)"),
             EmitterCategory::A3 => write!(f, "A3 : Large (75000 to 300000 lbs)"),
-            EmitterCategory::A4 => write!(f, "A4 :  High vortex large"),
+            EmitterCategory::A4 => write!(f, "A4 : High vortex large"),
             EmitterCategory::A5 => write!(f, "A5 : Heavy (> 300000 lbs) "),
             EmitterCategory::A6 => write!(f, "A6 : High performance"),
             EmitterCategory::A7 => write!(f, "A7 : Rotorcraft"),
@@ -138,6 +215,14 @@ impl fmt::Display for EmitterCategory {
             EmitterCategory::C5 => write!(f, "C5 : Line obstacle"),
             EmitterCategory::C6 => write!(f, "C6: Reserved"),
             EmitterCategory::C7 => write!(f, "C7: Reserved"),
+            EmitterCategory::D0 => write!(f, "D0 : Reserved/No ADS-B information"),
+            EmitterCategory::D1 => write!(f, "D1 : Reserved"),
+            EmitterCategory::D2 => write!(f, "D2 : Reserved"),
+            EmitterCategory::D3 => write!(f, "D3 : Reserved"),
+            EmitterCategory::D4 => write!(f, "D4 : Reserved"),
+            EmitterCategory::D5 => write!(f, "D5 : Reserved"),
+            EmitterCategory::D6 => write!(f, "D6 : Reserved"),
+            EmitterCategory::D7 => write!(f, "D7 : Reserved"),
         }
     }
 }
