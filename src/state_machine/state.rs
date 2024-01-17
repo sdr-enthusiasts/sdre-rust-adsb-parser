@@ -19,6 +19,7 @@ use crate::decoders::json_types::transponderhex;
 use crate::decoders::raw_types::df::DF;
 use crate::decoders::raw_types::ke;
 use crate::decoders::raw_types::me::ME;
+use crate::DecodeMessage;
 use crate::{
     data_structures::airplane::Airplane,
     decoders::{
@@ -28,16 +29,28 @@ use crate::{
     ADSBMessage,
 };
 
+#[derive(Debug, Clone)]
+pub enum ProcessMessageType {
+    Raw(AdsbRawMessage),
+    Beast(AdsbBeastMessage),
+    JSON(JSONMessage),
+    AircraftJSON(AircraftJSON),
+    ADSBMessage(ADSBMessage),
+    AsVecU8(Vec<u8>),
+    AsString(String),
+}
+
 pub struct StateMachine {
     pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
     pub adsb_timeout_in_seconds: u64,
     pub adsc_timeout_in_seconds: u64,
-    input_channel: Sender<ADSBMessage>,
-    output_channel: Receiver<ADSBMessage>,
+    input_channel: Sender<ProcessMessageType>,
+    output_channel: Receiver<ProcessMessageType>,
     messages_processed: Arc<Mutex<u64>>,
     position: Position,
 }
 
+// Note: Input to the state machine is a single frame of ADS-B data (beast/raw), AircraftJSON, or JSON
 impl StateMachine {
     pub fn new(
         adsb_timeout_in_seconds: u32,
@@ -45,7 +58,10 @@ impl StateMachine {
         lat: f64,
         lon: f64,
     ) -> StateMachine {
-        let (sender_channel, receiver_channel) = tokio::sync::mpsc::channel(100);
+        let (sender_channel, receiver_channel): (
+            Sender<ProcessMessageType>,
+            Receiver<ProcessMessageType>,
+        ) = tokio::sync::mpsc::channel(100);
         StateMachine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
             adsb_timeout_in_seconds: adsb_timeout_in_seconds as u64,
@@ -60,7 +76,7 @@ impl StateMachine {
         }
     }
 
-    pub fn get_sender_channel(&self) -> Sender<ADSBMessage> {
+    pub fn get_sender_channel(&self) -> Sender<ProcessMessageType> {
         self.input_channel.clone()
     }
 
@@ -106,23 +122,79 @@ impl StateMachine {
 
     pub async fn process_adsb_message(&mut self) {
         while let Some(message) = self.output_channel.recv().await {
-            match message {
-                ADSBMessage::AdsbRawMessage(raw_message) => {
-                    self.process_aircraft_raw(raw_message).await
+            let mut result: Result<(), String> = Ok(());
+
+            match message.clone() {
+                ProcessMessageType::Raw(raw_message) => {
+                    result = self.process_aircraft_raw(raw_message).await
                 }
-                ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
-                    self.process_aircraft_beast(adsb_beast_message).await
+                ProcessMessageType::Beast(beast_message) => {
+                    result = self.process_aircraft_beast(beast_message).await
                 }
-                ADSBMessage::AircraftJSON(aircraft_json) => {
+                ProcessMessageType::JSON(json_message) => {
+                    self.process_json_message(json_message).await
+                }
+                ProcessMessageType::AircraftJSON(aircraft_json) => {
                     self.process_aircraft_json(aircraft_json).await
                 }
-                ADSBMessage::JSONMessage(json_message) => {
-                    self.process_json_message(json_message).await
+                ProcessMessageType::ADSBMessage(adsb_message) => match adsb_message {
+                    ADSBMessage::AdsbRawMessage(raw_message) => {
+                        result = self.process_aircraft_raw(raw_message).await
+                    }
+                    ADSBMessage::AdsbBeastMessage(beast_message) => {
+                        result = self.process_aircraft_beast(beast_message).await
+                    }
+                    ADSBMessage::AircraftJSON(json_message) => {
+                        self.process_aircraft_json(json_message).await
+                    }
+                    ADSBMessage::JSONMessage(json_message) => {
+                        self.process_json_message(json_message).await
+                    }
+                },
+                ProcessMessageType::AsVecU8(vec_u8) => {
+                    if let Ok(message) = vec_u8.decode_message() {
+                        match message {
+                            ADSBMessage::AdsbRawMessage(raw_message) => {
+                                result = self.process_aircraft_raw(raw_message).await
+                            }
+                            ADSBMessage::AdsbBeastMessage(beast_message) => {
+                                result = self.process_aircraft_beast(beast_message).await
+                            }
+                            ADSBMessage::AircraftJSON(json_message) => {
+                                self.process_aircraft_json(json_message).await
+                            }
+                            ADSBMessage::JSONMessage(json_message) => {
+                                self.process_json_message(json_message).await
+                            }
+                        }
+                    }
+                }
+                ProcessMessageType::AsString(string) => {
+                    if let Ok(message) = string.decode_message() {
+                        match message {
+                            ADSBMessage::AdsbRawMessage(raw_message) => {
+                                result = self.process_aircraft_raw(raw_message).await
+                            }
+                            ADSBMessage::AdsbBeastMessage(beast_message) => {
+                                result = self.process_aircraft_beast(beast_message).await
+                            }
+                            ADSBMessage::AircraftJSON(json_message) => {
+                                self.process_aircraft_json(json_message).await
+                            }
+                            ADSBMessage::JSONMessage(json_message) => {
+                                self.process_json_message(json_message).await
+                            }
+                        }
+                    }
                 }
             }
 
             let mut messages_processed = self.messages_processed.lock().await;
             *messages_processed += 1;
+
+            if let Err(e) = result {
+                error!("{}", e);
+            }
         }
     }
 
@@ -157,7 +229,7 @@ impl StateMachine {
         }
     }
 
-    pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) {
+    pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) -> Result<(), String> {
         if let DF::ADSB(adsb) = &message.df {
             let mut airplanes = self.airplanes.lock().await;
 
@@ -165,20 +237,31 @@ impl StateMachine {
 
             match airplanes.entry(transponderhex.clone()) {
                 Entry::Occupied(mut airplane) => {
-                    airplane
+                    return airplane
                         .get_mut()
                         .update_from_df(&message.df, &self.position);
                 }
                 Entry::Vacant(airplane) => {
                     let mut new_airplane = Airplane::new(transponderhex);
-                    new_airplane.update_from_df(&message.df, &self.position);
-                    airplane.insert(new_airplane);
+                    match new_airplane.update_from_df(&message.df, &self.position) {
+                        Ok(_) => {
+                            airplane.insert(new_airplane);
+                        }
+                        Err(e) => {
+                            return Err(e);
+                        }
+                    }
                 }
             }
         }
+
+        Ok(())
     }
 
-    pub async fn process_aircraft_beast(&mut self, message: AdsbBeastMessage) {
+    pub async fn process_aircraft_beast(
+        &mut self,
+        message: AdsbBeastMessage,
+    ) -> Result<(), String> {
         self.process_aircraft_raw(message.raw_message).await
     }
 }

@@ -41,7 +41,9 @@ use sdre_rust_adsb_parser::{
         encode_adsb_json_input::format_adsb_json_frames_from_string,
         encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
     },
-    state_machine::state::{expire_planes, generate_aircraft_json, StateMachine},
+    state_machine::state::{
+        expire_planes, generate_aircraft_json, ProcessMessageType, StateMachine,
+    },
     ADSBMessage, DecodeMessage,
 };
 use sdre_rust_logging::SetupLogging;
@@ -392,16 +394,13 @@ async fn process_beast_frames(
 
         trace!("Pre-processed: {:02X?}", frames.frames);
 
-        for frame in &frames.frames {
+        for frame in frames.frames {
             debug!("Decoding: {:02X?}", frame);
 
-            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            if let Ok(message) = message {
-                sender_channel.send(message).await.unwrap();
-            } else {
-                error!("Error decoding: {}", message.unwrap_err());
-                error!("Message input: {:02X?}", frame);
-            }
+            sender_channel
+                .send(ProcessMessageType::AsVecU8(frame))
+                .await
+                .unwrap();
         }
     }
     Ok(())
@@ -519,16 +518,13 @@ async fn process_raw_frames(
 
         trace!("Pre-processed: {:02X?}", frames.frames);
 
-        for frame in &frames.frames {
+        for frame in frames.frames {
             debug!("Decoding: {:02X?}", frame);
 
-            let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
-            if let Ok(message) = message {
-                sender_channel.send(message).await.unwrap();
-            } else {
-                error!("Error decoding: {}", message.unwrap_err());
-                error!("Message input: {:02X?}", frame);
-            }
+            sender_channel
+                .send(ProcessMessageType::AsVecU8(frame))
+                .await
+                .unwrap();
         }
     }
     Ok(())
@@ -613,7 +609,10 @@ async fn process_as_aircraft_json(
                     let message: Result<ADSBMessage, DeserializationError> =
                         final_message_to_process.decode_message();
                     if let Ok(message) = message {
-                        sender_channel.send(message).await.unwrap();
+                        sender_channel
+                            .send(ProcessMessageType::ADSBMessage(message))
+                            .await
+                            .unwrap();
                     } else {
                         error!("Error decoding: {}", message.unwrap_err());
                         error!("Message input: {}", final_message_to_process);
@@ -753,7 +752,10 @@ async fn process_json_from_tcp(
 
             let message: Result<ADSBMessage, DeserializationError> = frame.decode_message();
             if let Ok(message) = message {
-                sender_channel.send(message).await.unwrap();
+                sender_channel
+                    .send(ProcessMessageType::ADSBMessage(message))
+                    .await
+                    .unwrap();
             } else {
                 error!("Error decoding: {}", message.unwrap_err());
                 error!("Message input: {}", frame);

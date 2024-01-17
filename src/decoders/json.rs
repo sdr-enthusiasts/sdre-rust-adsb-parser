@@ -370,7 +370,11 @@ impl JSONMessage {
         }
     }
 
-    pub fn update_from_df(&mut self, raw_adsb: &DF, reference_positon: &Position) {
+    pub fn update_from_df(
+        &mut self,
+        raw_adsb: &DF,
+        reference_positon: &Position,
+    ) -> Result<(), String> {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
@@ -394,7 +398,9 @@ impl JSONMessage {
                     );
                 }
                 ME::Reserved0(_) => warn!("Reserved0 is not implemented...."),
-                ME::SurfaceSystemStatus(_) => warn!("SurfaceSystemStatus is not implemented"),
+                ME::SurfaceSystemStatus(_) => {
+                    return Err("SurfaceSystemStatus is not implemented....".into())
+                }
                 ME::Reserved1(_) => warn!("Reserved1 is not implemented...."),
                 ME::AircraftStatus(status) => update_aircraft_status(self, status),
                 ME::TargetStateAndStatusInformation(_) => {
@@ -412,6 +418,8 @@ impl JSONMessage {
         // Reset the last time seen to "now". When the serializer is fixed properly
         self.last_time_seen = (0.0).into();
         self.timestamp = get_timestamp();
+
+        Ok(())
     }
 }
 
