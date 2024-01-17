@@ -6,8 +6,7 @@
 
 #![cfg_attr(debug_assertions, allow(dead_code, unused_imports, unused_variables))]
 
-use core::time;
-use serde::de::value;
+use core::fmt;
 use std::collections::{hash_map::Entry, HashMap};
 use std::sync::Arc;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -15,10 +14,7 @@ use tokio::sync::Mutex;
 
 use crate::decoders::helpers::cpr_calculators::Position;
 use crate::decoders::json_types::timestamp::TimeStamp;
-use crate::decoders::json_types::transponderhex;
 use crate::decoders::raw_types::df::DF;
-use crate::decoders::raw_types::ke;
-use crate::decoders::raw_types::me::ME;
 use crate::DecodeMessage;
 use crate::{
     data_structures::airplane::Airplane,
@@ -40,6 +36,26 @@ pub enum ProcessMessageType {
     AsString(String),
 }
 
+impl fmt::Display for ProcessMessageType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ProcessMessageType::Raw(raw_message) => write!(f, "{}", raw_message),
+            ProcessMessageType::Beast(beast_message) => write!(f, "{}", beast_message),
+            ProcessMessageType::JSON(json_message) => write!(f, "{}", json_message),
+            ProcessMessageType::AircraftJSON(aircraft_json) => write!(f, "{}", aircraft_json),
+            ProcessMessageType::ADSBMessage(adsb_message) => write!(f, "{}", adsb_message),
+            ProcessMessageType::AsVecU8(vec_u8) => {
+                let mut output = "".to_string();
+                for byte in vec_u8 {
+                    output.push_str(&format!("{:02X?}", byte));
+                }
+                write!(f, "{}", output)
+            }
+            ProcessMessageType::AsString(string) => write!(f, "{}", string),
+        }
+    }
+}
+
 pub struct StateMachine {
     pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
     pub adsb_timeout_in_seconds: u64,
@@ -51,6 +67,9 @@ pub struct StateMachine {
 }
 
 // Note: Input to the state machine is a single frame of ADS-B data (beast/raw), AircraftJSON, or JSON
+/// Create the state machine. The state machine will enable the user to set the timeout for ADS-B and ADS-C messages.
+/// The state machine needs a user-defined lat/lon for decoding Surface Position messages. This position is also used
+/// for airborne aircraft positions if the aircraft position cannot be derived from the available messages received.
 impl StateMachine {
     pub fn new(
         adsb_timeout_in_seconds: u32,
@@ -194,6 +213,7 @@ impl StateMachine {
 
             if let Err(e) = result {
                 error!("{}", e);
+                error!("Message: {}", message);
             }
         }
     }
@@ -294,7 +314,7 @@ pub async fn expire_planes(
         let mut airplanes = planes.lock().await;
         let mut planes_removed = 0;
 
-        airplanes.retain(|key, value| match value.timestamp {
+        airplanes.retain(|_, value| match value.timestamp {
             TimeStamp::TimeStampAsF64(timestamp) => match &value.message_type {
                 ADSC => {
                     if current_time - timestamp > adsc_timeout_in_seconds {
