@@ -105,6 +105,7 @@ pub mod decoders {
         pub mod identitycode;
         pub mod ke;
         pub mod me;
+        pub mod noposition;
         pub mod operationalmode;
         pub mod operationcodesurface;
         pub mod operationstatus;

@@ -23,7 +23,7 @@ use super::{
     raw_types::{
         airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
         aircraftstatus::AircraftStatus, emergencystate::EmergencyState,
-        identification::Identification, operationstatus::OperationStatus,
+        identification::Identification, noposition::NoPosition, operationstatus::OperationStatus,
         surfaceposition::SurfacePosition, surveillancestatus::SurveillanceStatus,
         verticleratesource::VerticalRateSource,
     },
@@ -110,6 +110,10 @@ pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &Aircraf
     }
 
     json.transponder_squawk_code = Some(format!("{:04}", radix(operation_status.squawk, 16)));
+}
+
+pub fn update_from_no_position(json: &mut JSONMessage, no_position: &NoPosition) {
+    json.barometric_altitude = no_position.altitude.map(|v| v.into());
 }
 
 pub fn update_target_state_and_status_information(

@@ -11,7 +11,7 @@ use std::fmt::{Error, Write};
 use super::{
     airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
     aircraftstatus::AircraftStatus, altitude::Altitude, capability::Capability, icao::ICAO,
-    identification::Identification, operationstatus::OperationStatus,
+    identification::Identification, noposition::NoPosition, operationstatus::OperationStatus,
     surfaceposition::SurfacePosition,
     targetstateandstatusinformation::TargetStateAndStatusInformation,
 };
@@ -28,7 +28,7 @@ pub enum ME {
     AirborneVelocity(AirborneVelocity), // Done
 
     #[deku(id = "0")]
-    NoPosition([u8; 6]),
+    NoPosition(NoPosition), // Done
 
     #[deku(id_pat = "1..=4")]
     AircraftIdentification(Identification), // Done

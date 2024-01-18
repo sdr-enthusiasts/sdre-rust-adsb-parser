@@ -46,7 +46,7 @@ use super::{
     rawtojson::{
         update_airborne_velocity, update_aircraft_identification,
         update_aircraft_position_airborne, update_aircraft_position_surface,
-        update_aircraft_status, update_operational_status,
+        update_aircraft_status, update_from_no_position, update_operational_status,
         update_target_state_and_status_information,
     },
 };
@@ -378,7 +378,9 @@ impl JSONMessage {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => update_airborne_velocity(self, velocity),
-                ME::NoPosition(_) => return Err("NoPosition is not implemented....".into()),
+                ME::NoPosition(no_position) => {
+                    update_from_no_position(self, no_position);
+                }
                 ME::AircraftIdentification(id) => {
                     update_aircraft_identification(self, id);
                 }
