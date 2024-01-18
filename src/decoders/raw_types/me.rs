@@ -49,7 +49,7 @@ pub enum ME {
     Reserved1([u8; 6]),
 
     #[deku(id = "28")]
-    AircraftStatus(AircraftStatus),
+    AircraftStatus(AircraftStatus), // Done
 
     #[deku(id = "29")]
     TargetStateAndStatusInformation(TargetStateAndStatusInformation), // Done

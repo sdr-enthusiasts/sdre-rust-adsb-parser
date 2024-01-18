@@ -378,7 +378,7 @@ impl JSONMessage {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => update_airborne_velocity(self, velocity),
-                ME::NoPosition(_) => warn!("NoPosition is not implemented...."),
+                ME::NoPosition(_) => return Err("NoPosition is not implemented....".into()),
                 ME::AircraftIdentification(id) => {
                     update_aircraft_identification(self, id);
                 }
@@ -399,11 +399,11 @@ impl JSONMessage {
                         reference_positon,
                     );
                 }
-                ME::Reserved0(_) => warn!("Reserved0 is not implemented...."),
+                ME::Reserved0(_) => return Err("Reserved0 is not implemented....".into()),
                 ME::SurfaceSystemStatus(_) => {
                     return Err("SurfaceSystemStatus is not implemented....".into())
                 }
-                ME::Reserved1(_) => warn!("Reserved1 is not implemented...."),
+                ME::Reserved1(_) => return Err("Reserved1 is not implemented....".into()),
                 ME::AircraftStatus(status) => update_aircraft_status(self, status),
                 ME::TargetStateAndStatusInformation(target_state_and_status_information) => {
                     update_target_state_and_status_information(
@@ -412,7 +412,7 @@ impl JSONMessage {
                     );
                 }
                 ME::AircraftOperationalCoordination(_) => {
-                    warn!("AircraftOperationalCoordination is not implemented....")
+                    return Err("AircraftOperationalCoordination is not implemented....".into())
                 }
                 ME::AircraftOperationStatus(operation_status) => {
                     update_operational_status(self, operation_status)

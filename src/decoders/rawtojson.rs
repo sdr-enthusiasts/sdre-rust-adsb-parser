@@ -16,15 +16,16 @@ use super::{
     helpers::cpr_calculators::Position,
     json::JSONMessage,
     json_types::{
-        emmittercategory::EmitterCategory, nacp::NavigationIntegrityCategory,
+        emergency::Emergency, emmittercategory::EmitterCategory, nacp::NavigationIntegrityCategory,
         nacv::NavigationAccuracyVelocity, navigationmodes::NavigationModes,
         sil::SourceIntegrityLevel,
     },
     raw_types::{
         airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
-        aircraftstatus::AircraftStatus, identification::Identification,
-        operationstatus::OperationStatus, surfaceposition::SurfacePosition,
-        surveillancestatus::SurveillanceStatus, verticleratesource::VerticalRateSource,
+        aircraftstatus::AircraftStatus, emergencystate::EmergencyState,
+        identification::Identification, operationstatus::OperationStatus,
+        surfaceposition::SurfacePosition, surveillancestatus::SurveillanceStatus,
+        verticleratesource::VerticalRateSource,
     },
 };
 
@@ -81,7 +82,33 @@ pub fn update_operational_status(json: &mut JSONMessage, operation_status: &Oper
 }
 
 pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &AircraftStatus) {
-    // TODO: the rest of the fields
+    match operation_status.emergency_state {
+        EmergencyState::None => {
+            json.emergency = Some(Emergency::None);
+        }
+        EmergencyState::DownedAircraft => {
+            json.emergency = Some(Emergency::Downed);
+        }
+        EmergencyState::General => {
+            json.emergency = Some(Emergency::General);
+        }
+        EmergencyState::Lifeguard => {
+            json.emergency = Some(Emergency::Lifeguard);
+        }
+        EmergencyState::MinimumFuel => {
+            json.emergency = Some(Emergency::Minfuel);
+        }
+        EmergencyState::NoCommunication => {
+            json.emergency = Some(Emergency::Nordo);
+        }
+        EmergencyState::Reserved2 => {
+            json.emergency = Some(Emergency::Reserved);
+        }
+        EmergencyState::UnlawfulInterference => {
+            json.emergency = Some(Emergency::Unlawful);
+        }
+    }
+
     json.transponder_squawk_code = Some(format!("{:04}", radix(operation_status.squawk, 16)));
 }
 

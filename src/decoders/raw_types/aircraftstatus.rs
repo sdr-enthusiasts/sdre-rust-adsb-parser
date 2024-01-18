@@ -44,9 +44,9 @@ pub mod test {
         println!("{:?}", decoded);
 
         let expected = AircraftStatus {
-            sub_type: AircraftStatusType::NoInformation,
+            sub_type: AircraftStatusType::EmergencyPriorityStatus,
             emergency_state: EmergencyState::None,
-            squawk: 1200,
+            squawk: 25092,
         };
 
         match decoded.df {
