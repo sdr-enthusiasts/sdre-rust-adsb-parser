@@ -20,7 +20,7 @@ use super::{
         airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
         aircraftstatus::AircraftStatus, identification::Identification,
         operationstatus::OperationStatus, surfaceposition::SurfacePosition,
-        verticleratesource::VerticalRateSource,
+        surveillancestatus::SurveillanceStatus, verticleratesource::VerticalRateSource,
     },
 };
 
@@ -405,6 +405,24 @@ pub fn update_aircraft_position_airborne(
             json.barometric_altitude = Some((*alt).into());
         } else {
             json.geometric_altitude = Some((*alt).into());
+        }
+    }
+
+    // TODO: I feel like the alert bit should maybe be set with the SPI condition
+    // but somewhere else from another value. Maybe perhaps. I don't know. I'm not sure.
+    match altitude.ss {
+        SurveillanceStatus::NoCondition => {
+            json.flight_status = Some(0);
+            json.flight_status_special_position_id_bit = Some(0);
+        }
+        SurveillanceStatus::PermanentAlert | SurveillanceStatus::TemporaryAlert => {
+            info!("{}: Setting alert bit", json.transponder_hex);
+            json.flight_status = Some(1);
+        }
+        SurveillanceStatus::SPICondition => {
+            info!("{}: Setting spi bit", json.transponder_hex);
+            json.flight_status = Some(0);
+            json.flight_status_special_position_id_bit = Some(1);
         }
     }
 

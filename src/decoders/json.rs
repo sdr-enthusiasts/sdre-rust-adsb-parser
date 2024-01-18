@@ -22,7 +22,6 @@ use super::{
         dbflags::DBFlags,
         emergency::Emergency,
         emmittercategory::EmitterCategory,
-        flightstatus::FlightStatusAlertBit,
         heading::Heading,
         lastknownposition::LastKnownPosition,
         latitude::Latitude,
@@ -445,7 +444,7 @@ pub struct JSONMessage {
     pub timestamp: TimeStamp,
     /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
-    pub flight_status: Option<FlightStatusAlertBit>, // FIXME: I doubt this is right
+    pub flight_status: Option<u8>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     /// Aircraft altitude reported from the barometric altimeter.
     pub barometric_altitude: Option<Altitude>,
