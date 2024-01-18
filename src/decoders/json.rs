@@ -382,12 +382,16 @@ impl JSONMessage {
                     update_aircraft_identification(self, id);
                 }
                 ME::SurfacePosition(surfaceposition) => {
-                    update_aircraft_position_surface(self, surfaceposition, reference_positon);
+                    return update_aircraft_position_surface(
+                        self,
+                        surfaceposition,
+                        reference_positon,
+                    )
                 }
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
-                    update_aircraft_position_airborne(
+                    return update_aircraft_position_airborne(
                         self,
                         altitude,
                         baro_altitude,

@@ -89,7 +89,7 @@ fn update_position(
     cpr_flag: CPRFormat,
     current_time: f64,
     position_type: PositionType,
-) {
+) -> Result<(), String> {
     // if we have both even and odd, calculate the position
     if let (Some(even_frame), Some(odd_frame)) = (&even_frame, &odd_frame) {
         let calculated_position = if position_type == PositionType::Airborne {
@@ -115,7 +115,7 @@ fn update_position(
                 }
 
                 // Success! We have a position. Time to bail out.
-                return;
+                return Ok(());
             } else {
                 debug!("Position from even/odd was invalid.");
                 match position_type {
@@ -158,10 +158,10 @@ fn update_position(
             {
                 json.latitude = Some(position.latitude.into());
                 json.longitude = Some(position.longitude.into());
-
-                // Success! We have a position. Time to bail out.
-                return;
             }
+
+            // Success! We have a position. Time to bail out.
+            return Ok(());
         } else {
             warn!(
                 "{}: Reference position is too far away from calculated position. Not updating.",
@@ -186,6 +186,13 @@ fn update_position(
     // we ended up here because everything else failed. The last try is to use the last known position
 
     if let (Some(lat), Some(lon)) = (&json.latitude, &json.longitude) {
+        if lat.latitude == 0.0 || lon.longitude == 0.0 {
+            return Err(format!(
+                "{}: Last known position is {}, {}. Unable to calculate position.",
+                json.transponder_hex, lat.latitude, lon.longitude
+            ));
+        }
+
         let reference_position = Position {
             latitude: lat.latitude,
             longitude: lon.longitude,
@@ -205,7 +212,7 @@ fn update_position(
             )
         };
 
-        debug!(
+        info!(
             "{} Last known position calculated {:?}",
             json.transponder_hex, position
         );
@@ -281,7 +288,7 @@ fn update_position(
                 json.longitude = Some(position.longitude.into());
 
                 // Success! We have a position. Time to bail out.
-                return;
+                return Ok(());
             }
         } else {
             debug!("Position from last known position was invalid.");
@@ -299,14 +306,17 @@ fn update_position(
     }
 
     // we ended up here because everything else failed.
-    warn!("{}: Unable to calculate position.", json.transponder_hex);
+    Err(format!(
+        "{}: Unable to calculate position.",
+        json.transponder_hex
+    ))
 }
 
 pub fn update_aircraft_position_surface(
     json: &mut JSONMessage,
     surface_position: &SurfacePosition,
     reference_position: &Position,
-) {
+) -> Result<(), String> {
     json.barometric_altitude = Some("ground".into());
 
     // TODO: I can't figure out what tar1090 is doing for what values it's using for ground speed and track, and if it factors in the validity of the surface position. I'm going to assume it does for now.
@@ -391,7 +401,7 @@ pub fn update_aircraft_position_surface(
         surface_position.f,
         current_time,
         PositionType::Surface,
-    );
+    )
 }
 
 pub fn update_aircraft_position_airborne(
@@ -399,7 +409,7 @@ pub fn update_aircraft_position_airborne(
     altitude: &super::raw_types::altitude::Altitude,
     baro_altitude: bool,
     reference_position: &Position,
-) {
+) -> Result<(), String> {
     if let Some(alt) = &altitude.alt {
         if baro_altitude {
             json.barometric_altitude = Some((*alt).into());
@@ -491,5 +501,5 @@ pub fn update_aircraft_position_airborne(
         altitude.odd_flag,
         current_time,
         PositionType::Airborne,
-    );
+    )
 }
