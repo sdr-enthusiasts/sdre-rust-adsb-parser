@@ -1,11 +1,62 @@
+/// This module contains the implementation of the state machine for processing ADS-B messages.
+/// The state machine handles various types of input messages, such as raw ADS-B data, JSON messages,
+/// and AircraftJSON messages. It maintains a collection of airplanes and processes incoming messages
+/// to update the state of the airplanes. The state machine also provides methods for retrieving and
+/// printing airplane information.
+///
+/// # Examples
+///
+/// ```
+/// use sdre_rust_adsb_parser::state_machine::state::StateMachine;
+///
+/// // Create a new state machine with a timeout of 10 seconds for ADS-B messages
+/// let state_machine = StateMachine::new(10, 0, 37.7749, -122.4194);
+///
+/// // Get the sender channel to send messages to the state machine
+/// let sender_channel = state_machine.get_sender_channel();
+///
+/// // Send a raw ADS-B message to the state machine
+/// sender_channel.send(ProcessMessageType::Raw(raw_message)).await;
+///
+/// // Process the incoming messages in the state machine
+/// state_machine.process_adsb_message().await;
+///
+/// // Print the airplanes in the state machine
+/// state_machine.print_airplanes().await;
+/// ```
+///
+/// The state machine processes different types of messages, such as raw ADS-B data, JSON messages,
+/// and AircraftJSON messages. It maintains a collection of airplanes and updates their state based
+/// on the incoming messages. The state machine provides methods for retrieving and printing airplane
+/// information. It also allows sending messages to the state machine for processing.
+///
+/// The state machine can be created using the `new` method, which takes the timeout values for ADS-B
+/// and ADS-C messages, as well as the latitude and longitude for decoding surface position messages.
+/// The state machine provides a sender channel to send messages for processing, and the `process_adsb_message`
+/// method can be used to process the incoming messages. The `print_airplanes` method prints the information
+/// of all the airplanes in the state machine.
+///
+/// The state machine uses a mutex-protected hashmap to store the airplanes. The `get_airplane_by_hex` method
+/// allows retrieving an airplane by its transponder hex code. The `print_airplane_by_hex` method prints the
+/// information of a specific airplane. The `get_airplanes` method returns a vector of all the airplanes in
+/// the state machine.
+///
+/// The state machine processes different types of messages, such as raw ADS-B data, JSON messages,
+/// and AircraftJSON messages. The `process_adsb_message` method is responsible for processing these messages.
+/// It uses pattern matching to handle different message types and calls the corresponding processing methods.
+/// The processing methods update the state of the airplanes based on the incoming messages.
+///
+/// The state machine also keeps track of the number of messages processed using a mutex-protected counter.
+/// The `get_messages_processed_mutex` method returns a mutex-protected reference to the counter.
+///
+/// Note: The state machine is designed to be used in a multi-threaded environment, where multiple threads
+/// can send messages to the state machine for processing concurrently. The state machine ensures thread-safety
+/// by using mutexes to protect shared data structures.
 // Copyright (c) 2024 Frederick Clausen II
 
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
-
-#![cfg_attr(debug_assertions, allow(dead_code, unused_imports, unused_variables))]
-
 use core::fmt;
 use std::collections::{hash_map::Entry, HashMap};
 use std::sync::Arc;

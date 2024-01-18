@@ -1,3 +1,49 @@
+//! This module contains the implementation of a Rust ADS-B parser.
+//!
+//! The parser supports decoding messages in JSON, Beast, and Raw formats.
+//! It provides functionality for decoding strings, byte slices, and vectors of bytes
+//! into `ADSBMessage` structs, which represent the parsed ADS-B messages.
+//!
+//! # Example
+//!
+//! ```
+//! use sdre_rust_adsb_parser::DecodeMessage;
+//!
+//! let json_message = r#"{
+//!     "messageType": "Aircraft",
+//!     "icao": "ABC123",
+//!     "altitude": 35000,
+//!     "latitude": 37.7749,
+//!     "longitude": -122.4194
+//! }"#;
+//!
+//! let decoded_message = json_message.decode_message().unwrap();
+//!
+//! match decoded_message {
+//!     sdre_rust_adsb_parser::ADSBMessage::AircraftJSON(aircraft) => {
+//!         println!("ICAO: {}", aircraft.icao);
+//!         println!("Altitude: {} feet", aircraft.altitude);
+//!         println!("Latitude: {}", aircraft.latitude);
+//!         println!("Longitude: {}", aircraft.longitude);
+//!     }
+//!     _ => {
+//!         println!("Invalid message type");
+//!     }
+//! }
+//! ```
+//!
+//! For more information on the supported message formats and decoding options,
+//! please refer to the documentation of the `DecodeMessage` trait.
+//!
+//! # License
+//!
+//! This code is licensed under the MIT License. See the [LICENSE](https://opensource.org/licenses/MIT) file for more information.
+//!
+//! # Acknowledgements
+//!
+//! This ADS-B parser is developed by Frederick Clausen II.
+//! Special thanks to the contributors and the open-source community for their support.
+
 // Copyright (c) 2023-2024 Frederick Clausen II
 
 // Use of this source code is governed by an MIT-style
