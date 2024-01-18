@@ -15,7 +15,11 @@ use crate::decoders::{
 use super::{
     helpers::cpr_calculators::Position,
     json::JSONMessage,
-    json_types::{emmittercategory::EmitterCategory, nacv::NavigationAccuracyVelocity},
+    json_types::{
+        emmittercategory::EmitterCategory, nacp::NavigationIntegrityCategory,
+        nacv::NavigationAccuracyVelocity, navigationmodes::NavigationModes,
+        sil::SourceIntegrityLevel,
+    },
     raw_types::{
         airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
         aircraftstatus::AircraftStatus, identification::Identification,
@@ -79,6 +83,65 @@ pub fn update_operational_status(json: &mut JSONMessage, operation_status: &Oper
 pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &AircraftStatus) {
     // TODO: the rest of the fields
     json.transponder_squawk_code = Some(format!("{:04}", radix(operation_status.squawk, 16)));
+}
+
+pub fn update_target_state_and_status_information(
+    json: &mut JSONMessage,
+    target_state_and_status_information: &super::raw_types::targetstateandstatusinformation::TargetStateAndStatusInformation,
+) {
+    let altitude = target_state_and_status_information.altitude;
+    json.selected_altimeter = Some(target_state_and_status_information.qnh.into());
+    if target_state_and_status_information.is_fms {
+        json.flight_management_system_selected_altitude = Some(altitude.into());
+    } else {
+        json.autopilot_selected_altitude = Some(altitude.into());
+    }
+
+    if target_state_and_status_information.is_heading {
+        json.autopilot_selected_heading = Some(target_state_and_status_information.heading.into());
+    }
+
+    json.navigation_accuracy_position = Some(
+        NavigationIntegrityCategory::try_from(target_state_and_status_information.nacp)
+            .unwrap_or_default(),
+    );
+    json.barometeric_altitude_integrity_category =
+        Some(target_state_and_status_information.nicbaro);
+    json.source_integrity_level = Some(
+        SourceIntegrityLevel::try_from(target_state_and_status_information.sil).unwrap_or_default(),
+    );
+
+    if target_state_and_status_information.mode_validity {
+        let mut output_modes: Vec<NavigationModes> = Vec::new();
+
+        if target_state_and_status_information.autopilot {
+            output_modes.push(NavigationModes::Autopilot);
+        }
+
+        if target_state_and_status_information.vnac {
+            output_modes.push(NavigationModes::VNAV);
+        }
+
+        if target_state_and_status_information.alt_hold {
+            output_modes.push(NavigationModes::AltHold);
+        }
+
+        if target_state_and_status_information.approach {
+            output_modes.push(NavigationModes::Approach);
+        }
+
+        if target_state_and_status_information.tcas {
+            output_modes.push(NavigationModes::TCAS);
+        }
+
+        if target_state_and_status_information.lnav {
+            output_modes.push(NavigationModes::LNAV);
+        }
+
+        json.autopilot_modes = Some(output_modes);
+    } else {
+        json.autopilot_modes = None;
+    }
 }
 
 fn update_position(

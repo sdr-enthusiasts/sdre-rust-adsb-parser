@@ -47,6 +47,7 @@ use super::{
         update_airborne_velocity, update_aircraft_identification,
         update_aircraft_position_airborne, update_aircraft_position_surface,
         update_aircraft_status, update_operational_status,
+        update_target_state_and_status_information,
     },
 };
 
@@ -404,8 +405,11 @@ impl JSONMessage {
                 }
                 ME::Reserved1(_) => warn!("Reserved1 is not implemented...."),
                 ME::AircraftStatus(status) => update_aircraft_status(self, status),
-                ME::TargetStateAndStatusInformation(_) => {
-                    //warn!("TargetStateAndStatusInformation is not implemented....")
+                ME::TargetStateAndStatusInformation(target_state_and_status_information) => {
+                    update_target_state_and_status_information(
+                        self,
+                        target_state_and_status_information,
+                    );
                 }
                 ME::AircraftOperationalCoordination(_) => {
                     warn!("AircraftOperationalCoordination is not implemented....")

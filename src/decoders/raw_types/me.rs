@@ -22,7 +22,7 @@ use super::{
 #[deku(type = "u8", bits = "5")]
 pub enum ME {
     #[deku(id_pat = "9..=18")]
-    AirbornePositionBaroAltitude(Altitude),
+    AirbornePositionBaroAltitude(Altitude), // Done
 
     #[deku(id = "19")]
     AirborneVelocity(AirborneVelocity), // Done
@@ -37,7 +37,7 @@ pub enum ME {
     SurfacePosition(SurfacePosition), // Done
 
     #[deku(id_pat = "20..=22")]
-    AirbornePositionGNSSAltitude(Altitude),
+    AirbornePositionGNSSAltitude(Altitude), // Done
 
     #[deku(id = "23")]
     Reserved0([u8; 6]),
@@ -52,7 +52,7 @@ pub enum ME {
     AircraftStatus(AircraftStatus),
 
     #[deku(id = "29")]
-    TargetStateAndStatusInformation(TargetStateAndStatusInformation),
+    TargetStateAndStatusInformation(TargetStateAndStatusInformation), // Done
 
     #[deku(id = "30")]
     AircraftOperationalCoordination([u8; 6]),
