@@ -489,11 +489,9 @@ pub fn update_aircraft_position_airborne(
             json.flight_status_special_position_id_bit = Some(0);
         }
         SurveillanceStatus::PermanentAlert | SurveillanceStatus::TemporaryAlert => {
-            info!("{}: Setting alert bit", json.transponder_hex);
             json.flight_status = Some(1);
         }
         SurveillanceStatus::SPICondition => {
-            info!("{}: Setting spi bit", json.transponder_hex);
             json.flight_status = Some(0);
             json.flight_status_special_position_id_bit = Some(1);
         }
