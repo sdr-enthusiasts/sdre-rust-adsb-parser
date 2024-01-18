@@ -31,7 +31,7 @@ pub enum ME {
     NoPosition([u8; 6]),
 
     #[deku(id_pat = "1..=4")]
-    AircraftIdentification(Identification),
+    AircraftIdentification(Identification), // Done
 
     #[deku(id_pat = "5..=8")]
     SurfacePosition(SurfacePosition),
