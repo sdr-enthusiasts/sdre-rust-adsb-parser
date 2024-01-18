@@ -340,7 +340,7 @@ pub fn update_aircraft_position_surface(
 
             // if json.cpr_odd is older than 10 seconds we don't have a valid position
 
-            if let Some(last_cpr_odd_update_time) = &json.last_cpr_odd_update_time_airborne {
+            if let Some(last_cpr_odd_update_time) = &json.last_cpr_odd_update_time_surface {
                 // get the f64 value of the timestamp
                 if last_cpr_odd_update_time.add_time(10.0) < current_time {
                     json.cpr_odd_surface = None;
@@ -354,7 +354,7 @@ pub fn update_aircraft_position_surface(
 
             // if json.cpr_even is older than 10 seconds we don't have a valid position
 
-            if let Some(last_cpr_even_update_time) = &json.last_cpr_even_update_time_airborne {
+            if let Some(last_cpr_even_update_time) = &json.last_cpr_even_update_time_surface {
                 if last_cpr_even_update_time.add_time(10.0) < current_time {
                     json.cpr_even_surface = None;
                     debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", json.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));

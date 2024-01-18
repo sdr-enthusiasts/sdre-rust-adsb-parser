@@ -34,7 +34,7 @@ pub enum ME {
     AircraftIdentification(Identification), // Done
 
     #[deku(id_pat = "5..=8")]
-    SurfacePosition(SurfacePosition),
+    SurfacePosition(SurfacePosition), // Done
 
     #[deku(id_pat = "20..=22")]
     AirbornePositionGNSSAltitude(Altitude),
