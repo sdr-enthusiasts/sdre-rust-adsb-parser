@@ -17,7 +17,11 @@ use super::{
 pub struct AirborneVelocity {
     #[deku(bits = "3")]
     pub st: u8,
-    #[deku(bits = "5")]
+    #[deku(bits = "1")]
+    pub intent_change: u8,
+    #[deku(bits = "1")]
+    pub ifr: u8,
+    #[deku(bits = "3")]
     pub nac_v: u8,
     #[deku(ctx = "*st")]
     pub sub_type: AirborneVelocitySubType,
@@ -47,6 +51,7 @@ impl AirborneVelocity {
         let h: f64 = libm::atan2(v_ew, v_ns) * (360.0 / (2.0 * std::f64::consts::PI));
         let heading: f64 = if h < 0.0 { h + 360.0 } else { h };
 
+        // TODO: We should handle sub types 2-4 here
         let vrate: Option<i16> = self
             .vrate_value
             .checked_sub(1)
@@ -74,6 +79,8 @@ mod tests {
 
         let expected = AirborneVelocity {
             st: 1,
+            intent_change: 0,
+            ifr: 0,
             nac_v: 1,
             sub_type: AirborneVelocitySubType::GroundSpeedDecoding(GroundSpeedDecoding {
                 ew_sign: Sign::Positive,

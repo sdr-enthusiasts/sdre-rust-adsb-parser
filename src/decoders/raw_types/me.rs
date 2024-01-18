@@ -25,7 +25,7 @@ pub enum ME {
     AirbornePositionBaroAltitude(Altitude),
 
     #[deku(id = "19")]
-    AirborneVelocity(AirborneVelocity),
+    AirborneVelocity(AirborneVelocity), // Done
 
     #[deku(id = "0")]
     NoPosition([u8; 6]),

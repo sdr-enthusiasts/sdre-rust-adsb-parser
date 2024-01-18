@@ -479,7 +479,7 @@ pub struct JSONMessage {
     /// Indicated Air speed.
     // TODO: what is the source of this?
     #[serde(skip_serializing_if = "Option::is_none", rename = "ias")]
-    indicated_air_speed: Option<Speed>,
+    pub indicated_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
     pub geometric_verticle_accuracy: Option<u8>, // FIXME: I doubt this is right
     /// The transponder hex identifier of the aircraft.

@@ -15,11 +15,12 @@ use crate::decoders::{
 use super::{
     helpers::cpr_calculators::Position,
     json::JSONMessage,
-    json_types::emmittercategory::EmitterCategory,
+    json_types::{emmittercategory::EmitterCategory, nacv::NavigationAccuracyVelocity},
     raw_types::{
-        airbornevelocity::AirborneVelocity, aircraftstatus::AircraftStatus,
-        identification::Identification, operationstatus::OperationStatus,
-        surfaceposition::SurfacePosition,
+        airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
+        aircraftstatus::AircraftStatus, identification::Identification,
+        operationstatus::OperationStatus, surfaceposition::SurfacePosition,
+        verticleratesource::VerticalRateSource,
     },
 };
 
@@ -32,9 +33,33 @@ enum PositionType {
 pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVelocity) {
     if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
         json.true_track_over_ground = Some(heading.into());
-        json.ground_speed = Some(ground_speed.into());
-        json.barometric_altitude_rate = Some(vert_speed.into());
-        // TODO: verify this should be baro rate
+        match velocity.vrate_src {
+            VerticalRateSource::BarometricPressureAltitude => {
+                json.barometric_altitude_rate = Some(vert_speed.into());
+            }
+            VerticalRateSource::GeometricAltitude => {
+                json.geometric_altitude_rate = Some(vert_speed.into());
+            }
+        }
+
+        match velocity.sub_type {
+            AirborneVelocitySubType::GroundSpeedDecoding(_ground_speed_decoding) => {
+                json.ground_speed = Some(ground_speed.into());
+            }
+            AirborneVelocitySubType::AirspeedDecoding(_airspeed_decoding) => {
+                json.indicated_air_speed = Some(ground_speed.into());
+            }
+            _ => (),
+        }
+
+        json.navigation_accuracy_velocity = Some(match velocity.nac_v {
+            0 => NavigationAccuracyVelocity::Category0,
+            1 => NavigationAccuracyVelocity::Category1,
+            2 => NavigationAccuracyVelocity::Category2,
+            3 => NavigationAccuracyVelocity::Category3,
+            4 => NavigationAccuracyVelocity::Category4,
+            _ => NavigationAccuracyVelocity::Category0,
+        });
     }
 }
 
@@ -376,17 +401,14 @@ pub fn update_aircraft_position_airborne(
     reference_position: &Position,
 ) {
     if let Some(alt) = &altitude.alt {
-        // check the ME type to see if we have baro or GNSS altitude
-        // TODO: can we do this better? We've already checked the type above and
-        // Ended up here. The lat/lon positioning is the same for both, so we
-        // need to use the same code for both.
-
         if baro_altitude {
             json.barometric_altitude = Some((*alt).into());
         } else {
             json.geometric_altitude = Some((*alt).into());
         }
     }
+
+    // NOTE: We are dropping the antenna flag.
 
     let current_time = match get_timestamp() {
         TimeStamp::TimeStampAsF64(current_time) => current_time,
