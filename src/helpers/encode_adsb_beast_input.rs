@@ -218,9 +218,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
         }
 
         // now walk the frame and replace any 1a with 1a 1a if it's not a 1a 31 or 1a 32 or 1a 33 sequence
-        // FIXME: ??? Verify that all possible 1x0a sequences are handled.
-        // possible sequences are: character in the middle, character at the end
-        // I think this is fixed, but I'm not 100% sure
+
         let mut new_frame_bytes: Vec<u8> = Vec::new();
         let mut byte_iter = frame_bytes.iter().peekable();
         while let Some(byte) = byte_iter.next() {

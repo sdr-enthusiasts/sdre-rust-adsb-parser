@@ -16,9 +16,9 @@ use super::{
     helpers::cpr_calculators::Position,
     json::JSONMessage,
     json_types::{
-        emergency::Emergency, emmittercategory::EmitterCategory, nacp::NavigationIntegrityCategory,
-        nacv::NavigationAccuracyVelocity, navigationmodes::NavigationModes,
-        sil::SourceIntegrityLevel,
+        adsbversion::ADSBVersion, emergency::Emergency, emmittercategory::EmitterCategory,
+        nacp::NavigationIntegrityCategory, nacv::NavigationAccuracyVelocity,
+        navigationmodes::NavigationModes, sil::SourceIntegrityLevel,
     },
     raw_types::{
         airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
@@ -76,8 +76,26 @@ pub fn update_aircraft_identification(json: &mut JSONMessage, id: &Identificatio
 }
 
 pub fn update_operational_status(json: &mut JSONMessage, operation_status: &OperationStatus) {
-    if let OperationStatus::Surface(_) = operation_status {
+    if operation_status.is_surface() {
         json.barometric_altitude = Some("ground".into());
+    }
+
+    match operation_status.get_adsb_version() {
+        super::raw_types::adsbversion::ADSBVersion::ADSBVersion0 => {
+            json.version = Some(ADSBVersion::Version0)
+        }
+        super::raw_types::adsbversion::ADSBVersion::ADSBVersion1 => {
+            json.version = Some(ADSBVersion::Version1)
+        }
+        super::raw_types::adsbversion::ADSBVersion::ADSBVersion2 => {
+            json.version = Some(ADSBVersion::Version2)
+        }
+        super::raw_types::adsbversion::ADSBVersion::ADSBVersion3 => {
+            json.version = Some(ADSBVersion::Version3)
+        }
+        super::raw_types::adsbversion::ADSBVersion::Unknown => {
+            json.version = Some(ADSBVersion::Unknown)
+        }
     }
 }
 

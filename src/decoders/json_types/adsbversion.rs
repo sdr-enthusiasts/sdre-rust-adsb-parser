@@ -18,6 +18,7 @@ pub enum ADSBVersion {
     Version5,
     Version6,
     Version7,
+    Unknown,
 }
 
 impl Serialize for ADSBVersion {
@@ -34,6 +35,7 @@ impl Serialize for ADSBVersion {
             ADSBVersion::Version5 => serializer.serialize_u8(5),
             ADSBVersion::Version6 => serializer.serialize_u8(6),
             ADSBVersion::Version7 => serializer.serialize_u8(7),
+            ADSBVersion::Unknown => serializer.serialize_u8(8),
         }
     }
 }
@@ -51,6 +53,7 @@ impl TryFrom<u8> for ADSBVersion {
             5 => Ok(ADSBVersion::Version5),
             6 => Ok(ADSBVersion::Version6),
             7 => Ok(ADSBVersion::Version7),
+            8 => Ok(ADSBVersion::Unknown),
             _ => Err(format!("Invalid ADSBVersion field: {}", field)),
         }
     }
@@ -67,6 +70,7 @@ impl fmt::Display for ADSBVersion {
             ADSBVersion::Version5 => write!(f, "ADSB Version 5"),
             ADSBVersion::Version6 => write!(f, "ADSB Version 6"),
             ADSBVersion::Version7 => write!(f, "ADSB Version 7"),
+            ADSBVersion::Unknown => write!(f, "ADSB Version Unknown"),
         }
     }
 }

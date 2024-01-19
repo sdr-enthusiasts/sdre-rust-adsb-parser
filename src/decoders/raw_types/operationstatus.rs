@@ -8,6 +8,8 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
+    adsbversion::ADSBVersion, capabilityclassairborne::CapabilityClassAirborne,
+    capabilityclasssurface::CapabilityClassSurface, operationalmode::OperationalMode,
     operationstatusairborne::OperationStatusAirborne,
     operationstatussurface::OperationStatusSurface,
 };
@@ -24,6 +26,48 @@ pub enum OperationStatus {
 
     #[deku(id_pat = "2..=7")]
     Reserved(#[deku(bits = "5")] u8, [u8; 5]),
+}
+
+pub enum CapabilityClass {
+    Airborne(CapabilityClassAirborne),
+    Surface(CapabilityClassSurface),
+    Unknown,
+}
+
+impl OperationStatus {
+    pub fn is_airborne(&self) -> bool {
+        matches!(self, OperationStatus::Airborne(_))
+    }
+
+    pub fn is_surface(&self) -> bool {
+        matches!(self, OperationStatus::Surface(_))
+    }
+
+    pub fn get_adsb_version(&self) -> ADSBVersion {
+        match self {
+            OperationStatus::Airborne(airborne) => airborne.version_number,
+            OperationStatus::Surface(surface) => surface.version_number,
+            OperationStatus::Reserved(_, _) => ADSBVersion::Unknown,
+        }
+    }
+
+    pub fn get_capability_class(&self) -> CapabilityClass {
+        match self {
+            OperationStatus::Airborne(airborne) => {
+                CapabilityClass::Airborne(airborne.capability_class)
+            }
+            OperationStatus::Surface(surface) => CapabilityClass::Surface(surface.capability_class),
+            OperationStatus::Reserved(_, _) => CapabilityClass::Unknown,
+        }
+    }
+
+    pub fn get_operational_mode(&self) -> Option<OperationalMode> {
+        match self {
+            OperationStatus::Airborne(airborne) => Some(airborne.operational_mode),
+            OperationStatus::Surface(surface) => Some(surface.operational_mode),
+            OperationStatus::Reserved(_, _) => None,
+        }
+    }
 }
 
 #[cfg(test)]

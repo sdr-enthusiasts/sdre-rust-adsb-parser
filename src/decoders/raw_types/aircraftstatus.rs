@@ -12,8 +12,7 @@ use super::{
     helper_functions::decode_id13_field,
 };
 
-// FIXME: there appear to be 4 different variants of this message type. We don't deserialize the one
-// we support properly, let alone the others.
+// FIXME: there appear to be 4 different variants of this message type.
 
 /// Table: A-2-97
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
