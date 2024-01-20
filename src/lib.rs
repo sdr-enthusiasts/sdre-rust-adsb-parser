@@ -9,22 +9,16 @@
 //! ```
 //! use sdre_rust_adsb_parser::DecodeMessage;
 //!
-//! let json_message = r#"{
-//!     "messageType": "Aircraft",
-//!     "icao": "ABC123",
-//!     "altitude": 35000,
-//!     "latitude": 37.7749,
-//!     "longitude": -122.4194
-//! }"#;
+//! let message = "8EADC035002D7000000000B02845";
 //!
-//! let decoded_message = json_message.decode_message().unwrap();
+//! let decoded_message = message.decode_message().unwrap();
 //!
 //! match decoded_message {
-//!     sdre_rust_adsb_parser::ADSBMessage::AircraftJSON(aircraft) => {
-//!         println!("ICAO: {}", aircraft.icao);
-//!         println!("Altitude: {} feet", aircraft.altitude);
-//!         println!("Latitude: {}", aircraft.latitude);
-//!         println!("Longitude: {}", aircraft.longitude);
+//!     sdre_rust_adsb_parser::ADSBMessage::JSONMessage(aircraft) => {
+//!         println!("ICAO: {}", aircraft.transponder_hex);
+//!         println!("Altitude: {:?} feet", aircraft.barometric_altitude);
+//!         println!("Latitude: {:?}", aircraft.latitude);
+//!         println!("Longitude: {:?}", aircraft.longitude);
 //!     }
 //!     _ => {
 //!         println!("Invalid message type");

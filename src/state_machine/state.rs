@@ -8,21 +8,27 @@
 ///
 /// ```
 /// use sdre_rust_adsb_parser::state_machine::state::StateMachine;
+/// use sdre_rust_adsb_parser::state_machine::state::ProcessMessageType;
 ///
-/// // Create a new state machine with a timeout of 10 seconds for ADS-B messages
-/// let state_machine = StateMachine::new(10, 0, 37.7749, -122.4194);
+/// async fn process_message() {
+///     // Create a raw ADS-B message. Generally input will be from a receiver.
+///     let raw_message = "8D4840D6202CC371C32CE0576098".to_string();
+///     // Create a new state machine with a timeout of 10 seconds for ADS-B messages
+///     let mut state_machine = StateMachine::new(10, 0, 37.7749, -122.4194);
 ///
-/// // Get the sender channel to send messages to the state machine
-/// let sender_channel = state_machine.get_sender_channel();
 ///
-/// // Send a raw ADS-B message to the state machine
-/// sender_channel.send(ProcessMessageType::Raw(raw_message)).await;
+///     // Get the sender channel to send messages to the state machine
+///     let sender_channel = state_machine.get_sender_channel();
 ///
-/// // Process the incoming messages in the state machine
-/// state_machine.process_adsb_message().await;
+///     // Send a raw ADS-B message to the state machine
+///     sender_channel.send(ProcessMessageType::AsString(raw_message)).await;
 ///
-/// // Print the airplanes in the state machine
-/// state_machine.print_airplanes().await;
+///     // Process the incoming messages in the state machine
+///     state_machine.process_adsb_message().await;
+///
+///     // Print the airplanes in the state machine
+///     state_machine.print_airplanes().await;
+/// }
 /// ```
 ///
 /// The state machine processes different types of messages, such as raw ADS-B data, JSON messages,
