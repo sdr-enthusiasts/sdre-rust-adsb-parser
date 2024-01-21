@@ -27,6 +27,7 @@ pub enum ME {
     #[deku(id = "19")]
     AirborneVelocity(AirborneVelocity), // Done
 
+    // FIXME: no position should also update the rc and nic
     #[deku(id = "0")]
     NoPosition(NoPosition), // Done
 

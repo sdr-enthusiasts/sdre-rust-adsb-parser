@@ -21,6 +21,7 @@ pub struct Altitude {
     pub tc: u8,
     pub ss: SurveillanceStatus,
     #[deku(bits = "1")]
+    /// nic supplement b
     pub saf_or_imf: u8,
     #[deku(reader = "Self::read(deku::rest)")]
     pub alt: Option<u16>,

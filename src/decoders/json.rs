@@ -417,7 +417,7 @@ impl JSONMessage {
                     return Err("AircraftOperationalCoordination is not implemented....".into())
                 }
                 ME::AircraftOperationStatus(operation_status) => {
-                    update_operational_status(self, operation_status)
+                    return update_operational_status(self, operation_status);
                 }
             }
         }
@@ -642,6 +642,16 @@ pub struct JSONMessage {
     pub last_cpr_even_update_time_surface: Option<TimeStamp>,
     #[serde(skip_serializing)]
     pub last_cpr_odd_update_time_surface: Option<TimeStamp>,
+    #[serde(skip_serializing)]
+    pub nic_supplement_a: Option<u8>,
+    #[serde(skip_serializing)]
+    pub nic_supplement_b: Option<u8>,
+    #[serde(skip_serializing)]
+    pub nic_supplement_c: Option<u8>,
+    #[serde(skip_serializing)]
+    pub airborne_type_code: Option<u8>,
+    #[serde(skip_serializing)]
+    pub surface_type_code: Option<u8>,
 }
 
 #[cfg(test)]
