@@ -34,7 +34,7 @@ use rocket::{get, routes, State};
 use generic_async_http_client::{Request, Response};
 use rocket::serde::json::Json;
 use sdre_rust_adsb_parser::{
-    decoders::aircraftjson::AircraftJSON,
+    decoders::{aircraftjson::AircraftJSON, json::JSONMessage},
     error_handling::deserialization_error::DeserializationError,
     helpers::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
@@ -48,11 +48,11 @@ use sdre_rust_adsb_parser::{
 };
 use sdre_rust_logging::SetupLogging;
 use sdre_stubborn_io::{config::DurationIterator, ReconnectOptions, StubbornTcpStream};
-use std::net::SocketAddr;
-use std::process::exit;
 use std::str::FromStr;
+use std::{collections::HashMap, net::SocketAddr};
 use std::{fmt, time::Duration};
-use tokio::{io::AsyncReadExt, time::sleep};
+use std::{process::exit, sync::Arc};
+use tokio::{io::AsyncReadExt, sync::Mutex, time::sleep};
 
 #[derive(Debug, Default)]
 enum Modes {
@@ -753,12 +753,8 @@ async fn process_json_from_tcp(
 }
 
 struct Model {
-    print_context: std::sync::Arc<
-        tokio::sync::Mutex<
-            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
-        >,
-    >,
-    message_count_context: std::sync::Arc<tokio::sync::Mutex<u64>>,
+    print_context: Arc<Mutex<HashMap<String, JSONMessage>>>,
+    message_count_context: Arc<Mutex<u64>>,
 }
 
 #[get("/data/aircraft.json")]
@@ -775,12 +771,8 @@ async fn aircraft_json(model: &State<Model>) -> Json<AircraftJSON> {
 }
 
 async fn rocket(
-    print_context: std::sync::Arc<
-        tokio::sync::Mutex<
-            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
-        >,
-    >,
-    message_count_context: std::sync::Arc<tokio::sync::Mutex<u64>>,
+    print_context: Arc<Mutex<HashMap<String, JSONMessage>>>,
+    message_count_context: Arc<Mutex<u64>>,
 ) {
     let model = Model {
         print_context,
