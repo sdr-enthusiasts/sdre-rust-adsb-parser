@@ -675,6 +675,7 @@ pub struct JSONMessage {
     pub wd: Option<u32>, // TODO: print this out
 
     // These are new fields we're adding to the json output
+    #[serde(default)]
     pub ident_active: bool,
 
     /// These are internal values that should never get serialized, but used for tracking raw even/odd positions

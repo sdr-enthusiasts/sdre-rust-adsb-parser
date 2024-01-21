@@ -52,7 +52,11 @@ use std::str::FromStr;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{fmt, time::Duration};
 use std::{process::exit, sync::Arc};
-use tokio::{io::AsyncReadExt, sync::Mutex, time::sleep};
+use tokio::{
+    io::AsyncReadExt,
+    sync::{mpsc::Sender, Mutex},
+    time::sleep,
+};
 
 #[derive(Debug, Default)]
 enum Modes {
@@ -248,60 +252,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let lat = args.lat;
     let lon = args.lon;
 
-    match mode {
-        Modes::JSONFromAircraftJSON => {
-            info!("Processing as Aircraft JSON");
-            process_as_aircraft_json(url_input, print_interval_in_seconds, print_json, lat, lon)
-                .await?;
-        }
-        Modes::JSONFromTCP => {
-            info!("Processing as JSON from TCP");
-            process_json_from_tcp(url_input, print_interval_in_seconds, print_json, lat, lon)
-                .await?;
-        }
-        Modes::Raw => {
-            info!("Processing as raw frames");
-            process_raw_frames(url_input, print_interval_in_seconds, print_json, lat, lon).await?;
-        }
-        Modes::Beast => {
-            info!("Processing as beast frames");
-            process_beast_frames(url_input, print_interval_in_seconds, print_json, lat, lon)
-                .await?;
-        }
-    }
-
-    Ok(())
-}
-
-async fn process_beast_frames(
-    ip: &str,
-    print_interval_in_seconds: u64,
-    print_json: &bool,
-    lat: f64,
-    lon: f64,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    // open a TCP connection to ip. Grab the frames and process them as raw
-    let addr = match ip.parse::<SocketAddr>() {
-        Ok(addr) => addr,
-        Err(e) => {
-            error!("Error parsing host: {}", e);
-            return Ok(());
-        }
-    };
-
-    let mut stream =
-        match StubbornTcpStream::connect_with_options(addr, reconnect_options(ip)).await {
-            Ok(stream) => stream,
-            Err(e) => {
-                error!("Error connecting to {}: {}", ip, e);
-                Err(e)?
-            }
-        };
-
-    info!("Connected to {}", ip);
-    let mut buffer: [u8; 4096] = [0u8; 4096];
-    let mut left_over: Vec<u8> = Vec::new();
-
     let mut state_machine = StateMachine::new(90, 360, lat, lon);
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
@@ -357,6 +307,54 @@ async fn process_beast_frames(
         )
         .await;
     });
+
+    match mode {
+        Modes::JSONFromAircraftJSON => {
+            info!("Processing as Aircraft JSON");
+            process_as_aircraft_json(url_input, sender_channel).await?;
+        }
+        Modes::JSONFromTCP => {
+            info!("Processing as JSON from TCP");
+            process_json_from_tcp(url_input, sender_channel).await?;
+        }
+        Modes::Raw => {
+            info!("Processing as raw frames");
+            process_raw_frames(url_input, sender_channel).await?;
+        }
+        Modes::Beast => {
+            info!("Processing as beast frames");
+            process_beast_frames(url_input, sender_channel).await?;
+        }
+    }
+
+    Ok(())
+}
+
+async fn process_beast_frames(
+    ip: &str,
+    sender_channel: Sender<ProcessMessageType>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    // open a TCP connection to ip. Grab the frames and process them as raw
+    let addr = match ip.parse::<SocketAddr>() {
+        Ok(addr) => addr,
+        Err(e) => {
+            error!("Error parsing host: {}", e);
+            return Ok(());
+        }
+    };
+
+    let mut stream =
+        match StubbornTcpStream::connect_with_options(addr, reconnect_options(ip)).await {
+            Ok(stream) => stream,
+            Err(e) => {
+                error!("Error connecting to {}: {}", ip, e);
+                Err(e)?
+            }
+        };
+
+    info!("Connected to {}", ip);
+    let mut buffer: [u8; 4096] = [0u8; 4096];
+    let mut left_over: Vec<u8> = Vec::new();
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -398,10 +396,7 @@ async fn process_beast_frames(
 
 async fn process_raw_frames(
     ip: &str,
-    print_interval_in_seconds: u64,
-    print_json: &bool,
-    lat: f64,
-    lon: f64,
+    sender_channel: Sender<ProcessMessageType>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as raw
     let addr = match ip.parse::<SocketAddr>() {
@@ -424,62 +419,6 @@ async fn process_raw_frames(
     info!("Connected to {}", ip);
     let mut buffer: [u8; 4096] = [0u8; 4096];
     let mut left_over: Vec<u8> = Vec::new();
-
-    let mut state_machine = StateMachine::new(90, 360, lat, lon);
-    let sender_channel = state_machine.get_sender_channel();
-    let print_mutex_context = state_machine.get_airplanes_mutex();
-    let message_count_context = state_machine.get_messages_processed_mutex();
-    let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
-
-    // rocket state machine
-    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
-    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
-
-    // start the rocket server
-
-    tokio::spawn(async move {
-        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
-        // stop the program if the rocket server stops
-        exit(0);
-    });
-
-    if *print_json {
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
-                    .await;
-                match generate_aircraft_json(
-                    print_mutex_context.clone(),
-                    message_count_context.clone(),
-                )
-                .await
-                {
-                    Some(aircraft_json) => {
-                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
-                    }
-                    None => {
-                        error!("Error generating aircraft JSON");
-                    }
-                }
-            }
-        });
-    }
-
-    tokio::spawn(async move {
-        state_machine.process_adsb_message().await;
-    });
-
-    tokio::spawn(async move {
-        expire_planes(
-            expire_mutex_context,
-            10,
-            adsb_expire_timeout,
-            adsc_expire_timeout,
-        )
-        .await;
-    });
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {
@@ -521,67 +460,8 @@ async fn process_raw_frames(
 
 async fn process_as_aircraft_json(
     url: &str,
-    print_interval_in_seconds: u64,
-    print_json: &bool,
-    lat: f64,
-    lon: f64,
+    sender_channel: Sender<ProcessMessageType>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    let mut state_machine = StateMachine::new(90, 360, lat, lon);
-    let sender_channel = state_machine.get_sender_channel();
-    let print_mutex_context = state_machine.get_airplanes_mutex();
-    let message_count_context = state_machine.get_messages_processed_mutex();
-    let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
-
-    // rocket state machine
-    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
-    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
-
-    // start the rocket server
-
-    tokio::spawn(async move {
-        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
-        // stop the program if the rocket server stops
-        exit(0);
-    });
-
-    if *print_json {
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
-                    .await;
-                match generate_aircraft_json(
-                    print_mutex_context.clone(),
-                    message_count_context.clone(),
-                )
-                .await
-                {
-                    Some(aircraft_json) => {
-                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
-                    }
-                    None => {
-                        error!("Error generating aircraft JSON");
-                    }
-                }
-            }
-        });
-    }
-
-    tokio::spawn(async move {
-        state_machine.process_adsb_message().await;
-    });
-
-    tokio::spawn(async move {
-        expire_planes(
-            expire_mutex_context,
-            10,
-            adsb_expire_timeout,
-            adsc_expire_timeout,
-        )
-        .await;
-    });
-
     loop {
         let req: Request = Request::get(url);
 
@@ -619,10 +499,7 @@ async fn process_as_aircraft_json(
 
 async fn process_json_from_tcp(
     ip: &str,
-    print_interval_in_seconds: u64,
-    print_json: &bool,
-    lat: f64,
-    lon: f64,
+    sender_channel: Sender<ProcessMessageType>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // open a TCP connection to ip. Grab the frames and process them as JSON
     let addr = match ip.parse::<SocketAddr>() {
@@ -646,62 +523,6 @@ async fn process_json_from_tcp(
 
     let mut buffer: [u8; 8000] = [0u8; 8000];
     let mut left_over = String::new();
-
-    let mut state_machine = StateMachine::new(90, 360, lat, lon);
-    let sender_channel = state_machine.get_sender_channel();
-    let print_mutex_context = state_machine.get_airplanes_mutex();
-    let message_count_context = state_machine.get_messages_processed_mutex();
-    let expire_mutex_context = state_machine.get_airplanes_mutex();
-    let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
-    let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
-
-    // rocket state machine
-    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
-    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
-
-    // start the rocket server
-
-    tokio::spawn(async move {
-        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
-        // stop the program if the rocket server stops
-        exit(0);
-    });
-
-    if *print_json {
-        tokio::spawn(async move {
-            loop {
-                tokio::time::sleep(tokio::time::Duration::from_secs(print_interval_in_seconds))
-                    .await;
-                match generate_aircraft_json(
-                    print_mutex_context.clone(),
-                    message_count_context.clone(),
-                )
-                .await
-                {
-                    Some(aircraft_json) => {
-                        info!("Aircraft JSON: {}", aircraft_json.to_string().unwrap());
-                    }
-                    None => {
-                        error!("Error generating aircraft JSON");
-                    }
-                }
-            }
-        });
-    }
-
-    tokio::spawn(async move {
-        state_machine.process_adsb_message().await;
-    });
-
-    tokio::spawn(async move {
-        expire_planes(
-            expire_mutex_context,
-            10,
-            adsb_expire_timeout,
-            adsc_expire_timeout,
-        )
-        .await;
-    });
 
     while let Ok(n) = stream.read(&mut buffer).await {
         if n == 0 {

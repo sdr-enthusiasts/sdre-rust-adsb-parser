@@ -1,6 +1,6 @@
 [package]
 name = "sdre-rust-adsb-parser"
-version = "0.1.0"
+version = "0.1.0-alpha.3"
 edition = "2021"
 authors = ["Fred Clausen"]
 documentation = "https://github.com/sdr-enthusiasts/sdre-rust-adsb-parser"
