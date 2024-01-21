@@ -29,7 +29,7 @@
 ///
 /// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
 use log::{debug, error, info, trace};
-use rocket::{get, routes};
+use rocket::{get, routes, State};
 
 use generic_async_http_client::{Request, Response};
 use rocket::serde::json::Json;
@@ -53,15 +53,6 @@ use std::process::exit;
 use std::str::FromStr;
 use std::{fmt, time::Duration};
 use tokio::{io::AsyncReadExt, time::sleep};
-
-static mut PRINT_CONTEXT: Option<
-    std::sync::Arc<
-        tokio::sync::Mutex<
-            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
-        >,
-    >,
-> = None;
-static mut MESSAGE_COUNT_CONTEXT: Option<std::sync::Arc<tokio::sync::Mutex<u64>>> = None;
 
 #[derive(Debug, Default)]
 enum Modes {
@@ -319,15 +310,14 @@ async fn process_beast_frames(
     let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
     let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
 
+    // rocket state machine
+    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
+    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
+
     // start the rocket server
 
-    unsafe {
-        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
-        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
-    }
-
     tokio::spawn(async move {
-        rocket().await;
+        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
         // stop the program if the rocket server stops
         exit(0);
     });
@@ -443,15 +433,14 @@ async fn process_raw_frames(
     let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
     let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
 
+    // rocket state machine
+    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
+    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
+
     // start the rocket server
 
-    unsafe {
-        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
-        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
-    }
-
     tokio::spawn(async move {
-        rocket().await;
+        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
         // stop the program if the rocket server stops
         exit(0);
     });
@@ -545,15 +534,14 @@ async fn process_as_aircraft_json(
     let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
     let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
 
+    // rocket state machine
+    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
+    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
+
     // start the rocket server
 
-    unsafe {
-        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
-        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
-    }
-
     tokio::spawn(async move {
-        rocket().await;
+        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
         // stop the program if the rocket server stops
         exit(0);
     });
@@ -667,15 +655,14 @@ async fn process_json_from_tcp(
     let adsb_expire_timeout = state_machine.adsb_timeout_in_seconds;
     let adsc_expire_timeout = state_machine.adsc_timeout_in_seconds;
 
+    // rocket state machine
+    let rocket_print_mutex_context = state_machine.get_airplanes_mutex();
+    let rocket_message_count_context = state_machine.get_messages_processed_mutex();
+
     // start the rocket server
 
-    unsafe {
-        PRINT_CONTEXT = Some(state_machine.get_airplanes_mutex());
-        MESSAGE_COUNT_CONTEXT = Some(state_machine.get_messages_processed_mutex());
-    }
-
     tokio::spawn(async move {
-        rocket().await;
+        rocket(rocket_print_mutex_context, rocket_message_count_context).await;
         // stop the program if the rocket server stops
         exit(0);
     });
@@ -765,31 +752,48 @@ async fn process_json_from_tcp(
     Ok(())
 }
 
+struct Model {
+    print_context: std::sync::Arc<
+        tokio::sync::Mutex<
+            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
+        >,
+    >,
+    message_count_context: std::sync::Arc<tokio::sync::Mutex<u64>>,
+}
+
 #[get("/data/aircraft.json")]
-async fn aircraft_json() -> Json<AircraftJSON> {
-    unsafe {
-        if PRINT_CONTEXT.is_some() {
-            let print_context = PRINT_CONTEXT.as_ref().unwrap().clone();
-            let message_count_context = MESSAGE_COUNT_CONTEXT.as_ref().unwrap().clone();
-            let aircraft_json = generate_aircraft_json(print_context, message_count_context).await;
-            if let Some(aircraft_json) = aircraft_json {
-                Json(aircraft_json)
-            } else {
-                Json(AircraftJSON::default())
-            }
-        } else {
-            Json(AircraftJSON::default())
-        }
+async fn aircraft_json(model: &State<Model>) -> Json<AircraftJSON> {
+    let print_context = model.print_context.clone();
+    let message_count_context = model.message_count_context.clone();
+
+    let aircraft_json = generate_aircraft_json(print_context, message_count_context).await;
+    if let Some(aircraft_json) = aircraft_json {
+        Json(aircraft_json)
+    } else {
+        Json(AircraftJSON::default())
     }
 }
 
-async fn rocket() {
+async fn rocket(
+    print_context: std::sync::Arc<
+        tokio::sync::Mutex<
+            std::collections::HashMap<String, sdre_rust_adsb_parser::decoders::json::JSONMessage>,
+        >,
+    >,
+    message_count_context: std::sync::Arc<tokio::sync::Mutex<u64>>,
+) {
+    let model = Model {
+        print_context,
+        message_count_context,
+    };
+
     match rocket::build()
         .configure(
             rocket::Config::figment()
                 .merge(("address", "0.0.0.0"))
                 .merge(("log_level", rocket::config::LogLevel::Critical)),
         )
+        .manage(model)
         .mount("/", routes![aircraft_json])
         .launch()
         .await
