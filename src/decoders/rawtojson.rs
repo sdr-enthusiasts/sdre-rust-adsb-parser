@@ -124,14 +124,16 @@ pub fn update_operational_status(
         }
     }
 
-    // match operation_status.get_operational_mode() {
-    //     Some(mode) => {
-    //         //json.operational_mode = Some(mode);
-    //     }
-    //     None => {
-    //         return Err("Unknown operational mode".into());
-    //     }
-    // }
+    match operation_status.get_operational_mode() {
+        Some(mode) => {
+            json.ident_active = mode.ident_switch_active;
+            json.system_design_assurance = Some(mode.system_design_assurance);
+            // TODO: handle TCAS RA active
+        }
+        None => {
+            return Err("Unknown operational mode".into());
+        }
+    }
 
     if let Some(nic) = operation_status.get_nic_supplement_a() {
         json.nic_supplement_a = Some(nic);

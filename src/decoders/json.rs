@@ -608,7 +608,7 @@ pub struct JSONMessage {
     pub rssi: Option<SignalPower>,
     /// System Design Assurance (2.2.3.2.7.2.4.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
-    pub system_design_assurance: Option<i32>, // FIXME: I doubt this is right
+    pub system_design_assurance: Option<u8>, // FIXME: I doubt this is right
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
     pub last_time_seen: SecondsAgo, // FIXME: when doing any serialization this value needs to be referenced to the current time
@@ -673,6 +673,9 @@ pub struct JSONMessage {
     pub ws: Option<u32>, // TODO: print this out
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wd: Option<u32>, // TODO: print this out
+
+    // These are new fields we're adding to the json output
+    pub ident_active: bool,
 
     /// These are internal values that should never get serialized, but used for tracking raw even/odd positions
 
