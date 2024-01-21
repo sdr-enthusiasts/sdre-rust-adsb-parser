@@ -521,6 +521,42 @@ pub fn get_position_from_even_odd_cpr_positions_surface(
     })
 }
 
+pub fn get_bearing_from_positions(position: &Position, other: &Position) -> f64 {
+    let lat1 = position.latitude.to_radians();
+    let lat2 = other.latitude.to_radians();
+    let long1 = position.longitude.to_radians();
+    let long2 = other.longitude.to_radians();
+
+    let delta_long = long2 - long1;
+
+    let y = libm::sin(delta_long) * libm::cos(lat2);
+    let x = libm::cos(lat1) * libm::sin(lat2)
+        - libm::sin(lat1) * libm::cos(lat2) * libm::cos(delta_long);
+
+    let bearing = libm::atan2(y, x).to_degrees();
+    // degrees should be between 0 and 360
+
+    if bearing < 0.0 {
+        bearing + 360.0
+    } else {
+        bearing
+    }
+}
+
+pub fn km_to_nm(km: f64) -> f64 {
+    km * 0.539957
+}
+
+pub fn get_distance_and_direction_from_reference_position(
+    aircraft_position: &Position,
+    reference_position: &Position,
+) -> (f64, f64) {
+    let distance = haversine_distance_position(aircraft_position, reference_position);
+    let bearing = get_bearing_from_positions(aircraft_position, reference_position);
+
+    (distance, bearing)
+}
+
 pub fn is_lat_lon_sane(position: Position) -> bool {
     position.latitude >= -90.0
         && position.latitude <= 90.0

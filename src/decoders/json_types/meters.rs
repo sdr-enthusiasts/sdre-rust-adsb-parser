@@ -22,22 +22,22 @@ impl Serialize for Meters {
         S: serde::Serializer,
     {
         match self {
-            Meters::MetersAsInteger(speed) => serializer.serialize_i32(*speed),
-            Meters::MetersAsFloat(speed) => serializer.serialize_f32(*speed),
+            Meters::MetersAsInteger(meters) => serializer.serialize_i32(*meters),
+            Meters::MetersAsFloat(meters) => serializer.serialize_f32(*meters),
             Meters::None => serializer.serialize_none(),
         }
     }
 }
 
 impl From<i32> for Meters {
-    fn from(speed: i32) -> Self {
-        Self::MetersAsInteger(speed)
+    fn from(meters: i32) -> Self {
+        Self::MetersAsInteger(meters)
     }
 }
 
 impl From<f32> for Meters {
-    fn from(speed: f32) -> Self {
-        Self::MetersAsFloat(speed)
+    fn from(meters: f32) -> Self {
+        Self::MetersAsFloat(meters)
     }
 }
 
@@ -45,8 +45,8 @@ impl fmt::Display for Meters {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            Meters::MetersAsInteger(speed) => write!(f, "{} meters", speed),
-            Meters::MetersAsFloat(speed) => write!(f, "{} meters", speed),
+            Meters::MetersAsInteger(meters) => write!(f, "{} meters", meters),
+            Meters::MetersAsFloat(meters) => write!(f, "{} meters", meters),
             Meters::None => write!(f, "None"),
         }
     }
@@ -57,6 +57,7 @@ impl fmt::Display for Meters {
 pub enum NauticalMiles {
     NauticalMilesAsInteger(i32),
     NauticalMilesAsFloat(f32),
+    NauticalMilesAsFloat64(f64),
     #[default]
     None,
 }
@@ -67,22 +68,29 @@ impl Serialize for NauticalMiles {
         S: serde::Serializer,
     {
         match self {
-            NauticalMiles::NauticalMilesAsInteger(speed) => serializer.serialize_i32(*speed),
-            NauticalMiles::NauticalMilesAsFloat(speed) => serializer.serialize_f32(*speed),
+            NauticalMiles::NauticalMilesAsInteger(miles) => serializer.serialize_i32(*miles),
+            NauticalMiles::NauticalMilesAsFloat(miles) => serializer.serialize_f32(*miles),
+            NauticalMiles::NauticalMilesAsFloat64(miles) => serializer.serialize_f64(*miles),
             NauticalMiles::None => serializer.serialize_none(),
         }
     }
 }
 
 impl From<i32> for NauticalMiles {
-    fn from(speed: i32) -> Self {
-        Self::NauticalMilesAsInteger(speed)
+    fn from(miles: i32) -> Self {
+        Self::NauticalMilesAsInteger(miles)
     }
 }
 
 impl From<f32> for NauticalMiles {
-    fn from(speed: f32) -> Self {
-        Self::NauticalMilesAsFloat(speed)
+    fn from(miles: f32) -> Self {
+        Self::NauticalMilesAsFloat(miles)
+    }
+}
+
+impl From<f64> for NauticalMiles {
+    fn from(miles: f64) -> Self {
+        Self::NauticalMilesAsFloat64(miles)
     }
 }
 
@@ -90,8 +98,9 @@ impl fmt::Display for NauticalMiles {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            NauticalMiles::NauticalMilesAsInteger(speed) => write!(f, "{} nm", speed),
-            NauticalMiles::NauticalMilesAsFloat(speed) => write!(f, "{} nm", speed),
+            NauticalMiles::NauticalMilesAsInteger(miles) => write!(f, "{} nm", miles),
+            NauticalMiles::NauticalMilesAsFloat(miles) => write!(f, "{} nm", miles),
+            NauticalMiles::NauticalMilesAsFloat64(miles) => write!(f, "{} nm", miles),
             NauticalMiles::None => write!(f, "None"),
         }
     }

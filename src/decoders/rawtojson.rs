@@ -665,24 +665,6 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
     json.naviation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
 }
 
-// pub fn update_distance_and_direction_from_reference_position(
-//     json: &mut JSONMessage,
-//     reference_position: &Position,
-// ) {
-//     if let (Some(lat), Some(lon)) = (&json.latitude, &json.longitude) {
-//         if lat.latitude == 0.0 || lon.longitude == 0.0 {
-//             return;
-//         }
-
-//         let position = Position {
-//             latitude: lat.latitude,
-//             longitude: lon.longitude,
-//         };
-
-//         let distance = haversine_distance_position(&position, reference_position);
-//     }
-// }
-
 pub fn update_aircraft_position_surface(
     json: &mut JSONMessage,
     surface_position: &SurfacePosition,

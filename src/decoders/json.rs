@@ -10,8 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::{
-    helpers::prettyprint::{
-        pretty_print_field, pretty_print_field_from_option, pretty_print_label,
+    helpers::{
+        cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
+        prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
     },
     json_types::{
         adsbversion::ADSBVersion,
@@ -373,7 +374,7 @@ impl JSONMessage {
     pub fn update_from_df(
         &mut self,
         raw_adsb: &DF,
-        reference_positon: &Position,
+        reference_position: &Position,
     ) -> Result<(), String> {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
@@ -385,21 +386,65 @@ impl JSONMessage {
                     update_aircraft_identification(self, id);
                 }
                 ME::SurfacePosition(surfaceposition) => {
-                    return update_aircraft_position_surface(
+                    match update_aircraft_position_surface(
                         self,
                         surfaceposition,
-                        reference_positon,
-                    )
+                        reference_position,
+                    ) {
+                        Ok(_) => {
+                            let latitude = self.latitude.clone().unwrap().latitude;
+                            let longitude = self.longitude.clone().unwrap().longitude;
+                            // update the distance and bearing
+                            let aircraft_position = Position {
+                                latitude,
+                                longitude,
+                            };
+                            let (distance, bearing) =
+                                get_distance_and_direction_from_reference_position(
+                                    reference_position,
+                                    &aircraft_position,
+                                );
+                            self.aircract_distance_from_receiving_station =
+                                Some(km_to_nm(distance).into());
+                            self.aircraft_direction_from_receiving_station = Some(bearing.into());
+
+                            self.last_time_seen = (0.0).into();
+                            self.timestamp = get_timestamp();
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
-                    return update_aircraft_position_airborne(
+                    match update_aircraft_position_airborne(
                         self,
                         altitude,
                         baro_altitude,
-                        reference_positon,
-                    );
+                        reference_position,
+                    ) {
+                        Ok(_) => {
+                            let latitude = self.latitude.clone().unwrap().latitude;
+                            let longitude = self.longitude.clone().unwrap().longitude;
+                            // update the distance and bearing
+                            let aircraft_position = Position {
+                                latitude,
+                                longitude,
+                            };
+                            let (distance, bearing) =
+                                get_distance_and_direction_from_reference_position(
+                                    reference_position,
+                                    &aircraft_position,
+                                );
+                            self.aircract_distance_from_receiving_station =
+                                Some(km_to_nm(distance).into());
+                            self.aircraft_direction_from_receiving_station = Some(bearing.into());
+
+                            self.last_time_seen = (0.0).into();
+                            self.timestamp = get_timestamp();
+                        }
+                        Err(e) => return Err(e),
+                    }
                 }
                 ME::Reserved0(_) => return Err("Reserved0 is not implemented....".into()),
                 ME::SurfaceSystemStatus(_) => {
@@ -417,7 +462,13 @@ impl JSONMessage {
                     return Err("AircraftOperationalCoordination is not implemented....".into())
                 }
                 ME::AircraftOperationStatus(operation_status) => {
-                    return update_operational_status(self, operation_status);
+                    match update_operational_status(self, operation_status) {
+                        Ok(_) => {
+                            self.last_time_seen = (0.0).into();
+                            self.timestamp = get_timestamp();
+                        }
+                        Err(e) => return Err(e),
+                    };
                 }
             }
         }

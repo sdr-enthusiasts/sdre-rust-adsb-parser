@@ -12,6 +12,7 @@ use std::fmt;
 pub enum Heading {
     HeadingAsInteger(i32),
     HeadingAsFloat(f32),
+    HeadingAsFloat64(f64),
     #[default]
     None,
 }
@@ -22,22 +23,29 @@ impl Serialize for Heading {
         S: serde::Serializer,
     {
         match self {
-            Heading::HeadingAsInteger(speed) => serializer.serialize_i32(*speed),
-            Heading::HeadingAsFloat(speed) => serializer.serialize_f32(*speed),
+            Heading::HeadingAsInteger(heading) => serializer.serialize_i32(*heading),
+            Heading::HeadingAsFloat(heading) => serializer.serialize_f32(*heading),
+            Heading::HeadingAsFloat64(heading) => serializer.serialize_f64(*heading),
             Heading::None => serializer.serialize_none(),
         }
     }
 }
 
 impl From<i32> for Heading {
-    fn from(speed: i32) -> Self {
-        Self::HeadingAsInteger(speed)
+    fn from(heading: i32) -> Self {
+        Self::HeadingAsInteger(heading)
     }
 }
 
 impl From<f32> for Heading {
-    fn from(speed: f32) -> Self {
-        Self::HeadingAsFloat(speed)
+    fn from(heading: f32) -> Self {
+        Self::HeadingAsFloat(heading)
+    }
+}
+
+impl From<f64> for Heading {
+    fn from(heading: f64) -> Self {
+        Self::HeadingAsFloat64(heading)
     }
 }
 
@@ -45,8 +53,9 @@ impl fmt::Display for Heading {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            Heading::HeadingAsInteger(speed) => write!(f, "{} degrees", speed),
-            Heading::HeadingAsFloat(speed) => write!(f, "{} degrees", *speed as u32),
+            Heading::HeadingAsInteger(heading) => write!(f, "{} degrees", heading),
+            Heading::HeadingAsFloat(heading) => write!(f, "{} degrees", *heading as u32),
+            Heading::HeadingAsFloat64(heading) => write!(f, "{} degrees", *heading as u32),
             Heading::None => write!(f, "None"),
         }
     }
