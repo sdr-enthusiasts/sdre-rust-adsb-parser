@@ -47,6 +47,8 @@
 extern crate serde;
 extern crate serde_json;
 #[macro_use]
+extern crate derive_builder;
+#[macro_use]
 extern crate log;
 
 use core::fmt;

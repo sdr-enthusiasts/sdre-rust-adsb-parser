@@ -26,7 +26,7 @@ const D_LAT_ODD_SURFACE: f64 = 90.0 / (4.0 * NZ - 1.0);
 const CPR_MAX: f64 = 131_072.0;
 
 /// Post-processing of CPR into Latitude/Longitude
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Position {
     pub latitude: f64,

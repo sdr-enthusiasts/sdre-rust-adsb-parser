@@ -9,12 +9,24 @@
 /// ```
 /// use sdre_rust_adsb_parser::state_machine::state::StateMachine;
 /// use sdre_rust_adsb_parser::state_machine::state::ProcessMessageType;
+/// use sdre_rust_adsb_parser::decoders::helpers::cpr_calculators::Position;
 ///
 /// async fn process_message() {
 ///     // Create a raw ADS-B message. Generally input will be from a receiver.
 ///     let raw_message = "8D4840D6202CC371C32CE0576098".to_string();
 ///     // Create a new state machine with a timeout of 10 seconds for ADS-B messages
-///     let mut state_machine = StateMachine::new(10, 0, 37.7749, -122.4194);
+///     let latitude = 37.7749;
+///    let longitude = -122.4194;
+///     let adsb_timeout_in_seconds = 10;
+///
+///     let state_machine = StateMachineBuilder::default().position(Position { latitude, longitude}).adsb_timeout_in_seconds(adsb_timeout_in_seconds);
+//      let mut state_machine: StateMachine = match state_machine.build() {
+//      Ok(state_machine) => state_machine,
+//      Err(e) => {
+//         error!("Error building state machine: {}", e);
+//         exit(1);
+//      }
+//     };
 ///
 ///
 ///     // Get the sender channel to send messages to the state machine
@@ -93,6 +105,30 @@ pub enum ProcessMessageType {
     AsString(String),
 }
 
+pub struct Channels {
+    pub input_channel: Sender<ProcessMessageType>,
+    pub output_channel: Receiver<ProcessMessageType>,
+}
+
+impl Default for Channels {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Channels {
+    pub fn new() -> Channels {
+        let (sender_channel, receiver_channel): (
+            Sender<ProcessMessageType>,
+            Receiver<ProcessMessageType>,
+        ) = tokio::sync::mpsc::channel(100);
+        Channels {
+            input_channel: sender_channel,
+            output_channel: receiver_channel,
+        }
+    }
+}
+
 impl fmt::Display for ProcessMessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
@@ -113,47 +149,64 @@ impl fmt::Display for ProcessMessageType {
     }
 }
 
+#[derive(Builder)]
+#[builder(pattern = "owned")]
 pub struct StateMachine {
+    #[builder(default = "Arc::new(Mutex::new(HashMap::new()))")]
     pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
+    #[builder(default = "90")]
     pub adsb_timeout_in_seconds: u64,
+    #[builder(default = "360")]
     pub adsc_timeout_in_seconds: u64,
-    input_channel: Sender<ProcessMessageType>,
-    output_channel: Receiver<ProcessMessageType>,
+    #[builder(default = "Channels::new()")]
+    channels: Channels,
+    #[builder(default = "Arc::new(Mutex::new(0))")]
     messages_processed: Arc<Mutex<u64>>,
+    #[builder(default = "Position::default()")]
     position: Position,
+}
+
+impl StateMachineBuilder {
+    pub fn set_channels(&mut self, channels: Channels) -> &mut Self {
+        self.channels = Some(channels);
+        self
+    }
 }
 
 // Note: Input to the state machine is a single frame of ADS-B data (beast/raw), AircraftJSON, or JSON
 /// Create the state machine. The state machine will enable the user to set the timeout for ADS-B and ADS-C messages.
 /// The state machine needs a user-defined lat/lon for decoding Surface Position messages. This position is also used
 /// for airborne aircraft positions if the aircraft position cannot be derived from the available messages received.
+impl Default for StateMachine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl StateMachine {
-    pub fn new(
-        adsb_timeout_in_seconds: u32,
-        adsc_timeout_in_seconds: u32,
-        lat: f64,
-        lon: f64,
-    ) -> StateMachine {
-        let (sender_channel, receiver_channel): (
-            Sender<ProcessMessageType>,
-            Receiver<ProcessMessageType>,
-        ) = tokio::sync::mpsc::channel(100);
+    pub fn new() -> StateMachine {
         StateMachine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
-            adsb_timeout_in_seconds: adsb_timeout_in_seconds as u64,
-            adsc_timeout_in_seconds: adsc_timeout_in_seconds as u64,
-            input_channel: sender_channel,
-            output_channel: receiver_channel,
+            adsb_timeout_in_seconds: 90,
+            adsc_timeout_in_seconds: 360,
+            channels: Channels::new(),
             messages_processed: Arc::new(Mutex::new(0)),
             position: Position {
-                latitude: lat,
-                longitude: lon,
+                latitude: 0.0,
+                longitude: 0.0,
             },
         }
     }
 
+    fn verify_position_is_not_default(&self) -> Result<(), String> {
+        match self.position == Position::default() {
+            true => Err("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.".to_string()),
+            false => Ok(()),
+        }
+    }
+
     pub fn get_sender_channel(&self) -> Sender<ProcessMessageType> {
-        self.input_channel.clone()
+        self.channels.input_channel.clone()
     }
 
     pub fn get_airplanes_mutex(&self) -> Arc<Mutex<HashMap<String, Airplane>>> {
@@ -197,7 +250,11 @@ impl StateMachine {
     }
 
     pub async fn process_adsb_message(&mut self) {
-        while let Some(message) = self.output_channel.recv().await {
+        if self.verify_position_is_not_default().is_err() {
+            warn!("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.");
+        }
+
+        while let Some(message) = self.channels.output_channel.recv().await {
             let mut result: Result<(), String> = Ok(());
 
             match message.clone() {

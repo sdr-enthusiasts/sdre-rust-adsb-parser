@@ -34,7 +34,10 @@ use rocket::{get, routes, State};
 use generic_async_http_client::{Request, Response};
 use rocket::serde::json::Json;
 use sdre_rust_adsb_parser::{
-    decoders::{aircraftjson::AircraftJSON, json::JSONMessage},
+    decoders::{
+        aircraftjson::AircraftJSON, helpers::cpr_calculators::Position, json::JSONMessage,
+        json_types::longitude,
+    },
     error_handling::deserialization_error::DeserializationError,
     helpers::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
@@ -43,6 +46,7 @@ use sdre_rust_adsb_parser::{
     },
     state_machine::state::{
         expire_planes, generate_aircraft_json, ProcessMessageType, StateMachine,
+        StateMachineBuilder,
     },
     ADSBMessage, DecodeMessage,
 };
@@ -227,7 +231,7 @@ impl Args {
             Args:\n\
             --url [url:[port]]: URL and optional port to get ADSB data from\n\
             --log-verbosity [0-5]: Set the log verbosity\n\
-            --mode [jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast]: Set the mode to use\n\
+            --mode [raw, beast, jsonfromtcp, jsonfromaircraftjson]: Set the mode to use\n\
             --print-json: Print the JSON to stdout\n\
             --print-state-interval [seconds]: Set the interval to print state in seconds\n\
             --lat [latitude]: Set the latitude to use for distance calculations. Only used for raw/beast frames\n\
@@ -249,10 +253,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let mode: &Modes = &args.mode;
     let print_interval_in_seconds: u64 = args.print_state_interval_seconds;
     let print_json = &args.print_json;
-    let lat = args.lat;
-    let lon = args.lon;
+    let latitude = args.lat;
+    let longitude = args.lon;
 
-    let mut state_machine = StateMachine::new(90, 360, lat, lon);
+    let state_machine = StateMachineBuilder::default().position(Position {
+        latitude,
+        longitude,
+    });
+
+    let mut state_machine: StateMachine = match state_machine.build() {
+        Ok(state_machine) => state_machine,
+        Err(e) => {
+            error!("Error building state machine: {}", e);
+            exit(1);
+        }
+    };
+
     let sender_channel = state_machine.get_sender_channel();
     let print_mutex_context = state_machine.get_airplanes_mutex();
     let message_count_context = state_machine.get_messages_processed_mutex();
