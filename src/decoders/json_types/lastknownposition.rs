@@ -16,25 +16,33 @@ use super::{
 #[serde(deny_unknown_fields)]
 pub struct LastKnownPosition {
     // lat, lon, nic, rc, seen_pos
-    #[serde(rename = "lat")]
-    latitude: Latitude,
-    #[serde(rename = "lon")]
-    longitude: Longitude,
-    #[serde(rename = "nic")]
-    naviation_integrity_category: NavigationIntegrityCategory,
-    #[serde(rename = "rc")]
-    radius_of_containment: Meters,
+    #[serde(rename = "lat", skip_serializing_if = "Option::is_none")]
+    pub latitude: Option<Latitude>,
+    #[serde(rename = "lon", skip_serializing_if = "Option::is_none")]
+    pub longitude: Option<Longitude>,
+    #[serde(rename = "nic", skip_serializing_if = "Option::is_none")]
+    pub naviation_integrity_category: Option<NavigationIntegrityCategory>,
+    #[serde(rename = "rc", skip_serializing_if = "Option::is_none")]
+    pub radius_of_containment: Option<Meters>,
     #[serde(rename = "seen_pos")]
-    last_time_seen: SecondsAgo,
+    pub last_time_seen: SecondsAgo,
 }
 
 impl fmt::Display for LastKnownPosition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Last Known Position:")?;
-        write!(f, "\tLatitude: {}", self.latitude)?;
-        write!(f, "\tLongitude: {}", self.longitude)?;
-        write!(f, "\tNIC: {}", self.naviation_integrity_category)?;
-        write!(f, "\tRadius of Containment: {}", self.radius_of_containment)?;
+        if let Some(latitude) = &self.latitude {
+            write!(f, "\tLatitude: {}", latitude)?;
+        }
+        if let Some(longitude) = &self.longitude {
+            write!(f, "\tLongitude: {}", longitude)?;
+        }
+        if let Some(naviation_integrity_category) = &self.naviation_integrity_category {
+            write!(f, "\tNIC: {}", naviation_integrity_category)?;
+        }
+        if let Some(radius_of_containment) = &self.radius_of_containment {
+            write!(f, "\tRadius of Containment: {}", radius_of_containment)?;
+        }
         write!(f, "\tLast Seen: {}", self.last_time_seen)
     }
 }

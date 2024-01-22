@@ -85,6 +85,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
 use crate::decoders::helpers::cpr_calculators::Position;
+use crate::decoders::json_types::lastknownposition::LastKnownPosition;
 use crate::decoders::json_types::timestamp::TimeStamp;
 use crate::decoders::raw_types::df::DF;
 use crate::DecodeMessage;
@@ -456,6 +457,36 @@ pub async fn expire_planes(
                         planes_removed += 1;
                         false
                     } else {
+                        // if last_time_seen is greater than 60 seconds, remove latitude, longitude, nic, rc, seen_pos
+                        if current_time - timestamp > 60.0 {
+                            debug!("Removing last known position");
+                            let last_time_seen = LastKnownPosition {
+                                latitude: value.latitude.clone(),
+                                longitude: value.longitude.clone(),
+                                naviation_integrity_category: value
+                                    .navigation_integrity_category
+                                    .clone(),
+                                radius_of_containment: value.radius_of_containment.clone(),
+                                last_time_seen: value.last_time_seen.clone(),
+                            };
+
+                            value.latitude = None;
+                            value.longitude = None;
+                            value.navigation_integrity_category = None;
+                            value.radius_of_containment = None;
+                            value.cpr_even_airborne = None;
+                            value.cpr_odd_airborne = None;
+                            value.cpr_even_surface = None;
+                            value.cpr_odd_surface = None;
+                            value.surface_type_code = None;
+                            value.airborne_type_code = None;
+                            value.last_time_seen_pos_and_alt = None;
+                            value.last_cpr_odd_update_time_airborne = None;
+                            value.last_cpr_even_update_time_airborne = None;
+                            value.last_cpr_odd_update_time_surface = None;
+                            value.last_cpr_even_update_time_surface = None;
+                            value.last_known_position = Some(last_time_seen);
+                        }
                         true
                     }
                 }

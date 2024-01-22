@@ -429,6 +429,7 @@ impl JSONMessage {
 
                             self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
+                            self.last_known_position = None;
                         }
                         Err(e) => return Err(e),
                     }
@@ -461,6 +462,7 @@ impl JSONMessage {
 
                             self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
+                            self.last_known_position = None;
                         }
                         Err(e) => return Err(e),
                     }
