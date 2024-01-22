@@ -427,7 +427,7 @@ impl JSONMessage {
                                 Some(km_to_nm(distance).into());
                             self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
-                            self.last_time_seen = (0.0).into();
+                            self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
                         }
                         Err(e) => return Err(e),
@@ -459,7 +459,7 @@ impl JSONMessage {
                                 Some(km_to_nm(distance).into());
                             self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
-                            self.last_time_seen = (0.0).into();
+                            self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
                         }
                         Err(e) => return Err(e),
@@ -498,7 +498,7 @@ impl JSONMessage {
 
                     match update_operational_status(self, operation_status) {
                         Ok(_) => {
-                            self.last_time_seen = (0.0).into();
+                            self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
                         }
                         Err(e) => return Err(e),
@@ -508,7 +508,7 @@ impl JSONMessage {
         }
 
         // Reset the last time seen to "now". When the serializer is fixed properly
-        self.last_time_seen = (0.0).into();
+        self.last_time_seen = SecondsAgo::now();
         self.timestamp = get_timestamp();
 
         Ok(())
@@ -645,7 +645,7 @@ pub struct JSONMessage {
     pub system_design_assurance: Option<u8>, // FIXME: I doubt this is right
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
-    pub last_time_seen: SecondsAgo, // FIXME: when doing any serialization this value needs to be referenced to the current time
+    pub last_time_seen: SecondsAgo,
     /// how long ago (in seconds before "now") the position was last updated
     #[serde(skip_serializing_if = "Option::is_none", rename = "seen_pos")]
     pub last_time_seen_pos_and_alt: Option<f32>,
