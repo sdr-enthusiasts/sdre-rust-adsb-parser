@@ -584,7 +584,6 @@ pub struct JSONMessage {
     /// {lat, lon, nic, rc, seen_pos} when the regular lat and lon are older than 60 seconds they are no longer considered valid,
     /// this will provide the last position and show the age for the last position. aircraft will only be in the aircraft json
     /// if a position has been received in the last 60 seconds or if any message has been received in the last 30 seconds.
-    /// TODO: set this during pruning of data
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastPosition")]
     pub last_known_position: Option<LastKnownPosition>,
     /// The aircraft latitude
