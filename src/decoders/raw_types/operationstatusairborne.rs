@@ -24,7 +24,10 @@ pub struct OperationStatusAirborne {
     /// OM
     pub operational_mode: OperationalMode,
 
-    #[deku(pad_bytes_before = "1")] // reserved: OM last 8 bits (diff for airborne/surface)
+    // reserved: OM last 8 bits (diff for airborne/surface)
+    #[deku(bits = "8")]
+    pub reserved1: u8,
+
     pub version_number: ADSBVersion,
 
     #[deku(bits = "1")]
@@ -46,8 +49,18 @@ pub struct OperationStatusAirborne {
     pub horizontal_reference_direction: u8,
 
     #[deku(bits = "1")]
-    #[deku(pad_bits_after = "1")] // reserved
     pub sil_supplement: u8,
+    #[deku(bits = "1")]
+    pub reserved: u8,
+}
+
+impl OperationStatusAirborne {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved == 0
+            && self.reserved1 == 0
+            && self.capability_class.is_reserved_zero()
+            && self.operational_mode.is_reserved_zero()
+    }
 }
 
 impl fmt::Display for OperationStatusAirborne {

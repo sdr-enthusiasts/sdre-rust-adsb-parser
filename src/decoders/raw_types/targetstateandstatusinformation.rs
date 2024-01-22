@@ -12,7 +12,7 @@ use serde::{Deserialize, Serialize};
 pub struct TargetStateAndStatusInformation {
     // TODO Support Target State and Status defined in DO-260A, ADS-B Version=1
     // TODO Support reserved 2..=3
-    #[deku(bits = "2")]
+    #[deku(bits = "2", assert_eq = "1")]
     pub subtype: u8,
     #[deku(bits = "1")]
     pub is_fms: bool,
@@ -51,14 +51,21 @@ pub struct TargetStateAndStatusInformation {
     #[deku(bits = "1")]
     pub alt_hold: bool,
     #[deku(bits = "1")]
-    pub imf: bool,
+    pub reserved0: u8,
     #[deku(bits = "1")]
     pub approach: bool,
     #[deku(bits = "1")]
     pub tcas: bool,
     #[deku(bits = "1")]
-    #[deku(pad_bits_after = "2")] // reserved
     pub lnav: bool,
+    #[deku(bits = "2")]
+    pub reserved1: u8,
+}
+
+impl TargetStateAndStatusInformation {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved0 == 0 && self.reserved1 == 0
+    }
 }
 
 #[cfg(test)]
@@ -88,11 +95,12 @@ mod test {
             mode_validity: false,
             autopilot: false,
             vnac: false,
+            reserved0: 0,
             alt_hold: false,
-            imf: false,
             approach: false,
             tcas: true,
             lnav: false,
+            reserved1: 0,
         };
 
         match decoded.df {

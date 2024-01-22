@@ -17,12 +17,14 @@ pub struct CapabilityClassSurface {
 
     /// Position Offset Applied
     #[deku(bits = "1")]
-    pub poe: u8,
+    pub poa: u8,
 
     /// Aircraft has ADS-B 1090ES Receive Capability
     #[deku(bits = "1")]
-    #[deku(pad_bits_after = "2")] // reserved
     pub es1090: u8,
+
+    #[deku(bits = "2")]
+    pub reserved1: u8,
 
     /// Class B2 Ground Vehicle transmitting with less than 70 watts
     #[deku(bits = "1")]
@@ -39,6 +41,12 @@ pub struct CapabilityClassSurface {
     /// NIC Supplement used on the Surface
     #[deku(bits = "1")]
     pub nic_supplement_c: u8,
+}
+
+impl CapabilityClassSurface {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved0 == 0 && self.reserved1 == 0
+    }
 }
 
 impl fmt::Display for CapabilityClassSurface {

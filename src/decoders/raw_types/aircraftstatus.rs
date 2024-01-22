@@ -25,6 +25,14 @@ pub struct AircraftStatus {
         map = "|squawk: u32| -> Result<_, DekuError> {Ok(decode_id13_field(squawk))}"
     )]
     pub squawk: u32,
+    #[deku(bits = "32")]
+    pub reserved: u32,
+}
+
+impl AircraftStatus {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved == 0
+    }
 }
 
 #[cfg(test)]
@@ -46,6 +54,7 @@ pub mod test {
             sub_type: AircraftStatusType::EmergencyPriorityStatus,
             emergency_state: EmergencyState::None,
             squawk: 25092,
+            reserved: 0,
         };
 
         match decoded.df {

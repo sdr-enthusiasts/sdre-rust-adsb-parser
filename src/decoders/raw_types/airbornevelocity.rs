@@ -20,7 +20,7 @@ pub struct AirborneVelocity {
     #[deku(bits = "1")]
     pub intent_change: u8,
     #[deku(bits = "1")]
-    pub ifr: u8,
+    pub reserved1: u8,
     #[deku(bits = "3")]
     pub nac_v: u8,
     #[deku(ctx = "*st")]
@@ -30,7 +30,7 @@ pub struct AirborneVelocity {
     #[deku(endian = "big", bits = "9")]
     pub vrate_value: u16,
     #[deku(bits = "2")]
-    pub reverved: u8,
+    pub reserved2: u8,
     pub gnss_sign: Sign,
     #[deku(
         bits = "7",
@@ -40,6 +40,10 @@ pub struct AirborneVelocity {
 }
 
 impl AirborneVelocity {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved1 == 0 && self.reserved2 == 0
+    }
+
     /// Return effective (`heading`, `ground_speed`, `vertical_rate`) for groundspeed
     #[must_use]
     pub fn calculate(&self) -> Option<(f32, f64, i16)> {
@@ -80,7 +84,7 @@ mod tests {
         let expected = AirborneVelocity {
             st: 1,
             intent_change: 0,
-            ifr: 0,
+            reserved1: 0,
             nac_v: 1,
             sub_type: AirborneVelocitySubType::GroundSpeedDecoding(GroundSpeedDecoding {
                 ew_sign: Sign::Positive,
@@ -91,7 +95,7 @@ mod tests {
             vrate_src: VerticalRateSource::GeometricAltitude,
             vrate_sign: Sign::Positive,
             vrate_value: 0b000000001,
-            reverved: 0b00,
+            reserved2: 0b00,
             gnss_sign: Sign::Positive,
             gnss_baro_diff: 550,
         };

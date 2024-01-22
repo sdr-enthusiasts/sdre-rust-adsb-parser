@@ -40,21 +40,38 @@ pub struct OperationStatusSurface {
     pub nic_supplement_a: u8,
 
     #[deku(bits = "4")]
-    #[deku(pad_bits_after = "2")] // reserved
     pub navigational_accuracy_category: u8,
+
+    #[deku(bits = "2")]
+    pub reserved0: u8,
 
     #[deku(bits = "2")]
     pub source_integrity_level: u8,
 
+    // FIXME: we should be handling track / angle in this message
+    // FIXME: additionally, for output encoding of heading in JSON we should
+    // make sure we're setting the appropriate output heading type and removing the unused heading type(s)
+    // FIXME: we should also be calculating track based on magnetic heading?
     #[deku(bits = "1")]
-    pub barometric_altitude_integrity: u8,
+    pub track_heading: u8,
 
     #[deku(bits = "1")]
     pub horizontal_reference_direction: u8,
 
     #[deku(bits = "1")]
-    #[deku(pad_bits_after = "1")] // reserved
     pub sil_supplement: u8,
+
+    #[deku(bits = "1")]
+    pub reserved1: u8,
+}
+
+impl OperationStatusSurface {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved0 == 0
+            && self.reserved1 == 0
+            && self.capability_class.is_reserved_zero()
+            && self.operational_mode.is_reserved_zero()
+    }
 }
 
 impl fmt::Display for OperationStatusSurface {
@@ -80,11 +97,7 @@ impl fmt::Display for OperationStatusSurface {
             "   SIL:                {} (per hour)",
             self.source_integrity_level
         )?;
-        writeln!(
-            f,
-            "   NICbaro:            {}",
-            self.barometric_altitude_integrity
-        )?;
+        writeln!(f, "   Track/Heading:            {}", self.track_heading)?;
         if self.horizontal_reference_direction == 1 {
             writeln!(f, "   Heading reference:  magnetic north")?;
         } else {

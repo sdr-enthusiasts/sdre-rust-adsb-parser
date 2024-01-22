@@ -375,10 +375,17 @@ impl JSONMessage {
         &mut self,
         raw_adsb: &DF,
         reference_position: &Position,
+        use_strict_mode: &bool,
     ) -> Result<(), String> {
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
-                ME::AirborneVelocity(velocity) => update_airborne_velocity(self, velocity),
+                ME::AirborneVelocity(velocity) => {
+                    if *use_strict_mode && !velocity.is_reserved_zero() {
+                        return Err("Airborne Velocity reserved field(s) are not 0".into());
+                    }
+
+                    update_airborne_velocity(self, velocity)
+                }
                 ME::NoPosition(no_position) => {
                     update_from_no_position(self, no_position);
                 }
@@ -451,8 +458,19 @@ impl JSONMessage {
                     return Err("SurfaceSystemStatus is not implemented....".into())
                 }
                 ME::Reserved1(_) => return Err("Reserved1 is not implemented....".into()),
-                ME::AircraftStatus(status) => update_aircraft_status(self, status),
+                ME::AircraftStatus(status) => {
+                    if *use_strict_mode && !status.is_reserved_zero() {
+                        return Err("Aircraft Status reserved field is not 0".into());
+                    }
+
+                    update_aircraft_status(self, status);
+                }
                 ME::TargetStateAndStatusInformation(target_state_and_status_information) => {
+                    if *use_strict_mode && !target_state_and_status_information.is_reserved_zero() {
+                        return Err(
+                            "Target State and Status Information reserved field is not 0".into(),
+                        );
+                    }
                     update_target_state_and_status_information(
                         self,
                         target_state_and_status_information,
@@ -462,6 +480,10 @@ impl JSONMessage {
                     return Err("AircraftOperationalCoordination is not implemented....".into())
                 }
                 ME::AircraftOperationStatus(operation_status) => {
+                    if *use_strict_mode && !operation_status.is_reserved_zero() {
+                        return Err("Aircraft Operation Status reserved field is not 0".into());
+                    }
+
                     match update_operational_status(self, operation_status) {
                         Ok(_) => {
                             self.last_time_seen = (0.0).into();

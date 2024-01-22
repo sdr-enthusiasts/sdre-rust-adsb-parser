@@ -227,9 +227,9 @@ pub fn update_target_state_and_status_information(
             output_modes.push(NavigationModes::TCAS);
         }
 
-        if target_state_and_status_information.lnav {
-            output_modes.push(NavigationModes::LNAV);
-        }
+        // if target_state_and_status_information.lnav {
+        //     output_modes.push(NavigationModes::LNAV);
+        // }
 
         json.autopilot_modes = Some(output_modes);
     } else {

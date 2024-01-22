@@ -162,11 +162,13 @@ pub struct StateMachine {
     #[builder(default = "360")]
     pub adsc_timeout_in_seconds: u64,
     #[builder(default = "Channels::new()")]
-    channels: Channels,
+    pub channels: Channels,
     #[builder(default = "Arc::new(Mutex::new(0))")]
-    messages_processed: Arc<Mutex<u64>>,
+    pub messages_processed: Arc<Mutex<u64>>,
     #[builder(default = "Position::default()")]
-    position: Position,
+    pub position: Position,
+    #[builder(default = "true")]
+    pub use_strict_mode: bool,
 }
 
 impl StateMachineBuilder {
@@ -198,6 +200,7 @@ impl StateMachine {
                 latitude: 0.0,
                 longitude: 0.0,
             },
+            use_strict_mode: true,
         }
     }
 
@@ -374,13 +377,19 @@ impl StateMachine {
 
             match airplanes.entry(transponderhex.clone()) {
                 Entry::Occupied(mut airplane) => {
-                    return airplane
-                        .get_mut()
-                        .update_from_df(&message.df, &self.position);
+                    return airplane.get_mut().update_from_df(
+                        &message.df,
+                        &self.position,
+                        &self.use_strict_mode,
+                    );
                 }
                 Entry::Vacant(airplane) => {
                     let mut new_airplane = Airplane::new(transponderhex);
-                    match new_airplane.update_from_df(&message.df, &self.position) {
+                    match new_airplane.update_from_df(
+                        &message.df,
+                        &self.position,
+                        &self.use_strict_mode,
+                    ) {
                         Ok(_) => {
                             airplane.insert(new_airplane);
                         }

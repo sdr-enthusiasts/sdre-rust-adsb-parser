@@ -28,6 +28,16 @@ pub enum OperationStatus {
     Reserved(#[deku(bits = "5")] u8, [u8; 5]),
 }
 
+impl CapabilityClass {
+    pub const fn is_reserved_zero(&self) -> bool {
+        match self {
+            CapabilityClass::Airborne(airborne) => airborne.is_reserved_zero(),
+            CapabilityClass::Surface(surface) => surface.is_reserved_zero(),
+            CapabilityClass::Unknown => false,
+        }
+    }
+}
+
 pub enum CapabilityClass {
     Airborne(CapabilityClassAirborne),
     Surface(CapabilityClassSurface),
@@ -45,6 +55,16 @@ impl OperationStatus {
 
     pub fn is_reserved(&self) -> bool {
         matches!(self, OperationStatus::Reserved(_, _))
+    }
+
+    pub const fn is_reserved_zero(&self) -> bool {
+        match self {
+            OperationStatus::Reserved(_reserved0, _reserved1) => false,
+
+            OperationStatus::Airborne(airborne) => airborne.is_reserved_zero(),
+
+            OperationStatus::Surface(surface) => surface.is_reserved_zero(),
+        }
     }
 
     pub fn get_adsb_version(&self) -> ADSBVersion {
@@ -108,7 +128,15 @@ impl OperationStatus {
     pub fn get_barometric_altitude_integrity(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.barometric_altitude_integrity),
-            OperationStatus::Surface(surface) => Some(surface.barometric_altitude_integrity),
+            OperationStatus::Surface(_surface) => None,
+            OperationStatus::Reserved(_, _) => None,
+        }
+    }
+
+    pub fn get_track_heading(&self) -> Option<u8> {
+        match self {
+            OperationStatus::Airborne(_airborne) => None,
+            OperationStatus::Surface(surface) => Some(surface.track_heading),
             OperationStatus::Reserved(_, _) => None,
         }
     }
@@ -162,10 +190,11 @@ mod test {
                 reserved: 0,
                 tcas_ra_active: false,
                 ident_switch_active: false,
-                reserved_recv_atc_service: false,
+                reserved_recv_atc_service: 0,
                 single_antenna_flag: true,
                 system_design_assurance: 2,
             },
+            reserved1: 0,
             version_number: ADSBVersion::ADSBVersion2,
             nic_supplement_a: 0,
             navigational_accuracy_category: 10,
@@ -174,6 +203,7 @@ mod test {
             barometric_altitude_integrity: 1,
             horizontal_reference_direction: 0,
             sil_supplement: 0,
+            reserved: 0,
         });
 
         match decoded.df {
@@ -196,19 +226,20 @@ mod test {
         let expected = OperationStatus::Surface(OperationStatusSurface {
             capability_class: CapabilityClassSurface {
                 reserved0: 0,
-                poe: 0,
+                poa: 0,
                 es1090: 0,
                 b2_low: 0,
                 uat_in: 0,
                 nac_v: 2,
                 nic_supplement_c: 0,
+                reserved1: 0,
             },
             lw_codes: 4,
             operational_mode: OperationalMode {
                 reserved: 0,
                 tcas_ra_active: false,
                 ident_switch_active: false,
-                reserved_recv_atc_service: false,
+                reserved_recv_atc_service: 0,
                 single_antenna_flag: false,
                 system_design_assurance: 2,
             },
@@ -217,9 +248,11 @@ mod test {
             nic_supplement_a: 0,
             navigational_accuracy_category: 10,
             source_integrity_level: 3,
-            barometric_altitude_integrity: 1,
+            track_heading: 1,
             horizontal_reference_direction: 0,
             sil_supplement: 0,
+            reserved0: 0,
+            reserved1: 0,
         });
 
         println!("Decoded {:?}", decoded);

@@ -22,13 +22,19 @@ pub struct OperationalMode {
     pub ident_switch_active: bool,
 
     #[deku(bits = "1")]
-    pub reserved_recv_atc_service: bool,
+    pub reserved_recv_atc_service: u8,
 
     #[deku(bits = "1")]
     pub single_antenna_flag: bool,
 
     #[deku(bits = "2")]
     pub system_design_assurance: u8,
+}
+
+impl OperationalMode {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved == 0 && self.reserved_recv_atc_service == 0
+    }
 }
 
 impl fmt::Display for OperationalMode {
@@ -39,7 +45,7 @@ impl fmt::Display for OperationalMode {
         if self.ident_switch_active {
             write!(f, " IDENT_SWITCH_ACTIVE")?;
         }
-        if self.reserved_recv_atc_service {
+        if self.reserved_recv_atc_service != 0 {
             write!(f, " ATC")?;
         }
         if self.single_antenna_flag {

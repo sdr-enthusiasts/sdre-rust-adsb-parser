@@ -43,6 +43,12 @@ pub struct CapabilityClassAirborne {
     pub tc: u8,
 }
 
+impl CapabilityClassAirborne {
+    pub const fn is_reserved_zero(&self) -> bool {
+        self.reserved0 == 0 && self.reserved1 == 0
+    }
+}
+
 impl fmt::Display for CapabilityClassAirborne {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if self.acas.eq(&1) {
