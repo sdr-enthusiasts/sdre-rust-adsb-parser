@@ -18,7 +18,7 @@ pub enum MLATFields {
     Latitude,
     Longitude,
     NIC,
-    RC, // TODO: rename this field
+    RC,
     NACv,
     NACp,
     Sil,

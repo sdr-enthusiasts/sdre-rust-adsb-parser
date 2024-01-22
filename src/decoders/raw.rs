@@ -268,9 +268,7 @@ mod tests {
         let result = input.to_adsb_raw();
         println!("Result: {:?}", result);
         assert!(result.is_ok(), "Failed to decode message: {:?}", result);
-        // 8d, ae, 54, ca, f8, 5, 0, 2, 0, 4a, b8, 67, a4, e
 
-        // FIXME: This is a valid message, but it's not being decoded correctly. Disabling for now so that precommit works.
         let input = "8DAE54CAF8050002004AB867A40E";
         let result = input.to_adsb_raw();
         println!("Result: {:?}", result);

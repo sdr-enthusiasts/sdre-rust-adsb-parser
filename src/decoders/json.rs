@@ -40,6 +40,7 @@ use super::{
         sil::SourceIntegrityLevel,
         sourceintegritylevel::SourceIntegrityLevelType,
         speed::Speed,
+        squawk::Squawk,
         timestamp::TimeStamp,
         tisb::TiSB,
         transponderhex::TransponderHex,
@@ -201,6 +202,10 @@ impl JSONMessage {
             &self.last_known_position,
             &mut output,
         );
+        pretty_print_field_from_option("GPS Okay Before", &self.gps_ok_before, &mut output);
+        pretty_print_field_from_option("GPS Okay Latitude", &self.gps_ok_latitude, &mut output);
+        pretty_print_field_from_option("GPS Okay Longitude", &self.gps_ok_longitude, &mut output);
+
         pretty_print_field_from_option("Calculated Track", &self.calculated_track, &mut output);
         pretty_print_field("Last Time Seen", &self.last_time_seen, &mut output);
         pretty_print_field_from_option(
@@ -224,6 +229,9 @@ impl JSONMessage {
             &self.geometric_altitude_rate,
             &mut output,
         );
+
+        pretty_print_field_from_option("Track Rate", &self.track_rate, &mut output);
+        pretty_print_field_from_option("Roll", &self.roll, &mut output);
 
         pretty_print_label("Autopilot Settings", &mut output);
         pretty_print_field_from_option(
@@ -328,6 +336,9 @@ impl JSONMessage {
         for mlat_message in &self.mlat {
             pretty_print_field("MLAT Message", mlat_message, &mut output);
         }
+
+        pretty_print_field_from_option("Wind Speed", &self.wind_speed, &mut output);
+        pretty_print_field_from_option("Wind Direction", &self.wind_direction, &mut output);
 
         output
     }
@@ -587,10 +598,10 @@ pub struct JSONMessage {
     pub mlat: Vec<MLATFields>,
     /// Navigation Accuracy for Position (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_p")]
-    pub navigation_accuracy_position: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
+    pub navigation_accuracy_position: Option<NavigationIntegrityCategory>,
     /// Navigation Accuracy for Velocity (2.2.5.1.19)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nac_v")]
-    pub navigation_accuracy_velocity: Option<NavigationAccuracyVelocity>, // FIXME: I doubt this is right
+    pub navigation_accuracy_velocity: Option<NavigationAccuracyVelocity>,
     /// selected altitude from the Mode Control Panel / Flight Control Unit (MCP/FCU) or equivalent equipment
     #[serde(skip_serializing_if = "Option::is_none", rename = "nav_altitude_mcp")]
     pub autopilot_selected_altitude: Option<Altitude>,
@@ -608,7 +619,7 @@ pub struct JSONMessage {
     pub selected_altimeter: Option<Altimeter>,
     /// Navigation Integrity Category (2.2.3.2.7.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
-    pub navigation_integrity_category: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
+    pub navigation_integrity_category: Option<NavigationIntegrityCategory>,
     /// Navigation Integrity Category for Barometric Altitude (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
     pub barometeric_altitude_integrity_category: Option<u8>, // FIXME: I doubt this is right
@@ -640,16 +651,16 @@ pub struct JSONMessage {
     pub last_time_seen_pos_and_alt: Option<f32>,
     /// Source Integity Level (2.2.5.1.40)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sil")]
-    pub source_integrity_level: Option<SourceIntegrityLevel>, // FIXME: I doubt this is right
+    pub source_integrity_level: Option<SourceIntegrityLevel>,
     /// interpretation of SIL: unknown, perhour, persample
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub sil_type: Option<SourceIntegrityLevelType>, // FIXME: I doubt this is right
+    pub sil_type: Option<SourceIntegrityLevelType>,
     /// Flight status special position identification bit (2.2.3.2.3.2)
     #[serde(skip_serializing_if = "Option::is_none", rename = "spi")]
     pub flight_status_special_position_id_bit: Option<u8>, // FIXME: I doubt this is right
     /// Mode A code (Squawk), encoded as 4 octal digits
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
-    pub transponder_squawk_code: Option<String>, // TODO: This does not serialize with leading 0s right. It should always be at least 4 digits
+    pub transponder_squawk_code: Option<Squawk>,
     /// wiedehopf's aircraft.json aircraft type pulled from database
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
     pub aircraft_type_from_database: Option<String>,
@@ -678,24 +689,24 @@ pub struct JSONMessage {
     pub magnetic_heading: Option<Heading>,
     /// GPS Okay before this time.
     #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkBefore")]
-    pub gps_ok_before: Option<TimeStamp>, // TODO: print out
+    pub gps_ok_before: Option<TimeStamp>,
     /// GPS Okay Latitude
     #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkLat")]
-    pub gps_ok_latitude: Option<Latitude>, // TODO: print out
+    pub gps_ok_latitude: Option<Latitude>,
     /// GPS Okay Longitude
     #[serde(skip_serializing_if = "Option::is_none", rename = "gpsOkLon")]
-    pub gps_ok_longitude: Option<Longitude>, // TODO: print out
+    pub gps_ok_longitude: Option<Longitude>,
     /// True air speed
     #[serde(skip_serializing_if = "Option::is_none", rename = "tas")]
     pub true_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub track_rate: Option<f32>, // TODO: print this out
+    pub track_rate: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub roll: Option<f32>, // TODO: print this out
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub ws: Option<u32>, // TODO: print this out
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub wd: Option<u32>, // TODO: print this out
+    pub roll: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "ws")]
+    pub wind_speed: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "wd")]
+    pub wind_direction: Option<u32>,
 
     // These are new fields we're adding to the json output
     #[serde(default)]

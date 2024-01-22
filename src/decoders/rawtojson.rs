@@ -188,7 +188,8 @@ pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &Aircraf
         }
     }
 
-    json.transponder_squawk_code = Some(format!("{:04}", radix(operation_status.squawk, 16)));
+    json.transponder_squawk_code =
+        Some(format!("{:04}", radix(operation_status.squawk, 16)).into());
 }
 
 pub fn update_from_no_position(json: &mut JSONMessage, no_position: &NoPosition) {
@@ -691,9 +692,6 @@ pub fn update_aircraft_position_surface(
 ) -> Result<(), String> {
     json.barometric_altitude = Some("ground".into());
     json.surface_type_code = Some(surface_position.type_code);
-
-    // TODO: I can't figure out what tar1090 is doing for what values it's using for ground speed and track, and if it factors in the validity of the surface position. I'm going to assume it does for now.
-    // Also there seems to be some fucked up thing where I may or may not be factoring in setting speed to 0 properly. Or tar1090 isn't. Well it def isn't at some point but who knows
 
     match surface_position.s {
         StatusForGroundTrack::Valid => {
