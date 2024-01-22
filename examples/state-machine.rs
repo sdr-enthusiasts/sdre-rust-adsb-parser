@@ -34,10 +34,7 @@ use rocket::{get, routes, State};
 use generic_async_http_client::{Request, Response};
 use rocket::serde::json::Json;
 use sdre_rust_adsb_parser::{
-    decoders::{
-        aircraftjson::AircraftJSON, helpers::cpr_calculators::Position, json::JSONMessage,
-        json_types::longitude,
-    },
+    decoders::{aircraftjson::AircraftJSON, helpers::cpr_calculators::Position, json::JSONMessage},
     error_handling::deserialization_error::DeserializationError,
     helpers::{
         encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},

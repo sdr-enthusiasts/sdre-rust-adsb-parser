@@ -8,25 +8,28 @@
 ///
 /// ```
 /// use sdre_rust_adsb_parser::state_machine::state::StateMachine;
+/// use sdre_rust_adsb_parser::state_machine::state::StateMachineBuilder;
 /// use sdre_rust_adsb_parser::state_machine::state::ProcessMessageType;
 /// use sdre_rust_adsb_parser::decoders::helpers::cpr_calculators::Position;
+/// use std::process::exit;
 ///
 /// async fn process_message() {
 ///     // Create a raw ADS-B message. Generally input will be from a receiver.
 ///     let raw_message = "8D4840D6202CC371C32CE0576098".to_string();
 ///     // Create a new state machine with a timeout of 10 seconds for ADS-B messages
 ///     let latitude = 37.7749;
-///    let longitude = -122.4194;
+///     let longitude = -122.4194;
 ///     let adsb_timeout_in_seconds = 10;
 ///
-///     let state_machine = StateMachineBuilder::default().position(Position { latitude, longitude}).adsb_timeout_in_seconds(adsb_timeout_in_seconds);
-//      let mut state_machine: StateMachine = match state_machine.build() {
-//      Ok(state_machine) => state_machine,
-//      Err(e) => {
-//         error!("Error building state machine: {}", e);
-//         exit(1);
-//      }
-//     };
+///     let state_machine_builder = StateMachineBuilder::default().position(Position { latitude, longitude}).adsb_timeout_in_seconds(adsb_timeout_in_seconds);
+///
+///     let mut state_machine = match state_machine_builder.build() {
+///         Ok(state_machine) => state_machine,
+///         Err(e) => {
+///             println!("Error building state machine: {}", e);
+///             exit(1);
+///         }
+///     };
 ///
 ///
 ///     // Get the sender channel to send messages to the state machine
