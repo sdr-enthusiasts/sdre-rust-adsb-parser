@@ -19,6 +19,7 @@ use super::{
         adsbversion::ADSBVersion, emergency::Emergency, emmittercategory::EmitterCategory,
         nacp::NavigationIntegrityCategory, nacv::NavigationAccuracyVelocity,
         navigationmodes::NavigationModes, sil::SourceIntegrityLevel,
+        sourceintegritylevel::SourceIntegrityLevelType,
     },
     raw_types::{
         airbornevelocity::AirborneVelocity,
@@ -30,6 +31,7 @@ use super::{
         operationstatus::{CapabilityClass, OperationStatus},
         surfaceposition::SurfacePosition,
         surveillancestatus::SurveillanceStatus,
+        targetstateandstatusinformation::TargetStateAndStatusInformation,
         verticleratesource::VerticalRateSource,
     },
 };
@@ -140,6 +142,21 @@ pub fn update_operational_status(
         update_nic_and_radius_of_containement(json);
     }
 
+    if let Some(gva) = operation_status.get_geometric_vertical_accuracy() {
+        json.geometric_vertical_accuracy = Some(gva.into());
+    }
+
+    if let Some(nacp) = operation_status.get_navigational_accuracy_category() {
+        json.navigation_accuracy_position =
+            Some(NavigationIntegrityCategory::try_from(nacp).unwrap_or_default());
+    }
+
+    if let Some(sil_supplement) = operation_status.get_source_integrity_level() {
+        json.sil_type = Some(sil_supplement.into());
+    } else {
+        json.sil_type = Some(SourceIntegrityLevelType::Unknown);
+    }
+
     Ok(())
 }
 
@@ -180,7 +197,7 @@ pub fn update_from_no_position(json: &mut JSONMessage, no_position: &NoPosition)
 
 pub fn update_target_state_and_status_information(
     json: &mut JSONMessage,
-    target_state_and_status_information: &super::raw_types::targetstateandstatusinformation::TargetStateAndStatusInformation,
+    target_state_and_status_information: &TargetStateAndStatusInformation,
 ) {
     let altitude = target_state_and_status_information.altitude;
     json.selected_altimeter = Some(target_state_and_status_information.qnh.into());
@@ -477,13 +494,13 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
             match airborne_type_code {
                 0 | 18 | 22 => {
                     json.radius_of_containment = None;
-                    json.naviation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
+                    json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
                     return;
                 }
                 17 => {
                     // 37.04km
                     json.radius_of_containment = Some(37040.0.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category1);
                     return;
                 }
@@ -491,7 +508,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
                         // 14.816 km
                         json.radius_of_containment = Some(14816.0.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category2);
                         return;
                     }
@@ -499,7 +516,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
                         // 7.408 km
                         json.radius_of_containment = Some(7408.0.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category3);
                         return;
                     }
@@ -507,14 +524,14 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                 15 => {
                     // 3.704 km
                     json.radius_of_containment = Some(3704.0.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category4);
                     return;
                 }
                 14 => {
                     // 1.852 km
                     json.radius_of_containment = Some(1852.0.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category5);
                     return;
                 }
@@ -522,7 +539,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
                         // 1111.2 m
                         json.radius_of_containment = Some(1111.2.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category6);
                         return;
                     }
@@ -530,7 +547,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
                         // 926 m
                         json.radius_of_containment = Some(926.0.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category6);
                         return;
                     }
@@ -538,7 +555,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 0 && *nic_supplement_b == 1 {
                         // 555.6 m
                         json.radius_of_containment = Some(555.6.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category6);
                         return;
                     }
@@ -546,14 +563,14 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                 12 => {
                     // 370.4 m
                     json.radius_of_containment = Some(370.4.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category7);
                 }
                 11 => {
                     if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
                         // 185.2 m
                         json.radius_of_containment = Some(185.2.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category8);
                         return;
                     }
@@ -561,7 +578,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
                         // 75 m
                         json.radius_of_containment = Some(75.0.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category9);
                         return;
                     }
@@ -569,14 +586,14 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                 10 | 21 => {
                     // 25 m
                     json.radius_of_containment = Some(25.0.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category10);
                     return;
                 }
                 9 | 20 => {
                     // 7.5 m
                     json.radius_of_containment = Some(7.5.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category11);
                     return;
                 }
@@ -592,13 +609,13 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
             match surface_type_code {
                 0 => {
                     json.radius_of_containment = None;
-                    json.naviation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
+                    json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
                     return;
                 }
                 8 => {
                     if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
                         json.radius_of_containment = None;
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Unknown);
                         return;
                     }
@@ -606,7 +623,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplment_a == 0 && *nic_supplment_c == 1 {
                         // 1111.2 m
                         json.radius_of_containment = Some(1111.2.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category6);
                         return;
                     }
@@ -614,7 +631,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
                         // 555.6 m
                         json.radius_of_containment = Some(555.6.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category6);
                         return;
                     }
@@ -622,7 +639,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplment_a == 1 && *nic_supplment_c == 1 {
                         // 370.4 m
                         json.radius_of_containment = Some(370.4.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category7);
                         return;
                     }
@@ -631,7 +648,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
                         // 185.2 m
                         json.radius_of_containment = Some(185.2.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category8);
                         return;
                     }
@@ -639,7 +656,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                     if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
                         // 75 m
                         json.radius_of_containment = Some(75.0.into());
-                        json.naviation_integrity_category =
+                        json.navigation_integrity_category =
                             Some(NavigationIntegrityCategory::Category9);
                         return;
                     }
@@ -647,14 +664,14 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
                 6 => {
                     // 25 m
                     json.radius_of_containment = Some(25.0.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category10);
                     return;
                 }
                 5 => {
                     // 7.5 m
                     json.radius_of_containment = Some(7.5.into());
-                    json.naviation_integrity_category =
+                    json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category11);
                     return;
                 }
@@ -664,7 +681,7 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
     }
     // We've made it to here and can't sus out the radius of containment. Set it to None.
     json.radius_of_containment = None;
-    json.naviation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
+    json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
 }
 
 pub fn update_aircraft_position_surface(

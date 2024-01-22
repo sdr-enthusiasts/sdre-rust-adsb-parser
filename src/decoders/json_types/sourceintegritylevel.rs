@@ -45,6 +45,16 @@ impl TryFrom<String> for SourceIntegrityLevelType {
     }
 }
 
+impl From<u8> for SourceIntegrityLevelType {
+    fn from(value: u8) -> Self {
+        match value {
+            1 => SourceIntegrityLevelType::PerSample,
+            2 => SourceIntegrityLevelType::PerHour,
+            _ => SourceIntegrityLevelType::Unknown,
+        }
+    }
+}
+
 impl fmt::Display for SourceIntegrityLevelType {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match *self {

@@ -140,6 +140,7 @@ pub mod decoders {
         pub mod dbflags;
         pub mod emergency;
         pub mod emmittercategory;
+        pub mod geometricverticalaccuracy;
         pub mod heading;
         pub mod lastknownposition;
         pub mod latitude;

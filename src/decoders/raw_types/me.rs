@@ -59,7 +59,7 @@ pub enum ME {
     AircraftOperationalCoordination([u8; 6]),
 
     #[deku(id = "31")]
-    AircraftOperationStatus(OperationStatus),
+    AircraftOperationStatus(OperationStatus), // Done
 }
 
 impl ME {

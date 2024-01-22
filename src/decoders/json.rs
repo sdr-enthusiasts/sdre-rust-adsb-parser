@@ -23,6 +23,7 @@ use super::{
         dbflags::DBFlags,
         emergency::Emergency,
         emmittercategory::EmitterCategory,
+        geometricverticalaccuracy::GeometricVerticalAccuracy,
         heading::Heading,
         lastknownposition::LastKnownPosition,
         latitude::Latitude,
@@ -256,7 +257,7 @@ impl JSONMessage {
         pretty_print_field_from_option("Emergency", &self.emergency, &mut output);
         pretty_print_field_from_option(
             "Geometric Vertical Accuracy",
-            &self.geometric_verticle_accuracy,
+            &self.geometric_vertical_accuracy,
             &mut output,
         );
         pretty_print_field_from_option(
@@ -271,7 +272,7 @@ impl JSONMessage {
         );
         pretty_print_field_from_option(
             "Navigation Integrity Category",
-            &self.naviation_integrity_category,
+            &self.navigation_integrity_category,
             &mut output,
         );
         pretty_print_field_from_option(
@@ -563,7 +564,7 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "ias")]
     pub indicated_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
-    pub geometric_verticle_accuracy: Option<u8>, // FIXME: I doubt this is right
+    pub geometric_vertical_accuracy: Option<GeometricVerticalAccuracy>,
     /// The transponder hex identifier of the aircraft.
     #[serde(rename = "hex")]
     pub transponder_hex: TransponderHex,
@@ -607,7 +608,7 @@ pub struct JSONMessage {
     pub selected_altimeter: Option<Altimeter>,
     /// Navigation Integrity Category (2.2.3.2.7.2.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic")]
-    pub naviation_integrity_category: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
+    pub navigation_integrity_category: Option<NavigationIntegrityCategory>, // FIXME: I doubt this is right
     /// Navigation Integrity Category for Barometric Altitude (2.2.5.1.35)
     #[serde(skip_serializing_if = "Option::is_none", rename = "nic_baro")]
     pub barometeric_altitude_integrity_category: Option<u8>, // FIXME: I doubt this is right
