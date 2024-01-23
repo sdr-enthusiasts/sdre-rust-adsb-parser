@@ -48,7 +48,7 @@ impl TryFrom<String> for NavigationModes {
             "approach" => Ok(NavigationModes::Approach),
             "lnav" => Ok(NavigationModes::LNAV),
             "tcas" => Ok(NavigationModes::TCAS),
-            _ => Err(format!("Invalid navigation mode: {}", navigation_modes)),
+            _ => Err(format!("Invalid navigation mode: {navigation_modes}")),
         }
     }
 }

@@ -68,7 +68,7 @@ impl TryFrom<String> for MLATFields {
             "sil" => Ok(MLATFields::Sil),
             "sil_type" => Ok(MLATFields::SilType),
             "none" => Ok(MLATFields::None),
-            _ => Err(format!("Invalid MLAT field: {}", field)),
+            _ => Err(format!("Invalid MLAT field: {field}")),
         }
     }
 }

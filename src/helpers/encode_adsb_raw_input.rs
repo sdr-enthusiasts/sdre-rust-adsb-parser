@@ -20,9 +20,12 @@ pub struct ADSBRawFrames {
 }
 
 impl ADSBRawFrames {
+    #[must_use]
     pub fn len(&self) -> usize {
         self.frames.len()
     }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }
@@ -32,7 +35,9 @@ impl ADSBRawFrames {
 /// Expected input is a &Vec<Vec<u8>>of the raw frame(s), including the control characters to start and end the frame.
 /// Does not consume the input.
 /// Returns a vector of bytes, with each element of the array being a frame that can be passed in to the ADSB Raw parser.
-
+/// # Errors
+/// If the input is not a valid ADSB Raw frame, an error will be returned.
+#[must_use]
 pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
     let mut formatted_frames: Vec<Vec<u8>> = Vec::new();
     let mut current_frame: Vec<u8> = Vec::new();
@@ -58,7 +63,7 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
                 && current_frame.len() != ADSB_RAW_FRAME_LARGE
             {
                 errors_found.push(ADSBRawError::ByteSequenceWrong {
-                    size: current_frame.len() as u8,
+                    size: current_frame.len(),
                 });
                 current_frame.clear();
                 _ = byte_iter.next();

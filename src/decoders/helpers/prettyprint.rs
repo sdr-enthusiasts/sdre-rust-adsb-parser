@@ -49,5 +49,5 @@ pub fn pretty_print_label(label: &str, output: &mut String) {
         buffer.push('=');
     }
 
-    output.push_str(&format!("{}{}{}{}\n", buffer, label, buffer, extra));
+    output.push_str(&format!("{buffer}{label}{buffer}{extra}\n"));
 }

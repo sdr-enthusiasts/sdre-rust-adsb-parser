@@ -65,7 +65,7 @@ impl Speed {
 
     pub fn display_as_knots(&self) -> String {
         match self {
-            Speed::Knots(speed) => format!("{} knots", speed),
+            Speed::Knots(speed) => format!("{speed} knots"),
             Speed::None => "None".to_string(),
         }
     }

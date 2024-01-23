@@ -128,7 +128,7 @@ impl TryFrom<String> for EmitterCategory {
             "D5" => Ok(EmitterCategory::D5),
             "D6" => Ok(EmitterCategory::D6),
             "D7" => Ok(EmitterCategory::D7),
-            _ => Err(format!("Invalid emitter category: {}", emitter_category)),
+            _ => Err(format!("Invalid emitter category: {emitter_category}")),
         }
     }
 }
@@ -145,7 +145,7 @@ impl EmitterCategory {
                 5 => Ok(EmitterCategory::A5),
                 6 => Ok(EmitterCategory::A6),
                 7 => Ok(EmitterCategory::A7),
-                _ => Err(format!("Invalid emitter category: A{}", ca)),
+                _ => Err(format!("Invalid emitter category: A{ca}")),
             },
             TypeCoding::B => match ca {
                 0 => Ok(EmitterCategory::B0),
@@ -156,7 +156,7 @@ impl EmitterCategory {
                 5 => Ok(EmitterCategory::B5),
                 6 => Ok(EmitterCategory::B6),
                 7 => Ok(EmitterCategory::B7),
-                _ => Err(format!("Invalid emitter category: B{}", ca)),
+                _ => Err(format!("Invalid emitter category: B{ca}")),
             },
             TypeCoding::C => match ca {
                 0 => Ok(EmitterCategory::C0),
@@ -167,7 +167,7 @@ impl EmitterCategory {
                 5 => Ok(EmitterCategory::C5),
                 6 => Ok(EmitterCategory::C6),
                 7 => Ok(EmitterCategory::C7),
-                _ => Err(format!("Invalid emitter category: C{}", ca)),
+                _ => Err(format!("Invalid emitter category: C{ca}")),
             },
             TypeCoding::D => match ca {
                 0 => Ok(EmitterCategory::D0),
@@ -178,7 +178,7 @@ impl EmitterCategory {
                 5 => Ok(EmitterCategory::D5),
                 6 => Ok(EmitterCategory::D6),
                 7 => Ok(EmitterCategory::D7),
-                _ => Err(format!("Invalid emitter category: D{}", ca)),
+                _ => Err(format!("Invalid emitter category: D{ca}")),
             },
         }
     }

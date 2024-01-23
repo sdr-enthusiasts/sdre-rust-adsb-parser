@@ -53,7 +53,7 @@ impl TryFrom<String> for Emergency {
             "unlawful" => Ok(Emergency::Unlawful),
             "downed" => Ok(Emergency::Downed),
             "reserved" => Ok(Emergency::Reserved),
-            _ => Err(format!("Invalid emergency: {}", emergency)),
+            _ => Err(format!("Invalid emergency: {emergency}")),
         }
     }
 }

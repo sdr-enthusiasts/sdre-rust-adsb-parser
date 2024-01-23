@@ -71,45 +71,45 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                 // verify we have a valid frame length
                 match frame_type {
                     FrameType::Short => {
-                        if frame_bytes.len() != ADSB_BEAST_SHORT_FRAME_LENGTH {
+                        if frame_bytes.len() == ADSB_BEAST_SHORT_FRAME_LENGTH {
+                            formatted_frames.push(frame_bytes.clone());
+                            frame_bytes.clear();
+                        } else {
                             if next_byte.is_some() {
                                 errors.push(ADSBBeastError::ShortFrameTooShort {
                                     message: frame_bytes.len(),
                                 });
                                 frame_bytes.clear();
                             }
-                        } else {
-                            formatted_frames.push(frame_bytes.clone());
-                            frame_bytes.clear();
                         }
                     }
                     FrameType::Long => {
-                        if frame_bytes.len() != ADSB_BEAST_LONG_FRAME_LENGTH {
+                        if frame_bytes.len() == ADSB_BEAST_LONG_FRAME_LENGTH {
+                            formatted_frames.push(frame_bytes.clone());
+                            frame_bytes.clear();
+                        } else {
                             if next_byte.is_some() {
                                 errors.push(ADSBBeastError::LongFrameTooShort {
                                     message: frame_bytes.len(),
                                 });
                                 frame_bytes.clear();
                             }
-                        } else {
-                            formatted_frames.push(frame_bytes.clone());
-                            frame_bytes.clear();
                         }
                     }
                     FrameType::None => {
                         frame_bytes.clear();
                     }
                     FrameType::ModeAC => {
-                        if frame_bytes.len() != ADSB_BEAST_MODEAC_FRAME_LENGTH {
+                        if frame_bytes.len() == ADSB_BEAST_MODEAC_FRAME_LENGTH {
+                            // Ignore the modeac frame
+                            frame_bytes.clear();
+                        } else {
                             if next_byte.is_some() {
                                 errors.push(ADSBBeastError::ModeACFrameTooShort {
                                     message: frame_bytes.len(),
                                 });
                                 frame_bytes.clear();
                             }
-                        } else {
-                            // Ignore the modeac frame
-                            frame_bytes.clear();
                         }
                     }
                 }
@@ -135,7 +135,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                 }
                 _ => {
                     errors.push(ADSBBeastError::StartSequenceError {
-                        message: format!("{:02X?}", byte),
+                        message: format!("{byte:02X?}"),
                     });
                     frame_type = FrameType::None;
                     continue;
@@ -157,7 +157,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         continue;
                     } else {
                         errors.push(ADSBBeastError::StartSequenceError {
-                            message: format!("{:02X?}", byte),
+                            message: format!("{byte:02X?}"),
                         });
                         frame_type = FrameType::None;
                         continue;
@@ -204,10 +204,10 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     // as well as, if the frame starts with a start character, we need to add it back
     if !frame_bytes.is_empty() {
         // we trimmed off the control characters, so we need to add them back if the frame starts with a start character
-        match frame_bytes[0] {
-            ADSB_BEAST_SHORT_FRAME_START_CHARACTER
-            | ADSB_BEAST_LONG_FRAME_START_CHARACTER
-            | ADSB_BEAST_MODEAC_FRAME_START_CHARACTER => {
+        match frame_bytes.first() {
+            Some(&ADSB_BEAST_SHORT_FRAME_START_CHARACTER)
+            | Some(&ADSB_BEAST_LONG_FRAME_START_CHARACTER)
+            | Some(&ADSB_BEAST_MODEAC_FRAME_START_CHARACTER) => {
                 frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
             }
             // We should never end up here.

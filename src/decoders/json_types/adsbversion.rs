@@ -54,7 +54,7 @@ impl TryFrom<u8> for ADSBVersion {
             6 => Ok(ADSBVersion::Version6),
             7 => Ok(ADSBVersion::Version7),
             8 => Ok(ADSBVersion::Unknown),
-            _ => Err(format!("Invalid ADSBVersion field: {}", field)),
+            _ => Err(format!("Invalid ADSBVersion field: {field}")),
         }
     }
 }

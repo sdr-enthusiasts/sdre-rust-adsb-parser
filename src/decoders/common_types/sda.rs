@@ -36,7 +36,7 @@ impl TryFrom<u8> for SystemDesignAssurance {
             // We should probably catch all in to the unknown variant
             // but technically the bit field in the raw message should only
             // ever be 2 bits so the range of values is 0-3
-            _ => Err(format!("Invalid SystemDesignAssurance: {}", value)),
+            _ => Err(format!("Invalid SystemDesignAssurance: {value}")),
         }
     }
 }

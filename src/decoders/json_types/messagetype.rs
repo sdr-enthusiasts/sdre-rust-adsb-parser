@@ -92,7 +92,7 @@ impl TryFrom<String> for MessageType {
             "tisb_other" => Ok(MessageType::ADSBOTHERSECONDARYSURVEILLANCE),
             "tisb_trackfile" => Ok(MessageType::ADSBTRACKFILE),
             "unknown" => Ok(MessageType::UNKNOWN),
-            _ => Err(format!("Invalid MessageType field: {}", message_type)),
+            _ => Err(format!("Invalid MessageType field: {message_type}")),
         }
     }
 }

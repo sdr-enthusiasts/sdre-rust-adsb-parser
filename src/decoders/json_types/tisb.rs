@@ -101,7 +101,7 @@ impl TryFrom<String> for TiSB {
             "nac_v" => Ok(TiSB::NACv),
             "sil" => Ok(TiSB::SIL),
             "sil_type" => Ok(TiSB::SILType),
-            _ => Err(format!("Invalid TiSB field: {}", field)),
+            _ => Err(format!("Invalid TiSB field: {field}")),
         }
     }
 }

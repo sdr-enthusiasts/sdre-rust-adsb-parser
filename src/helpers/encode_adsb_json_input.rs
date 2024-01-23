@@ -13,9 +13,12 @@ pub struct ADSBJSONFrames {
 }
 
 impl ADSBJSONFrames {
+    #[must_use]
     pub fn len(&self) -> usize {
         self.frames.len()
     }
+
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }
@@ -25,6 +28,7 @@ impl ADSBJSONFrames {
 /// Expected input is a &String of the JSON frame(s), including the control characters to start and end the frame.
 /// Does not consume the input.
 /// Returns a vector of strings, with each element of the array being a frame that can be passed in to the ADSB JSON parser.
+#[must_use]
 pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
     // Split the string into a vector of strings, delimited by '\n' with each element being a frame.
     let frames: Vec<&str> = string.split('\n').collect();
@@ -73,7 +77,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
 
     ADSBJSONFrames {
         frames: output,
-        left_over: "".to_string(),
+        left_over: String::new(),
         errors,
     }
 }
@@ -83,6 +87,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
 /// Does not consume the input.
 /// Returns a vector of strings, with each element of the array being a frame that can be passed in to the ADSB JSON parser.
 
+#[must_use]
 pub fn format_adsb_json_frames_from_bytes(bytes: &[u8]) -> ADSBJSONFrames {
     format_adsb_json_frames_from_string(String::from_utf8_lossy(bytes).as_ref())
 }

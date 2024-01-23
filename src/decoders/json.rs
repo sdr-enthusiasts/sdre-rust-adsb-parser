@@ -348,7 +348,7 @@ impl JSONMessage {
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
-            Ok(string) => Ok(format!("{}\n", string)),
+            Ok(string) => Ok(format!("{string}\n")),
         }
     }
 
@@ -762,7 +762,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {}", file_name);
+                    println!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 
@@ -793,7 +793,7 @@ mod tests {
                                     final_message_to_process
                                 );
                             } else {
-                                println!("Skipping line {}", line_number);
+                                println!("Skipping line {line_number}");
                             }
                             line_number += 1;
                         });
@@ -812,7 +812,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {}", file_name);
+                    println!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 
@@ -859,7 +859,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {}", file_name);
+                    println!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 

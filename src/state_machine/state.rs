@@ -1,6 +1,6 @@
 /// This module contains the implementation of the state machine for processing ADS-B messages.
 /// The state machine handles various types of input messages, such as raw ADS-B data, JSON messages,
-/// and AircraftJSON messages. It maintains a collection of airplanes and processes incoming messages
+/// and `AircraftJSON` messages. It maintains a collection of airplanes and processes incoming messages
 /// to update the state of the airplanes. The state machine also provides methods for retrieving and
 /// printing airplane information.
 ///
@@ -47,7 +47,7 @@
 /// ```
 ///
 /// The state machine processes different types of messages, such as raw ADS-B data, JSON messages,
-/// and AircraftJSON messages. It maintains a collection of airplanes and updates their state based
+/// and `AircraftJSON` messages. It maintains a collection of airplanes and updates their state based
 /// on the incoming messages. The state machine provides methods for retrieving and printing airplane
 /// information. It also allows sending messages to the state machine for processing.
 ///
@@ -63,7 +63,7 @@
 /// the state machine.
 ///
 /// The state machine processes different types of messages, such as raw ADS-B data, JSON messages,
-/// and AircraftJSON messages. The `process_adsb_message` method is responsible for processing these messages.
+/// and `AircraftJSON` messages. The `process_adsb_message` method is responsible for processing these messages.
 /// It uses pattern matching to handle different message types and calls the corresponding processing methods.
 /// The processing methods update the state of the airplanes based on the incoming messages.
 ///
@@ -121,6 +121,7 @@ impl Default for Channels {
 }
 
 impl Channels {
+    #[must_use]
     pub fn new() -> Channels {
         let (sender_channel, receiver_channel): (
             Sender<ProcessMessageType>,
@@ -136,19 +137,19 @@ impl Channels {
 impl fmt::Display for ProcessMessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProcessMessageType::Raw(raw_message) => write!(f, "{}", raw_message),
-            ProcessMessageType::Beast(beast_message) => write!(f, "{}", beast_message),
-            ProcessMessageType::JSON(json_message) => write!(f, "{}", json_message),
-            ProcessMessageType::AircraftJSON(aircraft_json) => write!(f, "{}", aircraft_json),
-            ProcessMessageType::ADSBMessage(adsb_message) => write!(f, "{}", adsb_message),
+            ProcessMessageType::Raw(raw_message) => write!(f, "{raw_message}"),
+            ProcessMessageType::Beast(beast_message) => write!(f, "{beast_message}"),
+            ProcessMessageType::JSON(json_message) => write!(f, "{json_message}"),
+            ProcessMessageType::AircraftJSON(aircraft_json) => write!(f, "{aircraft_json}"),
+            ProcessMessageType::ADSBMessage(adsb_message) => write!(f, "{adsb_message}"),
             ProcessMessageType::AsVecU8(vec_u8) => {
-                let mut output = "".to_string();
+                let mut output = String::new();
                 for byte in vec_u8 {
-                    output.push_str(&format!("{:02X?}", byte));
+                    output.push_str(&format!("{byte:02X?}"));
                 }
-                write!(f, "{}", output)
+                write!(f, "{output}")
             }
-            ProcessMessageType::AsString(string) => write!(f, "{}", string),
+            ProcessMessageType::AsString(string) => write!(f, "{string}"),
         }
     }
 }
@@ -190,6 +191,7 @@ impl Default for StateMachine {
 }
 
 impl StateMachine {
+    #[must_use]
     pub fn new() -> StateMachine {
         StateMachine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
@@ -205,25 +207,30 @@ impl StateMachine {
         }
     }
 
+    #[must_use]
     fn verify_position_is_not_default(&self) -> Result<(), String> {
-        match self.position == Position::default() {
-            true => Err("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.".to_string()),
-            false => Ok(()),
+        if self.position == Position::default() {
+            return Err("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.".to_string());
         }
+        Ok(())
     }
 
+    #[must_use]
     pub fn get_sender_channel(&self) -> Sender<ProcessMessageType> {
         self.channels.input_channel.clone()
     }
 
+    #[must_use]
     pub fn get_airplanes_mutex(&self) -> Arc<Mutex<HashMap<String, Airplane>>> {
         self.airplanes.clone()
     }
 
+    #[must_use]
     pub fn get_messages_processed_mutex(&self) -> Arc<Mutex<u64>> {
         self.messages_processed.clone()
     }
 
+    #[must_use]
     pub async fn get_airplane_by_hex(&self, transponder_hex: &str) -> Option<Airplane> {
         let airplanes = self.airplanes.lock().await;
 
@@ -232,8 +239,8 @@ impl StateMachine {
 
     pub async fn print_airplane_by_hex(&self, transponder_hex: &str) {
         match self.get_airplane_by_hex(transponder_hex).await {
-            Some(airplane) => println!("{}", airplane),
-            None => println!("No airplane found with transponder hex {}", transponder_hex),
+            Some(airplane) => println!("{airplane}"),
+            None => println!("No airplane found with transponder hex {transponder_hex}"),
         }
     }
 
@@ -241,7 +248,7 @@ impl StateMachine {
         let airplanes = self.airplanes.lock().await;
 
         for (_, airplane) in airplanes.iter() {
-            println!("{}", airplane);
+            println!("{airplane}");
         }
     }
 
@@ -266,45 +273,45 @@ impl StateMachine {
 
             match message.clone() {
                 ProcessMessageType::Raw(raw_message) => {
-                    result = self.process_aircraft_raw(raw_message).await
+                    result = self.process_aircraft_raw(raw_message).await;
                 }
                 ProcessMessageType::Beast(beast_message) => {
-                    result = self.process_aircraft_beast(beast_message).await
+                    result = self.process_aircraft_beast(beast_message).await;
                 }
                 ProcessMessageType::JSON(json_message) => {
-                    self.process_json_message(json_message).await
+                    self.process_json_message(json_message).await;
                 }
                 ProcessMessageType::AircraftJSON(aircraft_json) => {
-                    self.process_aircraft_json(aircraft_json).await
+                    self.process_aircraft_json(aircraft_json).await;
                 }
                 ProcessMessageType::ADSBMessage(adsb_message) => match adsb_message {
                     ADSBMessage::AdsbRawMessage(raw_message) => {
-                        result = self.process_aircraft_raw(raw_message).await
+                        result = self.process_aircraft_raw(raw_message).await;
                     }
                     ADSBMessage::AdsbBeastMessage(beast_message) => {
-                        result = self.process_aircraft_beast(beast_message).await
+                        result = self.process_aircraft_beast(beast_message).await;
                     }
                     ADSBMessage::AircraftJSON(json_message) => {
-                        self.process_aircraft_json(json_message).await
+                        self.process_aircraft_json(json_message).await;
                     }
                     ADSBMessage::JSONMessage(json_message) => {
-                        self.process_json_message(json_message).await
+                        self.process_json_message(json_message).await;
                     }
                 },
                 ProcessMessageType::AsVecU8(vec_u8) => {
                     if let Ok(message) = vec_u8.decode_message() {
                         match message {
                             ADSBMessage::AdsbRawMessage(raw_message) => {
-                                result = self.process_aircraft_raw(raw_message).await
+                                result = self.process_aircraft_raw(raw_message).await;
                             }
                             ADSBMessage::AdsbBeastMessage(beast_message) => {
-                                result = self.process_aircraft_beast(beast_message).await
+                                result = self.process_aircraft_beast(beast_message).await;
                             }
                             ADSBMessage::AircraftJSON(json_message) => {
-                                self.process_aircraft_json(json_message).await
+                                self.process_aircraft_json(json_message).await;
                             }
                             ADSBMessage::JSONMessage(json_message) => {
-                                self.process_json_message(json_message).await
+                                self.process_json_message(json_message).await;
                             }
                         }
                     }
@@ -313,16 +320,16 @@ impl StateMachine {
                     if let Ok(message) = string.decode_message() {
                         match message {
                             ADSBMessage::AdsbRawMessage(raw_message) => {
-                                result = self.process_aircraft_raw(raw_message).await
+                                result = self.process_aircraft_raw(raw_message).await;
                             }
                             ADSBMessage::AdsbBeastMessage(beast_message) => {
-                                result = self.process_aircraft_beast(beast_message).await
+                                result = self.process_aircraft_beast(beast_message).await;
                             }
                             ADSBMessage::AircraftJSON(json_message) => {
-                                self.process_aircraft_json(json_message).await
+                                self.process_aircraft_json(json_message).await;
                             }
                             ADSBMessage::JSONMessage(json_message) => {
-                                self.process_json_message(json_message).await
+                                self.process_json_message(json_message).await;
                             }
                         }
                     }
@@ -333,8 +340,8 @@ impl StateMachine {
             *messages_processed += 1;
 
             if let Err(e) = result {
-                error!("{}", e);
-                error!("Message: {}", message);
+                error!("{e}");
+                error!("Message: {message}");
             }
         }
     }
@@ -370,6 +377,11 @@ impl StateMachine {
         }
     }
 
+    /// Process a raw ADS-B message. The message is decoded and the state of the airplane is updated.
+    /// If the airplane does not exist, it is created.
+    /// If the airplane exists, it is updated.
+    /// # Errors
+    /// If the message cannot be decoded, an error is returned.
     pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) -> Result<(), String> {
         if let DF::ADSB(adsb) = &message.df {
             let mut airplanes = self.airplanes.lock().await;
@@ -391,7 +403,7 @@ impl StateMachine {
                         &self.position,
                         &self.use_strict_mode,
                     ) {
-                        Ok(_) => {
+                        Ok(()) => {
                             airplane.insert(new_airplane);
                         }
                         Err(e) => {
@@ -405,6 +417,11 @@ impl StateMachine {
         Ok(())
     }
 
+    /// Process a Beast ADS-B message. The message is decoded and the state of the airplane is updated.
+    /// If the airplane does not exist, it is created.
+    /// If the airplane exists, it is updated.
+    /// # Errors
+    /// If the message cannot be decoded, an error is returned.
     pub async fn process_aircraft_beast(
         &mut self,
         message: AdsbBeastMessage,

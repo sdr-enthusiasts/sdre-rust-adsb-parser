@@ -359,8 +359,8 @@ pub fn get_position_from_even_odd_cpr_positions_airborne(
 
     if nl_even != nl_odd {
         debug!("NL even and NL odd are not the same");
-        debug!("NL even: {}", nl_even);
-        debug!("NL odd: {}", nl_odd);
+        debug!("NL even: {nl_even}");
+        debug!("NL odd: {nl_odd}");
         return None;
     }
 
@@ -421,8 +421,8 @@ pub fn get_position_from_even_odd_cpr_positions_surface(
 
     if nl_even != nl_odd {
         debug!("NL even and NL odd are not the same");
-        debug!("NL even: {}", nl_even);
-        debug!("NL odd: {}", nl_odd);
+        debug!("NL even: {nl_even}");
+        debug!("NL odd: {nl_odd}");
         return None;
     }
 

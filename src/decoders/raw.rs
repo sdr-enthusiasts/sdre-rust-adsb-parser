@@ -227,7 +227,7 @@ impl AdsbRawMessage {
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
-            Ok(string) => Ok(format!("{}\n", string)),
+            Ok(string) => Ok(format!("{string}\n")),
         }
     }
 
