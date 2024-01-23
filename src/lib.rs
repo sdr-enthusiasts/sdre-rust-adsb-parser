@@ -1,3 +1,5 @@
+//#![warn(clippy::pedantic)]
+
 //! This module contains the implementation of a Rust ADS-B parser.
 //!
 //! The parser supports decoding messages in JSON, Beast, and Raw formats.

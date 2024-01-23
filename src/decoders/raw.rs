@@ -105,7 +105,7 @@ impl fmt::Display for AdsbRawMessage {
         match &self.df {
             DF::ShortAirAirSurveillance { altitude, .. } => {
                 writeln!(f, " Short Air-Air Surveillance")?;
-                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                writeln!(f, "  ICAO Address:  {crc:06X} (Mode S / ADS-B)")?;
                 if altitude.0 > 0 {
                     let altitude = altitude.0;
                     writeln!(f, "  Air/Ground:    airborne?")?;
@@ -116,7 +116,7 @@ impl fmt::Display for AdsbRawMessage {
             }
             DF::SurveillanceAltitudeReply { fs, ac, .. } => {
                 writeln!(f, " Surveillance, Altitude Reply")?;
-                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                writeln!(f, "  ICAO Address:  {crc:06X} (Mode S / ADS-B)")?;
                 writeln!(f, "  Air/Ground:    {fs}")?;
                 if ac.0 > 0 {
                     let altitude = ac.0;
@@ -126,9 +126,9 @@ impl fmt::Display for AdsbRawMessage {
             DF::SurveillanceIdentityReply { fs, id, .. } => {
                 let identity = id.0;
                 writeln!(f, " Surveillance, Identity Reply")?;
-                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
+                writeln!(f, "  ICAO Address:  {crc:06X} (Mode S / ADS-B)")?;
                 writeln!(f, "  Air/Ground:    {fs}")?;
-                writeln!(f, "  Identity:      {identity:04x}")?;
+                writeln!(f, "  Identity:      {identity:04X}")?;
             }
             DF::AllCallReply {
                 capability, icao, ..
@@ -139,11 +139,10 @@ impl fmt::Display for AdsbRawMessage {
             }
             DF::LongAirAir { altitude, .. } => {
                 writeln!(f, " Long Air-Air ACAS")?;
-                writeln!(f, "  ICAO Address:  {crc:06x} (Mode S / ADS-B)")?;
-                // TODO the airborne? shouldn't be static
+                writeln!(f, "  ICAO Address:  {crc:06X} (Mode S / ADS-B)")?;
                 if altitude.0 > 0 {
                     let altitude = altitude.0;
-                    writeln!(f, "  Air/Ground:    airborne?")?;
+                    writeln!(f, "  Air/Ground:    airborne")?;
                     writeln!(f, "  Baro altitude: {altitude} ft")?;
                 } else {
                     writeln!(f, "  Air/Ground:    ground")?;

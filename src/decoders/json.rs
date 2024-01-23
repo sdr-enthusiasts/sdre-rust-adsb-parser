@@ -574,7 +574,6 @@ pub struct JSONMessage {
     #[serde(skip_serializing_if = "Option::is_none", rename = "gs")]
     pub ground_speed: Option<Speed>,
     /// Indicated Air speed.
-    // TODO: what is the source of this?
     #[serde(skip_serializing_if = "Option::is_none", rename = "ias")]
     pub indicated_air_speed: Option<Speed>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "gva")]
