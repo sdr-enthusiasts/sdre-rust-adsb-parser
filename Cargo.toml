@@ -23,7 +23,7 @@ sdre-rust-logging = "0.2.2"
 deku = { version = "0.16.0", optional = true }
 custom_error = "1.9.2"
 libm = { version = "0.2.8", optional = true }
-chrono = { version = "0.4.31", optional = true }
+chrono = { version = "0.4.32", optional = true }
 radix_fmt = "1.0.0"
 derive_builder = "0.12.0"
 
