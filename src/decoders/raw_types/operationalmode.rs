@@ -8,6 +8,8 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
+use crate::decoders::common_types::sda::SystemDesignAssurance;
+
 /// `OperationMode` field not including the last 8 bits that are different for Surface/Airborne
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 pub struct OperationalMode {
@@ -27,8 +29,7 @@ pub struct OperationalMode {
     #[deku(bits = "1")]
     pub single_antenna_flag: bool,
 
-    #[deku(bits = "2")]
-    pub system_design_assurance: u8,
+    pub system_design_assurance: SystemDesignAssurance,
 }
 
 impl OperationalMode {
@@ -51,9 +52,9 @@ impl fmt::Display for OperationalMode {
         if self.single_antenna_flag {
             write!(f, " SAF")?;
         }
-        if self.system_design_assurance != 0 {
-            write!(f, " SDA={}", self.system_design_assurance)?;
-        }
+
+        write!(f, " SDA={}", self.system_design_assurance)?;
+
         Ok(())
     }
 }

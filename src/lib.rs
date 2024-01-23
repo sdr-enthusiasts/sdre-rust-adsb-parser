@@ -161,6 +161,9 @@ pub mod decoders {
         pub mod tisb;
         pub mod transponderhex;
     }
+    pub mod common_types {
+        pub mod sda;
+    }
     #[cfg(feature = "raw")]
     pub mod raw;
     pub mod helpers {

@@ -161,6 +161,7 @@ impl OperationStatus {
 #[cfg(test)]
 mod test {
     use super::*;
+    use crate::decoders::common_types::sda::SystemDesignAssurance;
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::adsbversion::ADSBVersion;
     use crate::decoders::raw_types::capabilityclassairborne::CapabilityClassAirborne;
@@ -192,7 +193,7 @@ mod test {
                 ident_switch_active: false,
                 reserved_recv_atc_service: 0,
                 single_antenna_flag: true,
-                system_design_assurance: 2,
+                system_design_assurance: SystemDesignAssurance::Major,
             },
             reserved1: 0,
             version_number: ADSBVersion::ADSBVersion2,
@@ -241,7 +242,7 @@ mod test {
                 ident_switch_active: false,
                 reserved_recv_atc_service: 0,
                 single_antenna_flag: false,
-                system_design_assurance: 2,
+                system_design_assurance: SystemDesignAssurance::Major,
             },
             gps_antenna_offset: 135,
             version_number: ADSBVersion::ADSBVersion2,

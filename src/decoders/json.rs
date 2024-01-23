@@ -10,6 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::{fmt, time::SystemTime};
 
 use super::{
+    common_types::sda::SystemDesignAssurance,
     helpers::{
         cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
         prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
@@ -643,7 +644,7 @@ pub struct JSONMessage {
     pub rssi: Option<SignalPower>,
     /// System Design Assurance (2.2.3.2.7.2.4.6)
     #[serde(skip_serializing_if = "Option::is_none", rename = "sda")]
-    pub system_design_assurance: Option<u8>, // FIXME: I doubt this is right
+    pub system_design_assurance: Option<SystemDesignAssurance>,
     /// how long ago (in seconds before "now") a message was last received from this aircraft
     #[serde(rename = "seen")]
     pub last_time_seen: SecondsAgo,
