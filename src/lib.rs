@@ -1,4 +1,4 @@
-//#![warn(clippy::pedantic)]
+#![warn(clippy::pedantic)]
 
 //! This module contains the implementation of a Rust ADS-B parser.
 //!
@@ -204,17 +204,22 @@ pub type MessageResult<T> = Result<T, DeserializationError>;
 ///
 /// The originating data must be in JSON, Beast or Raw format. Vectors of bytes are also supported.
 pub trait DecodeMessage {
+    /// Decodes the message and returns it as an `ADSBMessage` struct.
+    /// # Errors
+    /// This function will return an error if the message is not in JSON, Beast, or Raw format.
     fn decode_message(&self) -> MessageResult<ADSBMessage>;
+    /// Decodes the message and returns it as an `AircraftJSON` struct.
+    /// # Errors
+    /// This function will return an error if the message is not an aircraft.
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
-        match self.decode_message()? {
-            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
-            _ => {
-                let error: WrongType = WrongType::WrongTypeForAircraft {
-                    message: "The message is not an aircraft".to_string(),
-                };
+        if let ADSBMessage::AircraftJSON(aircraft_json) = self.decode_message()? {
+            Ok(aircraft_json)
+        } else {
+            let error = WrongType::WrongTypeForAircraft {
+                message: "The message is not an aircraft".to_string(),
+            };
 
-                Err(error.into())
-            }
+            Err(error.into())
         }
     }
 }
@@ -257,15 +262,14 @@ impl DecodeMessage for String {
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
-        match self.decode_message()? {
-            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
-            _ => {
-                let error: WrongType = WrongType::WrongTypeForAircraft {
-                    message: "The message is not an aircraft".to_string(),
-                };
+        if let ADSBMessage::AircraftJSON(aircraft_json) = self.decode_message()? {
+            Ok(aircraft_json)
+        } else {
+            let error = WrongType::WrongTypeForAircraft {
+                message: "The message is not an aircraft".to_string(),
+            };
 
-                Err(error.into())
-            }
+            Err(error.into())
         }
     }
 }
@@ -308,15 +312,14 @@ impl DecodeMessage for str {
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
-        match self.decode_message()? {
-            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
-            _ => {
-                let error: WrongType = WrongType::WrongTypeForAircraft {
-                    message: "The message is not an aircraft".to_string(),
-                };
+        if let ADSBMessage::AircraftJSON(aircraft_json) = self.decode_message()? {
+            Ok(aircraft_json)
+        } else {
+            let error = WrongType::WrongTypeForAircraft {
+                message: "The message is not an aircraft".to_string(),
+            };
 
-                Err(error.into())
-            }
+            Err(error.into())
         }
     }
 }
@@ -348,15 +351,14 @@ impl DecodeMessage for &[u8] {
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
-        match self.decode_message()? {
-            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
-            _ => {
-                let error: WrongType = WrongType::WrongTypeForAircraft {
-                    message: "The message is not an aircraft".to_string(),
-                };
+        if let ADSBMessage::AircraftJSON(aircraft_json) = self.decode_message()? {
+            Ok(aircraft_json)
+        } else {
+            let error = WrongType::WrongTypeForAircraft {
+                message: "The message is not an aircraft".to_string(),
+            };
 
-                Err(error.into())
-            }
+            Err(error.into())
         }
     }
 }
@@ -385,15 +387,14 @@ impl DecodeMessage for Vec<u8> {
     }
 
     fn decode_message_as_aircraft(&self) -> MessageResult<AircraftJSON> {
-        match self.decode_message()? {
-            ADSBMessage::AircraftJSON(aircraft_json) => Ok(aircraft_json),
-            _ => {
-                let error = WrongType::WrongTypeForAircraft {
-                    message: "The message is not an aircraft".to_string(),
-                };
+        if let ADSBMessage::AircraftJSON(aircraft_json) = self.decode_message()? {
+            Ok(aircraft_json)
+        } else {
+            let error = WrongType::WrongTypeForAircraft {
+                message: "The message is not an aircraft".to_string(),
+            };
 
-                Err(error.into())
-            }
+            Err(error.into())
         }
     }
 }
@@ -401,11 +402,11 @@ impl DecodeMessage for Vec<u8> {
 impl fmt::Display for ADSBMessage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ADSBMessage::JSONMessage(json_message) => write!(f, "{}", json_message),
-            ADSBMessage::AircraftJSON(aircraft_json) => write!(f, "{}", aircraft_json),
-            ADSBMessage::AdsbRawMessage(adsb_raw_message) => write!(f, "{}", adsb_raw_message),
+            ADSBMessage::JSONMessage(json_message) => write!(f, "{json_message}"),
+            ADSBMessage::AircraftJSON(aircraft_json) => write!(f, "{aircraft_json}"),
+            ADSBMessage::AdsbRawMessage(adsb_raw_message) => write!(f, "{adsb_raw_message}"),
             ADSBMessage::AdsbBeastMessage(adsb_beast_message) => {
-                write!(f, "{}", adsb_beast_message)
+                write!(f, "{adsb_beast_message}")
             }
         }
     }
@@ -414,6 +415,8 @@ impl fmt::Display for ADSBMessage {
 /// Implementation of `ADSBMessage`.
 impl ADSBMessage {
     /// Converts `ADSBMessage` to `String`.
+    /// # Errors
+    /// This function will return an error if the conversion to a string fails.
     pub fn to_string(&self) -> MessageResult<String> {
         trace!("Converting {:?} to a string", &self);
         match serde_json::to_string(self) {
@@ -423,17 +426,21 @@ impl ADSBMessage {
     }
 
     /// Converts `ADSBMessage` to `String` and appends a `\n` to the end.
+    /// # Errors
+    /// This function will return an error if the conversion to a string fails.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         trace!("Converting {:?} to a string and appending a newline", &self);
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
-            Ok(string) => Ok(format!("{}\n", string)),
+            Ok(string) => Ok(format!("{string}\n")),
         }
     }
 
     /// Converts `ADSBMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// This function will return an error if the conversion to a string fails.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         trace!("Converting {:?} into a string and encoding as bytes", &self);
         match self.to_string() {
@@ -445,6 +452,8 @@ impl ADSBMessage {
     /// Converts `ADSBMessage` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// This function will return an error if the conversion to a string fails.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
         trace!(
             "Converting {:?} into a string, appending a newline and encoding as bytes",
@@ -456,6 +465,7 @@ impl ADSBMessage {
         }
     }
 
+    #[must_use]
     pub fn pretty_print(&self) -> String {
         match self {
             ADSBMessage::JSONMessage(json_message) => json_message.pretty_print(),
@@ -469,23 +479,20 @@ impl ADSBMessage {
     ///
     /// the output is a `usize`.
 
+    #[must_use]
     pub fn len(&self) -> usize {
         match self {
-            ADSBMessage::JSONMessage(_) => 1,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.len(),
-            ADSBMessage::AdsbRawMessage(_) => 1,
-            ADSBMessage::AdsbBeastMessage(_) => 1,
+            _ => 1,
         }
     }
 
     /// Returns `true` if the message is empty.
-
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         match self {
-            ADSBMessage::JSONMessage(_) => false,
             ADSBMessage::AircraftJSON(aircraft_json) => aircraft_json.is_empty(),
-            ADSBMessage::AdsbRawMessage(_) => false,
-            ADSBMessage::AdsbBeastMessage(_) => false,
+            _ => false,
         }
     }
 }
