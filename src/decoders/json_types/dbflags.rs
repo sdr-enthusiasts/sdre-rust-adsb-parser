@@ -57,8 +57,7 @@ impl TryFrom<u8> for DBFlags {
             Ok(Self::LADD)
         } else {
             Err(format!(
-                "DBFlags should be a value between 0 and 15, inclusive. Found: {}",
-                db_flags
+                "DBFlags should be a value between 0 and 15, inclusive. Found: {db_flags}"
             ))
         }
     }

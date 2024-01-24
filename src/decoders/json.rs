@@ -121,7 +121,7 @@ impl fmt::Display for JSONMessage {
 }
 
 impl JSONMessage {
-    pub fn new(icao: String) -> JSONMessage {
+    #[must_use] pub fn new(icao: String) -> JSONMessage {
         JSONMessage {
             transponder_hex: icao.into(),
             timestamp: get_timestamp(),
@@ -138,12 +138,12 @@ impl JSONMessage {
         }
     }
 
-    /// Function to pretty print the JSONMessage.
+    /// Function to pretty print the `JSONMessage`.
     /// Units will be in Feet, Nautical Miles, and hPa.
     /// The units are not translated from the default units from the original data.
     ///
     /// return type is a String
-    pub fn pretty_print(&self) -> String {
+    #[must_use] pub fn pretty_print(&self) -> String {
         self.pretty_print_with_options()
     }
 
@@ -397,7 +397,7 @@ impl JSONMessage {
                         return Err("Airborne Velocity reserved field(s) are not 0".into());
                     }
 
-                    update_airborne_velocity(self, velocity)
+                    update_airborne_velocity(self, velocity);
                 }
                 ME::NoPosition(no_position) => {
                     update_from_no_position(self, no_position);
@@ -411,7 +411,7 @@ impl JSONMessage {
                         surfaceposition,
                         reference_position,
                     ) {
-                        Ok(_) => {
+                        Ok(()) => {
                             let latitude = self.latitude.clone().unwrap().latitude;
                             let longitude = self.longitude.clone().unwrap().longitude;
                             // update the distance and bearing
@@ -444,7 +444,7 @@ impl JSONMessage {
                         baro_altitude,
                         reference_position,
                     ) {
-                        Ok(_) => {
+                        Ok(()) => {
                             let latitude = self.latitude.clone().unwrap().latitude;
                             let longitude = self.longitude.clone().unwrap().longitude;
                             // update the distance and bearing
@@ -500,7 +500,7 @@ impl JSONMessage {
                     }
 
                     match update_operational_status(self, operation_status) {
-                        Ok(_) => {
+                        Ok(()) => {
                             self.last_time_seen = SecondsAgo::now();
                             self.timestamp = get_timestamp();
                         }
@@ -519,7 +519,7 @@ impl JSONMessage {
 }
 
 // Not all messages have a timestamp, so we'll use the current time if one isn't provided.
-pub fn get_timestamp() -> TimeStamp {
+#[must_use] pub fn get_timestamp() -> TimeStamp {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => TimeStamp::from(n.as_secs_f64()),
         Err(_) => TimeStamp::default(),

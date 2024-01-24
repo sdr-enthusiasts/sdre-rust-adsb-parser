@@ -21,10 +21,10 @@ pub struct ADSBBeastFrames {
 }
 
 impl ADSBBeastFrames {
-    pub fn len(&self) -> usize {
+    #[must_use] pub fn len(&self) -> usize {
         self.frames.len()
     }
-    pub fn is_empty(&self) -> bool {
+    #[must_use] pub fn is_empty(&self) -> bool {
         self.frames.is_empty()
     }
 }
@@ -42,7 +42,7 @@ enum FrameType {
 /// Does not consume the input.
 /// Returns a vector of bytes, with each element of the array being a frame that can be passed in to the ADSB Beast parser.
 
-pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
+#[must_use] pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     let mut formatted_frames: Vec<Vec<u8>> = Vec::new();
     let mut leftbytes: Vec<u8> = Vec::new();
     let mut frame_type: FrameType = FrameType::None;
@@ -74,26 +74,22 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         if frame_bytes.len() == ADSB_BEAST_SHORT_FRAME_LENGTH {
                             formatted_frames.push(frame_bytes.clone());
                             frame_bytes.clear();
-                        } else {
-                            if next_byte.is_some() {
-                                errors.push(ADSBBeastError::ShortFrameTooShort {
-                                    message: frame_bytes.len(),
-                                });
-                                frame_bytes.clear();
-                            }
+                        } else if next_byte.is_some() {
+                            errors.push(ADSBBeastError::ShortFrameTooShort {
+                                message: frame_bytes.len(),
+                            });
+                            frame_bytes.clear();
                         }
                     }
                     FrameType::Long => {
                         if frame_bytes.len() == ADSB_BEAST_LONG_FRAME_LENGTH {
                             formatted_frames.push(frame_bytes.clone());
                             frame_bytes.clear();
-                        } else {
-                            if next_byte.is_some() {
-                                errors.push(ADSBBeastError::LongFrameTooShort {
-                                    message: frame_bytes.len(),
-                                });
-                                frame_bytes.clear();
-                            }
+                        } else if next_byte.is_some() {
+                            errors.push(ADSBBeastError::LongFrameTooShort {
+                                message: frame_bytes.len(),
+                            });
+                            frame_bytes.clear();
                         }
                     }
                     FrameType::None => {
@@ -103,13 +99,11 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         if frame_bytes.len() == ADSB_BEAST_MODEAC_FRAME_LENGTH {
                             // Ignore the modeac frame
                             frame_bytes.clear();
-                        } else {
-                            if next_byte.is_some() {
-                                errors.push(ADSBBeastError::ModeACFrameTooShort {
-                                    message: frame_bytes.len(),
-                                });
-                                frame_bytes.clear();
-                            }
+                        } else if next_byte.is_some() {
+                            errors.push(ADSBBeastError::ModeACFrameTooShort {
+                                message: frame_bytes.len(),
+                            });
+                            frame_bytes.clear();
                         }
                     }
                 }
@@ -205,9 +199,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     if !frame_bytes.is_empty() {
         // we trimmed off the control characters, so we need to add them back if the frame starts with a start character
         match frame_bytes.first() {
-            Some(&ADSB_BEAST_SHORT_FRAME_START_CHARACTER)
-            | Some(&ADSB_BEAST_LONG_FRAME_START_CHARACTER)
-            | Some(&ADSB_BEAST_MODEAC_FRAME_START_CHARACTER) => {
+            Some(&ADSB_BEAST_SHORT_FRAME_START_CHARACTER |
+&ADSB_BEAST_LONG_FRAME_START_CHARACTER |
+&ADSB_BEAST_MODEAC_FRAME_START_CHARACTER) => {
                 frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
             }
             // We should never end up here.

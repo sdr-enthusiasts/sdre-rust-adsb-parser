@@ -30,7 +30,7 @@ pub struct AircraftStatus {
 }
 
 impl AircraftStatus {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         self.reserved == 0
     }
 }

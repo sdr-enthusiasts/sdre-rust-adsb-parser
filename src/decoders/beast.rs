@@ -81,7 +81,7 @@ impl NewAdsbBeastMessage for str {
 ///
 /// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
 /// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
-/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
+/// Both of those are handled by `helpers::encode_adsb_beast_input::format`_* methods.
 impl NewAdsbBeastMessage for &Vec<u8> {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         match AdsbBeastMessage::from_bytes((self, 0)) {
@@ -99,7 +99,7 @@ impl NewAdsbBeastMessage for &Vec<u8> {
 ///
 /// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
 /// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
-/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
+/// Both of those are handled by `helpers::encode_adsb_beast_input::format`_* methods.
 impl NewAdsbBeastMessage for &[u8] {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         match AdsbBeastMessage::from_bytes((self, 0)) {
@@ -124,7 +124,7 @@ impl fmt::Display for AdsbBeastMessage {
 ///
 /// Additionally, incoming message payloads will have a 0x1a 0x1a sequence to represent a single 0x1a byte.
 /// This is not handled by this library, and should be handled by the user by only emitting one 0x1a byte in the payload that is processed here.
-/// Both of those are handled by helpers::encode_adsb_beast_input::format_* methods.
+/// Both of those are handled by `helpers::encode_adsb_beast_input::format`_* methods.
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AdsbBeastMessage {
@@ -174,7 +174,7 @@ impl AdsbBeastMessage {
         }
     }
 
-    pub fn pretty_print(&self) -> String {
+    #[must_use] pub fn pretty_print(&self) -> String {
         let mut output = String::new();
         pretty_print_label("ADS-B Beast Message", &mut output);
         pretty_print_field("Message Type", &self.message_type, &mut output);

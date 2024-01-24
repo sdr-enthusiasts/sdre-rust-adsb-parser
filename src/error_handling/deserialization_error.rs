@@ -33,16 +33,16 @@ pub enum DeserializationError {
 impl std::fmt::Display for DeserializationError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            DeserializationError::SerdeError(e) => write!(f, "Serde error: {}", e),
-            DeserializationError::DekuError(e) => write!(f, "Deku error: {}", e),
-            DeserializationError::HexError(e) => write!(f, "Hex error: {}", e),
-            DeserializationError::ADSBRawError(e) => write!(f, "ADSB Raw error: {}", e),
-            DeserializationError::ADSBBeastError(e) => write!(f, "ADSB Beast error: {}", e),
-            DeserializationError::StardardError(e) => write!(f, "Standard error: {}", e),
-            DeserializationError::WrongType(e) => write!(f, "Wrong type error: {}", e),
+            DeserializationError::SerdeError(e) => write!(f, "Serde error: {e}"),
+            DeserializationError::DekuError(e) => write!(f, "Deku error: {e}"),
+            DeserializationError::HexError(e) => write!(f, "Hex error: {e}"),
+            DeserializationError::ADSBRawError(e) => write!(f, "ADSB Raw error: {e}"),
+            DeserializationError::ADSBBeastError(e) => write!(f, "ADSB Beast error: {e}"),
+            DeserializationError::StardardError(e) => write!(f, "Standard error: {e}"),
+            DeserializationError::WrongType(e) => write!(f, "Wrong type error: {e}"),
             DeserializationError::CombinedError(e) => {
                 for error in e {
-                    writeln!(f, "{}", error)?;
+                    writeln!(f, "{error}")?;
                 }
                 Ok(())
             }

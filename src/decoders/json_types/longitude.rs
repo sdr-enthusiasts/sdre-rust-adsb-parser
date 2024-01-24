@@ -43,8 +43,7 @@ impl fmt::Display for Longitude {
         let lon_dir: &str = if self.longitude >= 0.0 { "E" } else { "W" };
         write!(
             f,
-            "{:.0}° {:.0}' {:.4}\" {}",
-            lon_deg, lon_min, lon_sec, lon_dir
+            "{lon_deg:.0}° {lon_min:.0}' {lon_sec:.4}\" {lon_dir}"
         )
     }
 }

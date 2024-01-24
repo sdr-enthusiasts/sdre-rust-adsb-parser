@@ -55,7 +55,7 @@ pub struct OperationStatusAirborne {
 }
 
 impl OperationStatusAirborne {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         self.reserved == 0
             && self.reserved1 == 0
             && self.capability_class.is_reserved_zero()

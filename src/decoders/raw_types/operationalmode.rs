@@ -33,7 +33,7 @@ pub struct OperationalMode {
 }
 
 impl OperationalMode {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         self.reserved == 0 && self.reserved_recv_atc_service == 0
     }
 }

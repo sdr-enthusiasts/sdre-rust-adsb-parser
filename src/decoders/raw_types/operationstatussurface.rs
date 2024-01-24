@@ -66,7 +66,7 @@ pub struct OperationStatusSurface {
 }
 
 impl OperationStatusSurface {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         self.reserved0 == 0
             && self.reserved1 == 0
             && self.capability_class.is_reserved_zero()

@@ -65,8 +65,7 @@ impl TryFrom<u8> for NavigationIntegrityCategory {
             1 => Ok(NavigationIntegrityCategory::Category1),
             0 => Ok(NavigationIntegrityCategory::Unknown),
             _ => Err(format!(
-                "NIC should be a value between 0 and 11, inclusive. Found {}",
-                nic
+                "NIC should be a value between 0 and 11, inclusive. Found {nic}"
             )),
         }
     }

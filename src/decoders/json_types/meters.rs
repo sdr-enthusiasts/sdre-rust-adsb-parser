@@ -45,8 +45,8 @@ impl fmt::Display for Meters {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            Meters::MetersAsInteger(meters) => write!(f, "{} meters", meters),
-            Meters::MetersAsFloat(meters) => write!(f, "{} meters", meters),
+            Meters::MetersAsInteger(meters) => write!(f, "{meters} meters"),
+            Meters::MetersAsFloat(meters) => write!(f, "{meters} meters"),
             Meters::None => write!(f, "None"),
         }
     }
@@ -98,9 +98,9 @@ impl fmt::Display for NauticalMiles {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            NauticalMiles::NauticalMilesAsInteger(miles) => write!(f, "{} nm", miles),
-            NauticalMiles::NauticalMilesAsFloat(miles) => write!(f, "{} nm", miles),
-            NauticalMiles::NauticalMilesAsFloat64(miles) => write!(f, "{} nm", miles),
+            NauticalMiles::NauticalMilesAsInteger(miles) => write!(f, "{miles} nm"),
+            NauticalMiles::NauticalMilesAsFloat(miles) => write!(f, "{miles} nm"),
+            NauticalMiles::NauticalMilesAsFloat64(miles) => write!(f, "{miles} nm"),
             NauticalMiles::None => write!(f, "None"),
         }
     }

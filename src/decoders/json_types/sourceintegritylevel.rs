@@ -38,8 +38,7 @@ impl TryFrom<String> for SourceIntegrityLevelType {
             "perhour" => Ok(SourceIntegrityLevelType::PerHour),
             "unknown" => Ok(SourceIntegrityLevelType::Unknown),
             _ => Err(format!(
-                "SIL should be unknown, persample, perhour, inclusive. Found {}",
-                source_integrity_level
+                "SIL should be unknown, persample, perhour, inclusive. Found {source_integrity_level}"
             )),
         }
     }

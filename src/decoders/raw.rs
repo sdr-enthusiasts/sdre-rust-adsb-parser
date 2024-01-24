@@ -31,7 +31,7 @@ pub trait NewAdsbRawMessage {
 /// The expected input is a hexadecimal string.
 ///
 /// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
-/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
+/// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for String {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
@@ -48,7 +48,7 @@ impl NewAdsbRawMessage for String {
 /// The expected input is a hexadecimal string.
 /// ///
 /// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
-/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
+/// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for str {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
@@ -64,7 +64,7 @@ impl NewAdsbRawMessage for str {
 /// The expected input is a a Vec<u8> of *bytes*.
 ///
 /// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
-/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
+/// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for &Vec<u8> {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
@@ -79,7 +79,7 @@ impl NewAdsbRawMessage for &Vec<u8> {
 /// The expected input is a a [u8] of *bytes*.
 ///
 /// Additionally, the input should not contain the adsb raw control characters `*` or `;` or `\n`
-/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
+/// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for &[u8] {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         match AdsbRawMessage::from_bytes((self, 0)) {
@@ -182,7 +182,7 @@ impl fmt::Display for AdsbRawMessage {
 /// This is the raw message that is received from the SDR.
 ///
 /// The input used for deserializing in to this struct should not contain the adsb raw control characters `*` or `;` or `\n`
-/// This is handled by the helpers::encode_adsb_raw_input::format_* functions
+/// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl AdsbRawMessage {
     /// Read rest as CRC bits
     fn read_crc<'b>(
@@ -208,7 +208,7 @@ impl AdsbRawMessage {
         Ok((rest, crc))
     }
 
-    pub fn pretty_print(&self) -> String {
+    #[must_use] pub fn pretty_print(&self) -> String {
         let mut output: String = String::new();
         pretty_print_label("ADS-B Raw Message", &mut output);
         pretty_print_field("", &self, &mut output);
@@ -251,7 +251,7 @@ impl AdsbRawMessage {
         }
     }
 
-    pub fn get_time(&self) -> Option<f64> {
+    #[must_use] pub fn get_time(&self) -> Option<f64> {
         Some(0.0)
     }
 }

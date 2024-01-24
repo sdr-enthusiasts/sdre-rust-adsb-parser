@@ -37,7 +37,7 @@ impl fmt::Display for SignalPower {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            SignalPower::Decibels(rssi) => write!(f, "{:.1} dB", rssi),
+            SignalPower::Decibels(rssi) => write!(f, "{rssi:.1} dB"),
             SignalPower::None => write!(f, "None"),
         }
     }

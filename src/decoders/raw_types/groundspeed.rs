@@ -33,7 +33,7 @@ impl From<u8> for GroundSpeed {
 }
 
 impl GroundSpeed {
-    pub fn calculate(&self) -> Option<f32> {
+    #[must_use] pub fn calculate(&self) -> Option<f32> {
         //         0 	Speed not available
         // 1 	Stopped (v
         // 0.125 kt)
@@ -63,7 +63,7 @@ impl GroundSpeed {
             GroundSpeed::None => None,
             GroundSpeed::Stopped => Some(0.0),
             GroundSpeed::Speed(speed) => {
-                let speed = *speed as f32;
+                let speed = f32::from(*speed);
                 if speed <= 8.0 {
                     Some(0.125 + (speed - 2.0) * 0.125)
                 } else if speed <= 12.0 {
@@ -91,7 +91,7 @@ impl fmt::Display for GroundSpeed {
             GroundSpeed::None => write!(f, "N/A"),
             GroundSpeed::Stopped => write!(f, "0 kt"),
             GroundSpeed::Speed(speed) => {
-                let speed = *speed as f32;
+                let speed = f32::from(*speed);
                 if speed <= 8.0 {
                     write!(f, "{} kt", 0.125 + (speed - 2.0) * 0.125)
                 } else if speed <= 12.0 {

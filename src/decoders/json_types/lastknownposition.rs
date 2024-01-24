@@ -32,16 +32,16 @@ impl fmt::Display for LastKnownPosition {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Last Known Position:")?;
         if let Some(latitude) = &self.latitude {
-            write!(f, "\tLatitude: {}", latitude)?;
+            write!(f, "\tLatitude: {latitude}")?;
         }
         if let Some(longitude) = &self.longitude {
-            write!(f, "\tLongitude: {}", longitude)?;
+            write!(f, "\tLongitude: {longitude}")?;
         }
         if let Some(naviation_integrity_category) = &self.naviation_integrity_category {
-            write!(f, "\tNIC: {}", naviation_integrity_category)?;
+            write!(f, "\tNIC: {naviation_integrity_category}")?;
         }
         if let Some(radius_of_containment) = &self.radius_of_containment {
-            write!(f, "\tRadius of Containment: {}", radius_of_containment)?;
+            write!(f, "\tRadius of Containment: {radius_of_containment}")?;
         }
         write!(f, "\tLast Seen: {}", self.last_time_seen)
     }

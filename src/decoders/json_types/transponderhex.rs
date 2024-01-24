@@ -43,17 +43,17 @@ impl From<String> for TransponderHex {
 impl fmt::Display for TransponderHex {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Self::TransponderHexAsString(transponder_hex) => write!(f, "{}", transponder_hex),
+            Self::TransponderHexAsString(transponder_hex) => write!(f, "{transponder_hex}"),
             Self::None => write!(f, "None"),
         }
     }
 }
 
 impl TransponderHex {
-    pub fn get_transponder_hex_as_string(&self) -> String {
+    #[must_use] pub fn get_transponder_hex_as_string(&self) -> String {
         match self {
             Self::TransponderHexAsString(transponder_hex) => transponder_hex.clone(),
-            Self::None => String::from(""),
+            Self::None => String::new(),
         }
     }
 }

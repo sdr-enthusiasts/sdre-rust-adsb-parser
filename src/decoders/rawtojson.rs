@@ -97,16 +97,16 @@ pub fn update_operational_status(
 
     match operation_status.get_adsb_version() {
         super::raw_types::adsbversion::ADSBVersion::ADSBVersion0 => {
-            json.version = Some(ADSBVersion::Version0)
+            json.version = Some(ADSBVersion::Version0);
         }
         super::raw_types::adsbversion::ADSBVersion::ADSBVersion1 => {
-            json.version = Some(ADSBVersion::Version1)
+            json.version = Some(ADSBVersion::Version1);
         }
         super::raw_types::adsbversion::ADSBVersion::ADSBVersion2 => {
-            json.version = Some(ADSBVersion::Version2)
+            json.version = Some(ADSBVersion::Version2);
         }
         super::raw_types::adsbversion::ADSBVersion::ADSBVersion3 => {
-            json.version = Some(ADSBVersion::Version3)
+            json.version = Some(ADSBVersion::Version3);
         }
         super::raw_types::adsbversion::ADSBVersion::Unknown => {
             return Err("Unknown ADSB version".into());
@@ -193,7 +193,7 @@ pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &Aircraf
 }
 
 pub fn update_from_no_position(json: &mut JSONMessage, no_position: &NoPosition) {
-    json.barometric_altitude = no_position.altitude.map(|v| v.into());
+    json.barometric_altitude = no_position.altitude.map(std::convert::Into::into);
 }
 
 pub fn update_target_state_and_status_information(
@@ -702,7 +702,7 @@ pub fn update_aircraft_position_surface(
                 }
             }
 
-            json.true_track_over_ground = surface_position.get_heading().map(|v| v.into());
+            json.true_track_over_ground = surface_position.get_heading().map(std::convert::Into::into);
         }
         StatusForGroundTrack::Invalid => {
             json.ground_speed = Some(0.0.into());
@@ -747,8 +747,8 @@ pub fn update_aircraft_position_surface(
     let even_frame = if json.cpr_even_surface.is_some() {
         let frame = json.cpr_even_surface.as_ref().unwrap();
         Some(Position {
-            latitude: frame.lat_cpr as f64,
-            longitude: frame.lon_cpr as f64,
+            latitude: f64::from(frame.lat_cpr),
+            longitude: f64::from(frame.lon_cpr),
         })
     } else {
         None
@@ -757,8 +757,8 @@ pub fn update_aircraft_position_surface(
     let odd_frame = if json.cpr_odd_surface.is_some() {
         let frame = json.cpr_odd_surface.as_ref().unwrap();
         Some(Position {
-            latitude: frame.lat_cpr as f64,
-            longitude: frame.lon_cpr as f64,
+            latitude: f64::from(frame.lat_cpr),
+            longitude: f64::from(frame.lon_cpr),
         })
     } else {
         None
@@ -851,8 +851,8 @@ pub fn update_aircraft_position_airborne(
     let even_frame = if json.cpr_even_airborne.is_some() {
         let frame = json.cpr_even_airborne.as_ref().unwrap();
         Some(Position {
-            latitude: frame.lat_cpr as f64,
-            longitude: frame.lon_cpr as f64,
+            latitude: f64::from(frame.lat_cpr),
+            longitude: f64::from(frame.lon_cpr),
         })
     } else {
         None
@@ -861,8 +861,8 @@ pub fn update_aircraft_position_airborne(
     let odd_frame = if json.cpr_odd_airborne.is_some() {
         let frame = json.cpr_odd_airborne.as_ref().unwrap();
         Some(Position {
-            latitude: frame.lat_cpr as f64,
-            longitude: frame.lon_cpr as f64,
+            latitude: f64::from(frame.lat_cpr),
+            longitude: f64::from(frame.lon_cpr),
         })
     } else {
         None

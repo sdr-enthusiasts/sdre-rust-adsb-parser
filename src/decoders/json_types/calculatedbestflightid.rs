@@ -25,7 +25,7 @@ impl Serialize for CalculatedBestFlightID {
 impl Default for CalculatedBestFlightID {
     fn default() -> Self {
         Self {
-            flight_id: "".to_string(),
+            flight_id: String::new(),
         }
     }
 }

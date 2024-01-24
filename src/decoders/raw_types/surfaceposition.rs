@@ -30,7 +30,7 @@ pub struct SurfacePosition {
 }
 
 impl SurfacePosition {
-    pub fn get_heading(&self) -> Option<f32> {
+    #[must_use] pub fn get_heading(&self) -> Option<f32> {
         match self.s {
             StatusForGroundTrack::Invalid => None,
             StatusForGroundTrack::Valid => {
@@ -38,13 +38,13 @@ impl SurfacePosition {
                 if self.trk == 0 {
                     Some(360.0)
                 } else {
-                    Some((360.0 * self.trk as f32) / 128.0)
+                    Some((360.0 * f32::from(self.trk)) / 128.0)
                 }
             }
         }
     }
 
-    pub fn get_ground_speed(&self) -> Option<GroundSpeed> {
+    #[must_use] pub fn get_ground_speed(&self) -> Option<GroundSpeed> {
         match self.s {
             StatusForGroundTrack::Invalid => None,
             StatusForGroundTrack::Valid => Some(GroundSpeed::from(self.mov)),

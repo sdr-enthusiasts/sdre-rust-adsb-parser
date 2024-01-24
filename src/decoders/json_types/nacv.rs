@@ -44,8 +44,7 @@ impl TryFrom<u8> for NavigationAccuracyVelocity {
             3 => Ok(NavigationAccuracyVelocity::Category3),
             4 => Ok(NavigationAccuracyVelocity::Category4),
             _ => Err(format!(
-                "NACv should be a value between 0 and 4, inclusive. Found {}",
-                nacv
+                "NACv should be a value between 0 and 4, inclusive. Found {nacv}"
             )),
         }
     }

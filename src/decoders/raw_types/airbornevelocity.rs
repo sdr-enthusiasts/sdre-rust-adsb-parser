@@ -40,7 +40,7 @@ pub struct AirborneVelocity {
 }
 
 impl AirborneVelocity {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         self.reserved1 == 0 && self.reserved2 == 0
     }
 

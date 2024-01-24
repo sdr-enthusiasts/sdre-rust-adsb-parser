@@ -28,7 +28,7 @@ impl From<String> for Squawk {
 impl fmt::Display for Squawk {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Squawk::String(s) => write!(f, "{}", s),
+            Squawk::String(s) => write!(f, "{s}"),
         }
     }
 }

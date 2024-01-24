@@ -41,8 +41,7 @@ impl TryFrom<u8> for SourceIntegrityLevel {
             2 => Ok(Self::Level2),
             3 => Ok(Self::Level3),
             _ => Err(format!(
-                "SIL should be a value between 0 and 3, inclusive. Found {}",
-                level
+                "SIL should be a value between 0 and 3, inclusive. Found {level}"
             )),
         }
     }

@@ -53,7 +53,7 @@ impl fmt::Display for Heading {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            Heading::HeadingAsInteger(heading) => write!(f, "{} degrees", heading),
+            Heading::HeadingAsInteger(heading) => write!(f, "{heading} degrees"),
             Heading::HeadingAsFloat(heading) => write!(f, "{} degrees", *heading as u32),
             Heading::HeadingAsFloat64(heading) => write!(f, "{} degrees", *heading as u32),
             Heading::None => write!(f, "None"),

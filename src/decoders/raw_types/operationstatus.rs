@@ -29,7 +29,7 @@ pub enum OperationStatus {
 }
 
 impl CapabilityClass {
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         match self {
             CapabilityClass::Airborne(airborne) => airborne.is_reserved_zero(),
             CapabilityClass::Surface(surface) => surface.is_reserved_zero(),
@@ -45,19 +45,19 @@ pub enum CapabilityClass {
 }
 
 impl OperationStatus {
-    pub fn is_airborne(&self) -> bool {
+    #[must_use] pub fn is_airborne(&self) -> bool {
         matches!(self, OperationStatus::Airborne(_))
     }
 
-    pub fn is_surface(&self) -> bool {
+    #[must_use] pub fn is_surface(&self) -> bool {
         matches!(self, OperationStatus::Surface(_))
     }
 
-    pub fn is_reserved(&self) -> bool {
+    #[must_use] pub fn is_reserved(&self) -> bool {
         matches!(self, OperationStatus::Reserved(_, _))
     }
 
-    pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
         match self {
             OperationStatus::Reserved(_reserved0, _reserved1) => false,
 
@@ -67,7 +67,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_adsb_version(&self) -> ADSBVersion {
+    #[must_use] pub fn get_adsb_version(&self) -> ADSBVersion {
         match self {
             OperationStatus::Airborne(airborne) => airborne.version_number,
             OperationStatus::Surface(surface) => surface.version_number,
@@ -75,7 +75,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_capability_class(&self) -> CapabilityClass {
+    #[must_use] pub fn get_capability_class(&self) -> CapabilityClass {
         match self {
             OperationStatus::Airborne(airborne) => {
                 CapabilityClass::Airborne(airborne.capability_class)
@@ -85,7 +85,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_operational_mode(&self) -> Option<OperationalMode> {
+    #[must_use] pub fn get_operational_mode(&self) -> Option<OperationalMode> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.operational_mode),
             OperationStatus::Surface(surface) => Some(surface.operational_mode),
@@ -93,7 +93,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_nic_supplement_a(&self) -> Option<u8> {
+    #[must_use] pub fn get_nic_supplement_a(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.nic_supplement_a),
             OperationStatus::Surface(surface) => Some(surface.nic_supplement_a),
@@ -101,7 +101,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_navigational_accuracy_category(&self) -> Option<u8> {
+    #[must_use] pub fn get_navigational_accuracy_category(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.navigational_accuracy_category),
             OperationStatus::Surface(surface) => Some(surface.navigational_accuracy_category),
@@ -109,7 +109,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_geometric_vertical_accuracy(&self) -> Option<u8> {
+    #[must_use] pub fn get_geometric_vertical_accuracy(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.geometric_vertical_accuracy),
             OperationStatus::Surface(_surface) => None,
@@ -117,7 +117,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_source_integrity_level(&self) -> Option<u8> {
+    #[must_use] pub fn get_source_integrity_level(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.source_integrity_level),
             OperationStatus::Surface(surface) => Some(surface.source_integrity_level),
@@ -125,7 +125,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_barometric_altitude_integrity(&self) -> Option<u8> {
+    #[must_use] pub fn get_barometric_altitude_integrity(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.barometric_altitude_integrity),
             OperationStatus::Surface(_surface) => None,
@@ -133,7 +133,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_track_heading(&self) -> Option<u8> {
+    #[must_use] pub fn get_track_heading(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(_airborne) => None,
             OperationStatus::Surface(surface) => Some(surface.track_heading),
@@ -141,7 +141,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_horizontal_reference_direction(&self) -> Option<u8> {
+    #[must_use] pub fn get_horizontal_reference_direction(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.horizontal_reference_direction),
             OperationStatus::Surface(surface) => Some(surface.horizontal_reference_direction),
@@ -149,7 +149,7 @@ impl OperationStatus {
         }
     }
 
-    pub fn get_sil_supplement(&self) -> Option<u8> {
+    #[must_use] pub fn get_sil_supplement(&self) -> Option<u8> {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.sil_supplement),
             OperationStatus::Surface(surface) => Some(surface.sil_supplement),

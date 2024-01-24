@@ -43,8 +43,7 @@ impl fmt::Display for Latitude {
         let lat_dir: &str = if self.latitude >= 0.0 { "N" } else { "S" };
         write!(
             f,
-            "{:.0}° {:.0}' {:.4}\" {}",
-            lat_deg, lat_min, lat_sec, lat_dir
+            "{lat_deg:.0}° {lat_min:.0}' {lat_sec:.4}\" {lat_dir}"
         )
     }
 }
