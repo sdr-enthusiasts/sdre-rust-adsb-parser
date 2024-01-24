@@ -24,7 +24,8 @@ pub struct Adsb {
 
 impl Adsb {
     /// `to_string` with DF.id() input
-    #[must_use] pub fn to_string(&self, address_type: &str) -> String {
+    #[must_use]
+    pub fn to_string(&self, address_type: &str) -> String {
         self.me
             .to_string(self.icao, address_type, self.capability, true)
             .unwrap()

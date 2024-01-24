@@ -208,7 +208,8 @@ impl AdsbRawMessage {
         Ok((rest, crc))
     }
 
-    #[must_use] pub fn pretty_print(&self) -> String {
+    #[must_use]
+    pub fn pretty_print(&self) -> String {
         let mut output: String = String::new();
         pretty_print_label("ADS-B Raw Message", &mut output);
         pretty_print_field("", &self, &mut output);
@@ -251,7 +252,8 @@ impl AdsbRawMessage {
         }
     }
 
-    #[must_use] pub fn get_time(&self) -> Option<f64> {
+    #[must_use]
+    pub fn get_time(&self) -> Option<f64> {
         Some(0.0)
     }
 }

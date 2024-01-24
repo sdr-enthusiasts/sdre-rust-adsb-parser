@@ -221,7 +221,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     1
 }
 
-#[must_use] pub fn haversine_distance_position(position: &Position, other: &Position) -> f64 {
+#[must_use]
+pub fn haversine_distance_position(position: &Position, other: &Position) -> f64 {
     let lat1 = position.latitude;
     let lat2 = other.latitude;
     let long1 = position.longitude;
@@ -230,7 +231,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
 }
 
 // https://en.wikipedia.org/wiki/Haversine_formula
-#[must_use] pub fn haversine_distance(s: (f64, f64), other: (f64, f64)) -> f64 {
+#[must_use]
+pub fn haversine_distance(s: (f64, f64), other: (f64, f64)) -> f64 {
     // kilometers
     let lat1_rad = s.0.to_radians();
     let lat2_rad = other.0.to_radians();
@@ -251,11 +253,13 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     r * c
 }
 
-#[must_use] pub fn calc_modulo(x: f64, y: f64) -> f64 {
+#[must_use]
+pub fn calc_modulo(x: f64, y: f64) -> f64 {
     x - y * libm::floor(x / y)
 }
 
-#[must_use] pub fn get_position_from_locally_unabiguous_surface(
+#[must_use]
+pub fn get_position_from_locally_unabiguous_surface(
     aircraft_frame: &Position,
     local: &Position,
     cpr_flag: CPRFormat,
@@ -289,7 +293,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     }
 }
 
-#[must_use] pub fn get_position_from_locally_unabiguous_airborne(
+#[must_use]
+pub fn get_position_from_locally_unabiguous_airborne(
     aircraft_frame: &Position,
     local: &Position,
     cpr_flag: CPRFormat,
@@ -330,7 +335,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
 ///
 /// reference: ICAO 9871 (D.2.4.7.7)
 
-#[must_use] pub fn get_position_from_even_odd_cpr_positions_airborne(
+#[must_use]
+pub fn get_position_from_even_odd_cpr_positions_airborne(
     even_frame: &Position,
     odd_frame: &Position,
     latest_frame_flag: CPRFormat,
@@ -398,7 +404,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     })
 }
 
-#[must_use] pub fn get_position_from_even_odd_cpr_positions_surface(
+#[must_use]
+pub fn get_position_from_even_odd_cpr_positions_surface(
     even_frame: &Position,
     odd_frame: &Position,
     latest_frame_flag: CPRFormat,
@@ -521,7 +528,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     })
 }
 
-#[must_use] pub fn get_bearing_from_positions(position: &Position, other: &Position) -> f64 {
+#[must_use]
+pub fn get_bearing_from_positions(position: &Position, other: &Position) -> f64 {
     let lat1 = position.latitude.to_radians();
     let lat2 = other.latitude.to_radians();
     let long1 = position.longitude.to_radians();
@@ -543,11 +551,13 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     }
 }
 
-#[must_use] pub fn km_to_nm(km: f64) -> f64 {
+#[must_use]
+pub fn km_to_nm(km: f64) -> f64 {
     km * 0.539_957
 }
 
-#[must_use] pub fn get_distance_and_direction_from_reference_position(
+#[must_use]
+pub fn get_distance_and_direction_from_reference_position(
     aircraft_position: &Position,
     reference_position: &Position,
 ) -> (f64, f64) {
@@ -557,7 +567,8 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     (distance, bearing)
 }
 
-#[must_use] pub fn is_lat_lon_sane(position: Position) -> bool {
+#[must_use]
+pub fn is_lat_lon_sane(position: Position) -> bool {
     position.latitude >= -90.0
         && position.latitude <= 90.0
         && position.longitude >= -180.0

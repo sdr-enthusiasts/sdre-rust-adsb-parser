@@ -41,9 +41,6 @@ impl fmt::Display for Latitude {
         let lat_min: f64 = (self.latitude.abs() - lat_deg) * 60.0;
         let lat_sec: f64 = (lat_min - lat_min.floor()) * 60.0;
         let lat_dir: &str = if self.latitude >= 0.0 { "N" } else { "S" };
-        write!(
-            f,
-            "{lat_deg:.0}° {lat_min:.0}' {lat_sec:.4}\" {lat_dir}"
-        )
+        write!(f, "{lat_deg:.0}° {lat_min:.0}' {lat_sec:.4}\" {lat_dir}")
     }
 }

@@ -50,7 +50,8 @@ impl fmt::Display for TransponderHex {
 }
 
 impl TransponderHex {
-    #[must_use] pub fn get_transponder_hex_as_string(&self) -> String {
+    #[must_use]
+    pub fn get_transponder_hex_as_string(&self) -> String {
         match self {
             Self::TransponderHexAsString(transponder_hex) => transponder_hex.clone(),
             Self::None => String::new(),

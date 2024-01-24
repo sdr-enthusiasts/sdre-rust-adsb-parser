@@ -16,7 +16,8 @@ pub enum Speed {
 }
 
 impl Speed {
-    #[must_use] pub fn get_speed(&self) -> f64 {
+    #[must_use]
+    pub fn get_speed(&self) -> f64 {
         match self {
             Self::Knots(speed) => f64::from(*speed),
             Self::None => 0.0,
@@ -49,28 +50,32 @@ impl From<f32> for Speed {
 }
 
 impl Speed {
-    #[must_use] pub fn as_meters(&self) -> f32 {
+    #[must_use]
+    pub fn as_meters(&self) -> f32 {
         match self {
             Speed::Knots(speed) => *speed * 0.514_444,
             Speed::None => 0.0,
         }
     }
 
-    #[must_use] pub fn as_knots(&self) -> f32 {
+    #[must_use]
+    pub fn as_knots(&self) -> f32 {
         match self {
             Speed::Knots(speed) => *speed,
             Speed::None => 0.0,
         }
     }
 
-    #[must_use] pub fn display_as_knots(&self) -> String {
+    #[must_use]
+    pub fn display_as_knots(&self) -> String {
         match self {
             Speed::Knots(speed) => format!("{speed} knots"),
             Speed::None => "None".to_string(),
         }
     }
 
-    #[must_use] pub fn display_as_meters(&self) -> String {
+    #[must_use]
+    pub fn display_as_meters(&self) -> String {
         match self {
             Speed::Knots(speed) => format!("{} m/min", speed * 0.514_444),
             Speed::None => "None".to_string(),

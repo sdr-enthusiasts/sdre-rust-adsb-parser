@@ -121,7 +121,8 @@ impl fmt::Display for JSONMessage {
 }
 
 impl JSONMessage {
-    #[must_use] pub fn new(icao: String) -> JSONMessage {
+    #[must_use]
+    pub fn new(icao: String) -> JSONMessage {
         JSONMessage {
             transponder_hex: icao.into(),
             timestamp: get_timestamp(),
@@ -143,7 +144,8 @@ impl JSONMessage {
     /// The units are not translated from the default units from the original data.
     ///
     /// return type is a String
-    #[must_use] pub fn pretty_print(&self) -> String {
+    #[must_use]
+    pub fn pretty_print(&self) -> String {
         self.pretty_print_with_options()
     }
 
@@ -519,7 +521,8 @@ impl JSONMessage {
 }
 
 // Not all messages have a timestamp, so we'll use the current time if one isn't provided.
-#[must_use] pub fn get_timestamp() -> TimeStamp {
+#[must_use]
+pub fn get_timestamp() -> TimeStamp {
     match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
         Ok(n) => TimeStamp::from(n.as_secs_f64()),
         Err(_) => TimeStamp::default(),

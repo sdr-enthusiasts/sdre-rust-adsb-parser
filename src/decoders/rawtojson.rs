@@ -702,7 +702,8 @@ pub fn update_aircraft_position_surface(
                 }
             }
 
-            json.true_track_over_ground = surface_position.get_heading().map(std::convert::Into::into);
+            json.true_track_over_ground =
+                surface_position.get_heading().map(std::convert::Into::into);
         }
         StatusForGroundTrack::Invalid => {
             json.ground_speed = Some(0.0.into());

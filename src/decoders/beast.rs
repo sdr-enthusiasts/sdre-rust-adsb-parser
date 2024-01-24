@@ -174,7 +174,8 @@ impl AdsbBeastMessage {
         }
     }
 
-    #[must_use] pub fn pretty_print(&self) -> String {
+    #[must_use]
+    pub fn pretty_print(&self) -> String {
         let mut output = String::new();
         pretty_print_label("ADS-B Beast Message", &mut output);
         pretty_print_field("Message Type", &self.message_type, &mut output);

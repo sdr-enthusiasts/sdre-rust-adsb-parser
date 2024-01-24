@@ -65,7 +65,8 @@ pub struct AircraftJSON {
 
 impl AircraftJSON {
     /// Create a new `AircraftJSON` object from a `Vec<JSONMessage>` and a `u64`.
-    #[must_use] pub fn new(aircraft: Vec<JSONMessage>, total_messages: u64) -> AircraftJSON {
+    #[must_use]
+    pub fn new(aircraft: Vec<JSONMessage>, total_messages: u64) -> AircraftJSON {
         match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
             Ok(n) => AircraftJSON {
                 timestamp: n.as_secs_f64(),
@@ -115,7 +116,8 @@ impl AircraftJSON {
         }
     }
 
-    #[must_use] pub fn pretty_print(&self) -> String {
+    #[must_use]
+    pub fn pretty_print(&self) -> String {
         let mut output: String = String::new();
 
         pretty_print_label("Aircraft JSON", &mut output);
@@ -130,11 +132,13 @@ impl AircraftJSON {
         output
     }
 
-    #[must_use] pub fn len(&self) -> usize {
+    #[must_use]
+    pub fn len(&self) -> usize {
         self.aircraft.len()
     }
 
-    #[must_use] pub fn is_empty(&self) -> bool {
+    #[must_use]
+    pub fn is_empty(&self) -> bool {
         self.aircraft.is_empty()
     }
 }

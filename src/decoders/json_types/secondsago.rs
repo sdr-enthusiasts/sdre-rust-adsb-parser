@@ -16,7 +16,8 @@ pub enum SecondsAgo {
 }
 
 impl SecondsAgo {
-    #[must_use] pub fn now() -> Self {
+    #[must_use]
+    pub fn now() -> Self {
         // get the current unix timestamp
         let seconds = chrono::Utc::now().timestamp() as f64;
         Self::TimeStamp(seconds)

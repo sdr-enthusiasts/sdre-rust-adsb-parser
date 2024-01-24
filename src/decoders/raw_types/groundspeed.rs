@@ -33,7 +33,8 @@ impl From<u8> for GroundSpeed {
 }
 
 impl GroundSpeed {
-    #[must_use] pub fn calculate(&self) -> Option<f32> {
+    #[must_use]
+    pub fn calculate(&self) -> Option<f32> {
         //         0 	Speed not available
         // 1 	Stopped (v
         // 0.125 kt)

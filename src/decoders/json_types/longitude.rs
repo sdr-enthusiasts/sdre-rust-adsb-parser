@@ -41,9 +41,6 @@ impl fmt::Display for Longitude {
         let lon_min: f64 = (self.longitude.abs() - lon_deg) * 60.0;
         let lon_sec: f64 = (lon_min - lon_min.floor()) * 60.0;
         let lon_dir: &str = if self.longitude >= 0.0 { "E" } else { "W" };
-        write!(
-            f,
-            "{lon_deg:.0}° {lon_min:.0}' {lon_sec:.4}\" {lon_dir}"
-        )
+        write!(f, "{lon_deg:.0}° {lon_min:.0}' {lon_sec:.4}\" {lon_dir}")
     }
 }

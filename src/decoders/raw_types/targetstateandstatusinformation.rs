@@ -63,7 +63,8 @@ pub struct TargetStateAndStatusInformation {
 }
 
 impl TargetStateAndStatusInformation {
-    #[must_use] pub const fn is_reserved_zero(&self) -> bool {
+    #[must_use]
+    pub const fn is_reserved_zero(&self) -> bool {
         self.reserved0 == 0 && self.reserved1 == 0
     }
 }

@@ -207,7 +207,6 @@ impl StateMachine {
         }
     }
 
-    #[must_use]
     fn verify_position_is_not_default(&self) -> Result<(), String> {
         if self.position == Position::default() {
             return Err("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.".to_string());
