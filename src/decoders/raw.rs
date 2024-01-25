@@ -217,6 +217,8 @@ impl AdsbRawMessage {
     }
 
     /// Converts `AdsbRawMessage` to `String`.
+    /// Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Ok(v) => Ok(v),
@@ -225,6 +227,8 @@ impl AdsbRawMessage {
     }
 
     /// Converts `AdsbRawMessage` to `String` and appends a `\n` to the end.
+    /// Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
@@ -235,6 +239,8 @@ impl AdsbRawMessage {
     /// Converts `ADSBRawMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         match self.to_string() {
             Err(conversion_failed) => Err(conversion_failed),

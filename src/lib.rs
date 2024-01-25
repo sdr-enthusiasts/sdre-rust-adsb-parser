@@ -171,6 +171,7 @@ pub mod decoders {
     pub mod helpers {
         pub mod cpr_calculators;
         pub mod prettyprint;
+        pub mod time;
     }
 }
 

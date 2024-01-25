@@ -7,13 +7,12 @@ use crate::decoders::{
         get_position_from_locally_unabiguous_airborne,
         get_position_from_locally_unabiguous_surface, haversine_distance_position, is_lat_lon_sane,
     },
-    json::get_timestamp,
     json_types::timestamp::TimeStamp,
     raw_types::{cprheaders::CPRFormat, statusforgroundtrack::StatusForGroundTrack},
 };
 
 use super::{
-    helpers::cpr_calculators::Position,
+    helpers::{cpr_calculators::Position, time::get_time_as_timestamp},
     json::JSONMessage,
     json_types::{
         adsbversion::ADSBVersion, emergency::Emergency, emmittercategory::EmitterCategory,
@@ -710,7 +709,7 @@ pub fn update_aircraft_position_surface(
         }
     }
 
-    let current_time = match get_timestamp() {
+    let current_time = match get_time_as_timestamp() {
         TimeStamp::TimeStampAsF64(current_time) => current_time,
         TimeStamp::None => 0.0,
     };
@@ -718,7 +717,7 @@ pub fn update_aircraft_position_surface(
     match surface_position.f {
         CPRFormat::Even => {
             json.cpr_even_surface = Some(*surface_position);
-            json.last_cpr_even_update_time_surface = Some(get_timestamp());
+            json.last_cpr_even_update_time_surface = Some(get_time_as_timestamp());
 
             // if json.cpr_odd is older than 10 seconds we don't have a valid position
 
@@ -732,7 +731,7 @@ pub fn update_aircraft_position_surface(
         }
         CPRFormat::Odd => {
             json.cpr_odd_surface = Some(*surface_position);
-            json.last_cpr_odd_update_time_surface = Some(get_timestamp());
+            json.last_cpr_odd_update_time_surface = Some(get_time_as_timestamp());
 
             // if json.cpr_even is older than 10 seconds we don't have a valid position
 
@@ -814,7 +813,7 @@ pub fn update_aircraft_position_airborne(
 
     // NOTE: We are dropping the antenna flag.
 
-    let current_time = match get_timestamp() {
+    let current_time = match get_time_as_timestamp() {
         TimeStamp::TimeStampAsF64(current_time) => current_time,
         TimeStamp::None => 0.0,
     };
@@ -822,7 +821,7 @@ pub fn update_aircraft_position_airborne(
     match altitude.odd_flag {
         CPRFormat::Even => {
             json.cpr_even_airborne = Some(*altitude);
-            json.last_cpr_even_update_time_airborne = Some(get_timestamp());
+            json.last_cpr_even_update_time_airborne = Some(get_time_as_timestamp());
 
             // if json.cpr_odd is older than 10 seconds we don't have a valid position
 
@@ -836,7 +835,7 @@ pub fn update_aircraft_position_airborne(
         }
         CPRFormat::Odd => {
             json.cpr_odd_airborne = Some(*altitude);
-            json.last_cpr_odd_update_time_airborne = Some(get_timestamp());
+            json.last_cpr_odd_update_time_airborne = Some(get_time_as_timestamp());
 
             // if json.cpr_even is older than 10 seconds we don't have a valid position
 

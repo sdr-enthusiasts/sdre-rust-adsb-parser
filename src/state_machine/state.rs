@@ -85,6 +85,7 @@ use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
 use crate::decoders::helpers::cpr_calculators::Position;
+use crate::decoders::helpers::time::get_time_as_f64;
 use crate::decoders::json_types::lastknownposition::LastKnownPosition;
 use crate::decoders::json_types::timestamp::TimeStamp;
 use crate::decoders::raw_types::df::DF;
@@ -453,7 +454,7 @@ pub async fn expire_planes(
     loop {
         tokio::time::sleep(tokio::time::Duration::from_secs(check_interval_in_seconds)).await;
         // current unix timestamp
-        let current_time = chrono::Utc::now().timestamp() as f64;
+        let current_time = get_time_as_f64();
         let mut airplanes = planes.lock().await;
         let mut planes_removed = 0;
 

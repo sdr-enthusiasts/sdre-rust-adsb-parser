@@ -7,13 +7,14 @@
 use crate::{decoders::helpers::cpr_calculators::Position, MessageResult};
 
 use serde::{Deserialize, Serialize};
-use std::{fmt, time::SystemTime};
+use std::fmt;
 
 use super::{
     common_types::sda::SystemDesignAssurance,
     helpers::{
         cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
         prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
+        time::get_time_as_timestamp,
     },
     json_types::{
         adsbversion::ADSBVersion,
@@ -125,7 +126,7 @@ impl JSONMessage {
     pub fn new(icao: String) -> JSONMessage {
         JSONMessage {
             transponder_hex: icao.into(),
-            timestamp: get_timestamp(),
+            timestamp: get_time_as_timestamp(),
             last_time_seen: (0.0).into(),
             message_type: MessageType::ADSBICAO, // FIXME: this feels wrong. How do we handle data that is UAT?
             ..Default::default()
@@ -431,7 +432,7 @@ impl JSONMessage {
                             self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
                             self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_timestamp();
+                            self.timestamp = get_time_as_timestamp();
                             self.last_known_position = None;
                         }
                         Err(e) => return Err(e),
@@ -464,7 +465,7 @@ impl JSONMessage {
                             self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
                             self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_timestamp();
+                            self.timestamp = get_time_as_timestamp();
                             self.last_known_position = None;
                         }
                         Err(e) => return Err(e),
@@ -504,7 +505,7 @@ impl JSONMessage {
                     match update_operational_status(self, operation_status) {
                         Ok(()) => {
                             self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_timestamp();
+                            self.timestamp = get_time_as_timestamp();
                         }
                         Err(e) => return Err(e),
                     };
@@ -514,18 +515,9 @@ impl JSONMessage {
 
         // Reset the last time seen to "now". When the serializer is fixed properly
         self.last_time_seen = SecondsAgo::now();
-        self.timestamp = get_timestamp();
+        self.timestamp = get_time_as_timestamp();
 
         Ok(())
-    }
-}
-
-// Not all messages have a timestamp, so we'll use the current time if one isn't provided.
-#[must_use]
-pub fn get_timestamp() -> TimeStamp {
-    match SystemTime::now().duration_since(std::time::UNIX_EPOCH) {
-        Ok(n) => TimeStamp::from(n.as_secs_f64()),
-        Err(_) => TimeStamp::default(),
     }
 }
 
@@ -541,7 +533,7 @@ pub fn get_timestamp() -> TimeStamp {
 #[serde(deny_unknown_fields)]
 pub struct JSONMessage {
     /// The timestamp of the message in seconds since the epoch.
-    #[serde(rename = "now", default = "get_timestamp")]
+    #[serde(rename = "now", default = "get_time_as_timestamp")]
     pub timestamp: TimeStamp,
     /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
