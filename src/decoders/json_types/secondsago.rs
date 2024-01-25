@@ -21,7 +21,7 @@ impl SecondsAgo {
     #[must_use]
     pub fn now() -> Self {
         // get the current unix timestamp
-        let seconds = get_time_as_f64() as f64;
+        let seconds = get_time_as_f64();
         Self::TimeStamp(seconds)
     }
 }

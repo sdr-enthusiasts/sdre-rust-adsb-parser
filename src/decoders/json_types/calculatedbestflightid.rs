@@ -7,7 +7,7 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Deserialize, Clone, PartialEq, PartialOrd, Debug)]
+#[derive(Deserialize, Clone, PartialEq, PartialOrd, Debug, Default)]
 #[serde(from = "String")]
 pub struct CalculatedBestFlightID {
     flight_id: String,
@@ -19,14 +19,6 @@ impl Serialize for CalculatedBestFlightID {
         S: serde::Serializer,
     {
         serializer.serialize_str(&self.flight_id)
-    }
-}
-
-impl Default for CalculatedBestFlightID {
-    fn default() -> Self {
-        Self {
-            flight_id: String::new(),
-        }
     }
 }
 

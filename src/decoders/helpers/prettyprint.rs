@@ -27,7 +27,7 @@ pub fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: 
     output.push_str(&format!(
         "{}{}{}\n",
         field_name,
-        if !field_name.is_empty() { ": " } else { "" },
+        if field_name.is_empty() { "" } else { ": " },
         field
     ));
 }

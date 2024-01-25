@@ -21,7 +21,6 @@ pub enum GroundSpeed {
 impl From<u8> for GroundSpeed {
     fn from(speed: u8) -> Self {
         match speed {
-            0 => GroundSpeed::None,
             1 => GroundSpeed::Stopped,
             2..=123 => GroundSpeed::Speed(speed),
             124 => GroundSpeed::ReseveredAccelerating,
@@ -61,7 +60,6 @@ impl GroundSpeed {
         // 125–127 	Reserved
 
         match self {
-            GroundSpeed::None => None,
             GroundSpeed::Stopped => Some(0.0),
             GroundSpeed::Speed(speed) => {
                 let speed = f32::from(*speed);

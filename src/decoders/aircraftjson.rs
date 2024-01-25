@@ -14,6 +14,9 @@ use super::{
 };
 
 pub trait NewAircraftJSONMessage {
+    /// Converts the message to an `AircraftJSON` object.
+    /// # Errors
+    /// If the conversion fails, the error is returned.
     fn to_aircraft_json(&self) -> MessageResult<AircraftJSON>;
 }
 
@@ -81,6 +84,8 @@ impl AircraftJSON {
         }
     }
     /// Converts `AircraftJSON` to `String`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Ok(v) => Ok(v),
@@ -89,6 +94,8 @@ impl AircraftJSON {
     }
 
     /// Converts `AircraftJSON` to `String` and appends a `\n` to the end.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
@@ -99,6 +106,8 @@ impl AircraftJSON {
     /// Converts `AircraftJSON` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         match self.to_string() {
             Err(conversion_failed) => Err(conversion_failed),
@@ -109,6 +118,8 @@ impl AircraftJSON {
     /// Converts `AircraftJSON` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
         match self.to_string_newline() {
             Err(conversion_failed) => Err(conversion_failed),

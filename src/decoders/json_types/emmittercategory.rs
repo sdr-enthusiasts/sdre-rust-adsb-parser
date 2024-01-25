@@ -134,6 +134,9 @@ impl TryFrom<String> for EmitterCategory {
 }
 
 impl EmitterCategory {
+    /// Create a new `EmitterCategory` from a `TypeCoding` and a `Category`
+    /// # Errors
+    /// Returns an error if the `TypeCoding` and `Category` combination is invalid
     pub fn new(tc: TypeCoding, ca: u8) -> Result<Self, String> {
         match tc {
             TypeCoding::A => match ca {

@@ -62,6 +62,9 @@ use super::{
 ///
 /// This is intended for specifically decoding to `JSONMessage`.
 pub trait NewJSONMessage {
+    /// Converts the type to `JSONMessage`.
+    /// # Errors
+    /// Returns an error if the conversion to `JSONMessage` fails.
     fn to_json(&self) -> MessageResult<JSONMessage>;
 }
 
@@ -69,6 +72,9 @@ pub trait NewJSONMessage {
 ///
 /// This does not consume the `String`.
 impl NewJSONMessage for String {
+    /// Converts the type to `JSONMessage`.
+    /// # Errors
+    /// Returns an error if the conversion to `JSONMessage` fails.
     fn to_json(&self) -> MessageResult<JSONMessage> {
         match serde_json::from_str(self) {
             Ok(v) => Ok(v),
@@ -81,6 +87,9 @@ impl NewJSONMessage for String {
 ///
 /// This does not consume the `str`.
 impl NewJSONMessage for str {
+    /// Converts the type to `JSONMessage`.
+    /// # Errors
+    /// Returns an error if the conversion to `JSONMessage` fails.
     fn to_json(&self) -> MessageResult<JSONMessage> {
         match serde_json::from_str(self) {
             Ok(v) => Ok(v),
@@ -133,6 +142,8 @@ impl JSONMessage {
         }
     }
     /// Converts `JSONMessage` to `String`.
+    /// # Errors
+    /// Returns an error if the conversion to `String` fails.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Ok(v) => Ok(v),
@@ -348,6 +359,8 @@ impl JSONMessage {
     }
 
     /// Converts `JSONMessage` to `String` and appends a `\n` to the end.
+    /// # Errors
+    /// Returns an error if the conversion to `String` fails.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
@@ -358,6 +371,8 @@ impl JSONMessage {
     /// Converts `JSONMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// Returns an error if the conversion to `String` fails.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         match self.to_string() {
             Err(conversion_failed) => Err(conversion_failed),
@@ -368,6 +383,8 @@ impl JSONMessage {
     /// Converts `JSONMessage` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// Returns an error if the conversion to `String` fails.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
         match self.to_string_newline() {
             Err(conversion_failed) => Err(conversion_failed),
@@ -387,6 +404,9 @@ impl JSONMessage {
         }
     }
 
+    /// Update the `JSONMessage` from a DF.
+    /// # Errors
+    /// Returns an error if the DF is not an ADSB message.
     pub fn update_from_df(
         &mut self,
         raw_adsb: &DF,
@@ -415,8 +435,14 @@ impl JSONMessage {
                         reference_position,
                     ) {
                         Ok(()) => {
-                            let latitude = self.latitude.clone().unwrap().latitude;
-                            let longitude = self.longitude.clone().unwrap().longitude;
+                            let latitude = match self.latitude.clone() {
+                                Some(latitude) => latitude.latitude,
+                                None => return Err("Calculated Latitude is None".into()),
+                            };
+                            let longitude = match self.longitude.clone() {
+                                Some(longitude) => longitude.longitude,
+                                None => return Err("Calculated Longitude is None".into()),
+                            };
                             // update the distance and bearing
                             let aircraft_position = Position {
                                 latitude,
@@ -448,8 +474,14 @@ impl JSONMessage {
                         reference_position,
                     ) {
                         Ok(()) => {
-                            let latitude = self.latitude.clone().unwrap().latitude;
-                            let longitude = self.longitude.clone().unwrap().longitude;
+                            let latitude = match self.latitude.clone() {
+                                Some(latitude) => latitude.latitude,
+                                None => return Err("Calculated Latitude is None".into()),
+                            };
+                            let longitude = match self.longitude.clone() {
+                                Some(longitude) => longitude.longitude,
+                                None => return Err("Calculated Longitude is None".into()),
+                            };
                             // update the distance and bearing
                             let aircraft_position = Position {
                                 latitude,

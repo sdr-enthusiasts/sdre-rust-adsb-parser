@@ -26,8 +26,15 @@ impl Adsb {
     /// `to_string` with DF.id() input
     #[must_use]
     pub fn to_string(&self, address_type: &str) -> String {
-        self.me
+        match self
+            .me
             .to_string(self.icao, address_type, self.capability, true)
-            .unwrap()
+        {
+            Ok(string) => string,
+            Err(e) => {
+                error!("Failed to convert Adsb to string: {e}");
+                String::new()
+            }
+        }
     }
 }

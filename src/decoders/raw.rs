@@ -22,6 +22,9 @@ use super::raw_types::{df::DF, helper_functions::modes_checksum};
 ///
 /// This is intended for specifically decoding to `ADSBMessage`.
 pub trait NewAdsbRawMessage {
+    /// Decode the input to an `ADSBMessage`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage>;
 }
 
@@ -217,7 +220,7 @@ impl AdsbRawMessage {
     }
 
     /// Converts `AdsbRawMessage` to `String`.
-    /// Errors
+    /// # Errors
     /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
@@ -227,7 +230,7 @@ impl AdsbRawMessage {
     }
 
     /// Converts `AdsbRawMessage` to `String` and appends a `\n` to the end.
-    /// Errors
+    /// # Errors
     /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
@@ -239,7 +242,7 @@ impl AdsbRawMessage {
     /// Converts `ADSBRawMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
-    /// Errors
+    /// # Errors
     /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         match self.to_string() {
@@ -251,6 +254,8 @@ impl AdsbRawMessage {
     /// Converts `ADSBRawMessage` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
         match self.to_string_newline() {
             Err(conversion_failed) => Err(conversion_failed),

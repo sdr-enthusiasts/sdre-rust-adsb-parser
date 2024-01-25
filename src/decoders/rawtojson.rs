@@ -64,7 +64,6 @@ pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVeloc
         }
 
         json.navigation_accuracy_velocity = Some(match velocity.nac_v {
-            0 => NavigationAccuracyVelocity::Category0,
             1 => NavigationAccuracyVelocity::Category1,
             2 => NavigationAccuracyVelocity::Category2,
             3 => NavigationAccuracyVelocity::Category3,
@@ -81,6 +80,9 @@ pub fn update_aircraft_identification(json: &mut JSONMessage, id: &Identificatio
     }
 }
 
+/// Updates the JSON message with the operational status information.
+/// # Errors
+/// Returns an error if the operational status is invalid.
 pub fn update_operational_status(
     json: &mut JSONMessage,
     operation_status: &OperationStatus,
@@ -261,11 +263,11 @@ fn update_position(
     reference_position: &Position,
     cpr_flag: CPRFormat,
     current_time: f64,
-    position_type: PositionType,
+    position_type: &PositionType,
 ) -> Result<(), String> {
     // if we have both even and odd, calculate the position
     if let (Some(even_frame), Some(odd_frame)) = (&even_frame, &odd_frame) {
-        let calculated_position = if position_type == PositionType::Airborne {
+        let calculated_position = if *position_type == PositionType::Airborne {
             get_position_from_even_odd_cpr_positions_airborne(even_frame, odd_frame, cpr_flag)
         } else {
             get_position_from_even_odd_cpr_positions_surface(
@@ -289,20 +291,19 @@ fn update_position(
 
                 // Success! We have a position. Time to bail out.
                 return Ok(());
-            } else {
-                debug!("Position from even/odd was invalid.");
-                match position_type {
-                    PositionType::Airborne => {
-                        debug!("{} {:?}", json.transponder_hex, json.cpr_even_airborne);
-                        debug!("{} {:?}", json.transponder_hex, json.cpr_odd_airborne);
-                    }
-                    PositionType::Surface => {
-                        debug!("{} {:?}", json.transponder_hex, json.cpr_even_surface);
-                        debug!("{} {:?}", json.transponder_hex, json.cpr_odd_surface);
-                    }
-                }
-                debug!("{} {:?}", json.transponder_hex, position);
             }
+            debug!("Position from even/odd was invalid.");
+            match position_type {
+                PositionType::Airborne => {
+                    debug!("{} {:?}", json.transponder_hex, json.cpr_even_airborne);
+                    debug!("{} {:?}", json.transponder_hex, json.cpr_odd_airborne);
+                }
+                PositionType::Surface => {
+                    debug!("{} {:?}", json.transponder_hex, json.cpr_even_surface);
+                    debug!("{} {:?}", json.transponder_hex, json.cpr_odd_surface);
+                }
+            }
+            debug!("{} {:?}", json.transponder_hex, position);
         }
     }
 
@@ -315,7 +316,7 @@ fn update_position(
     // we ended up here because even/odd failed or we didn't have both even and odd
     // if we have a reference position from the user, try to use that to calculate the position
 
-    let position = if position_type == PositionType::Airborne {
+    let position = if *position_type == PositionType::Airborne {
         get_position_from_locally_unabiguous_airborne(aircraft_frame, reference_position, cpr_flag)
     } else {
         get_position_from_locally_unabiguous_surface(aircraft_frame, reference_position, cpr_flag)
@@ -335,12 +336,12 @@ fn update_position(
 
             // Success! We have a position. Time to bail out.
             return Ok(());
-        } else {
-            warn!(
-                "{}: Reference position is too far away from calculated position. Not updating.",
-                json.transponder_hex
-            );
         }
+
+        warn!(
+            "{}: Reference position is too far away from calculated position. Not updating.",
+            json.transponder_hex
+        );
     } else {
         debug!("Position from reference antenna was invalid.");
         match position_type {
@@ -371,7 +372,7 @@ fn update_position(
             longitude: lon.longitude,
         };
 
-        let position = if position_type == PositionType::Airborne {
+        let position = if *position_type == PositionType::Airborne {
             get_position_from_locally_unabiguous_airborne(
                 aircraft_frame,
                 &reference_position,
@@ -399,7 +400,7 @@ fn update_position(
 
             let mut oldest_timestamp = 0.0;
 
-            if let Some(last_cpr_even_update_time) = if position_type == PositionType::Airborne {
+            if let Some(last_cpr_even_update_time) = if *position_type == PositionType::Airborne {
                 &json.last_cpr_even_update_time_airborne
             } else {
                 &json.last_cpr_even_update_time_surface
@@ -407,7 +408,7 @@ fn update_position(
                 oldest_timestamp = last_cpr_even_update_time.get_time();
             };
 
-            if let Some(last_cpr_odd_update_time) = if position_type == PositionType::Airborne {
+            if let Some(last_cpr_odd_update_time) = if *position_type == PositionType::Airborne {
                 &json.last_cpr_odd_update_time_airborne
             } else {
                 &json.last_cpr_odd_update_time_surface
@@ -428,10 +429,10 @@ fn update_position(
 
             // get the distance the aircraft could have traveled in the time delta only if speed is not 0
 
-            let distance_traveled = if speed != 0.0 {
-                speed * time_delta
-            } else {
+            let distance_traveled = if speed == 0.0 {
                 0.0
+            } else {
+                speed * time_delta
             };
 
             // if the distance travelled is within 10% of the distance between the reference position and the calculated position, we'll update the position
@@ -684,6 +685,9 @@ fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
     json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
 }
 
+/// Updates the JSON message with the surface position information.
+/// # Errors
+/// Returns an error if the position is invalid.
 pub fn update_aircraft_position_surface(
     json: &mut JSONMessage,
     surface_position: &SurfacePosition,
@@ -744,25 +748,15 @@ pub fn update_aircraft_position_surface(
         }
     }
 
-    let even_frame = if json.cpr_even_surface.is_some() {
-        let frame = json.cpr_even_surface.as_ref().unwrap();
-        Some(Position {
-            latitude: f64::from(frame.lat_cpr),
-            longitude: f64::from(frame.lon_cpr),
-        })
-    } else {
-        None
-    };
+    let even_frame = json.cpr_even_surface.map(|frame| Position {
+        latitude: f64::from(frame.lat_cpr),
+        longitude: f64::from(frame.lon_cpr),
+    });
 
-    let odd_frame = if json.cpr_odd_surface.is_some() {
-        let frame = json.cpr_odd_surface.as_ref().unwrap();
-        Some(Position {
-            latitude: f64::from(frame.lat_cpr),
-            longitude: f64::from(frame.lon_cpr),
-        })
-    } else {
-        None
-    };
+    let odd_frame = json.cpr_odd_surface.map(|frame| Position {
+        latitude: f64::from(frame.lat_cpr),
+        longitude: f64::from(frame.lon_cpr),
+    });
 
     update_position(
         json,
@@ -771,10 +765,14 @@ pub fn update_aircraft_position_surface(
         reference_position,
         surface_position.f,
         current_time,
-        PositionType::Surface,
+        &PositionType::Surface,
     )
 }
 
+/// Updates the JSON message with the altitude information.
+/// This function is used for both airborne and surface messages.
+/// # Errors
+/// Returns an error if the altitude is invalid.
 pub fn update_aircraft_position_airborne(
     json: &mut JSONMessage,
     altitude: &super::raw_types::altitude::Altitude,
@@ -848,25 +846,15 @@ pub fn update_aircraft_position_airborne(
         }
     }
 
-    let even_frame = if json.cpr_even_airborne.is_some() {
-        let frame = json.cpr_even_airborne.as_ref().unwrap();
-        Some(Position {
-            latitude: f64::from(frame.lat_cpr),
-            longitude: f64::from(frame.lon_cpr),
-        })
-    } else {
-        None
-    };
+    let even_frame = json.cpr_even_airborne.map(|frame| Position {
+        latitude: f64::from(frame.lat_cpr),
+        longitude: f64::from(frame.lon_cpr),
+    });
 
-    let odd_frame = if json.cpr_odd_airborne.is_some() {
-        let frame = json.cpr_odd_airborne.as_ref().unwrap();
-        Some(Position {
-            latitude: f64::from(frame.lat_cpr),
-            longitude: f64::from(frame.lon_cpr),
-        })
-    } else {
-        None
-    };
+    let odd_frame = json.cpr_odd_airborne.map(|frame| Position {
+        latitude: f64::from(frame.lat_cpr),
+        longitude: f64::from(frame.lon_cpr),
+    });
 
     update_position(
         json,
@@ -875,6 +863,6 @@ pub fn update_aircraft_position_airborne(
         reference_position,
         altitude.odd_flag,
         current_time,
-        PositionType::Airborne,
+        &PositionType::Airborne,
     )
 }

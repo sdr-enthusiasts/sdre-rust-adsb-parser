@@ -34,6 +34,9 @@ use super::{
 ///
 /// This is intended for specifically decoding to `ADSBMessage`.
 pub trait NewAdsbBeastMessage {
+    /// Converts the message to an `AdsbBeastMessage` object.
+    /// # Errors
+    /// If the conversion fails, the error is returned.
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage>;
 }
 
@@ -142,11 +145,15 @@ pub struct AdsbBeastMessage {
 
 impl AdsbBeastMessage {
     /// Converts `AdsbBeastMessage` to `String`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string(&self) -> MessageResult<String> {
         Ok(serde_json::to_string(self)?)
     }
 
     /// Converts `AdsbBeastMessage` to `String` and appends a `\n` to the end.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_string_newline(&self) -> MessageResult<String> {
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
@@ -157,6 +164,8 @@ impl AdsbBeastMessage {
     /// Converts `AdsbBeastMessage` to a `String` encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
         match self.to_string() {
             Err(conversion_failed) => Err(conversion_failed),
@@ -167,6 +176,8 @@ impl AdsbBeastMessage {
     /// Converts `AdsbBeastMessage` to a `String` terminated with a `\n` and encoded as bytes.
     ///
     /// The output is returned as a `Vec<u8>`.
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
         match self.to_string_newline() {
             Err(conversion_failed) => Err(conversion_failed),

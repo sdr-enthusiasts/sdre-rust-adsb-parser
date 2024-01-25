@@ -71,10 +71,12 @@ impl ME {
         capability: Capability,
         is_transponder: bool,
     ) -> Result<String, Error> {
-        let transponder: &str = match is_transponder {
-            true => " ",
-            false => " (Non-Transponder) ",
+        let transponder: &str = if is_transponder {
+            " "
+        } else {
+            " (Non-Transponder) "
         };
+
         let mut f: String = String::new();
         match self {
             ME::NoPosition(_) => {

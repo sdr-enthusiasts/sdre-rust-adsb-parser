@@ -152,13 +152,13 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         frame_bytes.push(*byte);
                         _ = byte_iter.next();
                         continue;
-                    } else {
-                        errors.push(ADSBBeastError::StartSequenceError {
-                            message: format!("{byte:02X?}"),
-                        });
-                        frame_type = FrameType::None;
-                        continue;
                     }
+
+                    errors.push(ADSBBeastError::StartSequenceError {
+                        message: format!("{byte:02X?}"),
+                    });
+                    frame_type = FrameType::None;
+                    continue;
                 }
                 _ => {
                     frame_bytes.push(*byte);
@@ -201,19 +201,16 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     // as well as, if the frame starts with a start character, we need to add it back
     if !frame_bytes.is_empty() {
         // we trimmed off the control characters, so we need to add them back if the frame starts with a start character
-        match frame_bytes.first() {
-            Some(
-                &ADSB_BEAST_SHORT_FRAME_START_CHARACTER
-                | &ADSB_BEAST_LONG_FRAME_START_CHARACTER
-                | &ADSB_BEAST_MODEAC_FRAME_START_CHARACTER,
-            ) => {
-                frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
-            }
-            // We should never end up here.
-            _ => {
-                error!("Frame bytes is not empty, but the first byte is not a start character");
-                error!("The frame bytes are: {:02X?}", frame_bytes);
-            }
+        if let Some(
+            &ADSB_BEAST_SHORT_FRAME_START_CHARACTER
+            | &ADSB_BEAST_LONG_FRAME_START_CHARACTER
+            | &ADSB_BEAST_MODEAC_FRAME_START_CHARACTER,
+        ) = frame_bytes.first()
+        {
+            frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
+        } else {
+            error!("Frame bytes is not empty, but the first byte is not a start character");
+            error!("The frame bytes are: {:02X?}", frame_bytes);
         }
 
         // now walk the frame and replace any 1a with 1a 1a if it's not a 1a 31 or 1a 32 or 1a 33 sequence
@@ -226,7 +223,13 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                 && next_byte != Some(&&ADSB_BEAST_START_CHARACTER)
             {
                 if next_byte.is_some() {
-                    let next_byte = next_byte.unwrap();
+                    // TODO: does this pattern make sense? Can we combine this with the logic check
+                    // above or destructure in to a match?
+                    let Some(next_byte) = next_byte else {
+                        error!("You should never see this!! Next byte is none but is_some returned true?");
+                        break;
+                    };
+
                     if **next_byte == ADSB_BEAST_MODEAC_FRAME_START_CHARACTER
                         || **next_byte == ADSB_BEAST_SHORT_FRAME_START_CHARACTER
                         || **next_byte == ADSB_BEAST_LONG_FRAME_START_CHARACTER

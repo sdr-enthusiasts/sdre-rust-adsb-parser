@@ -446,10 +446,10 @@ pub async fn expire_planes<S: ::std::hash::BuildHasher>(
     planes: Arc<Mutex<HashMap<String, Airplane, S>>>,
     check_interval_in_seconds: u64,
     adsb_timeout_in_seconds: u64,
-    adsc_timeout_in_seconds: u64,
+    satellite_or_hf_timeout_in_seconds: u64,
 ) {
     let adsb_timeout_in_seconds = adsb_timeout_in_seconds as f64;
-    let adsc_timeout_in_seconds = adsc_timeout_in_seconds as f64;
+    let satellite_or_hf_timeout_in_seconds = satellite_or_hf_timeout_in_seconds as f64;
 
     loop {
         tokio::time::sleep(tokio::time::Duration::from_secs(check_interval_in_seconds)).await;
@@ -461,7 +461,7 @@ pub async fn expire_planes<S: ::std::hash::BuildHasher>(
         airplanes.retain(|_, value| match value.timestamp {
             TimeStamp::TimeStampAsF64(timestamp) => match &value.message_type {
                 ADSC => {
-                    if current_time - timestamp > adsc_timeout_in_seconds {
+                    if current_time - timestamp > satellite_or_hf_timeout_in_seconds {
                         planes_removed += 1;
                         info!("Removing ADSC");
                         false
