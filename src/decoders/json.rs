@@ -861,6 +861,7 @@ mod tests {
                                     line_number
                                 );
                                 let json_message = final_message_to_process.decode_message();
+                                println!("JSONMessage: {:?}", json_message,);
 
                                 assert!(
                                     json_message.is_ok(),

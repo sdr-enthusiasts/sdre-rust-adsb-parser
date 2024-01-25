@@ -35,7 +35,7 @@ pub struct Position {
 
 /// The NL function uses the precomputed table from 1090-WP-9-14
 /// This code is translated from <https://github.com/wiedehopf/readsb/blob/dev/cpr.c>
-pub(crate) fn cpr_nl(lat: f64) -> u64 {
+pub(crate) fn cpr_nl(lat: f64) -> f64 {
     let mut lat = lat;
     if lat < 0.0 {
         // Table is symmetric about the equator
@@ -43,182 +43,182 @@ pub(crate) fn cpr_nl(lat: f64) -> u64 {
     }
     if lat < 29.911_356_86 {
         if lat < 10.470_471_30 {
-            return 59;
+            return 59.0;
         }
         if lat < 14.828_174_37 {
-            return 58;
+            return 58.0;
         }
         if lat < 18.186_263_57 {
-            return 57;
+            return 57.0;
         }
         if lat < 21.029_394_93 {
-            return 56;
+            return 56.0;
         }
         if lat < 23.545_044_87 {
-            return 55;
+            return 55.0;
         }
         if lat < 25.829_247_07 {
-            return 54;
+            return 54.0;
         }
         if lat < 27.938_987_10 {
-            return 53;
+            return 53.0;
         }
         // < 29.91135686
-        return 52;
+        return 52.0;
     }
     if lat < 44.194_549_51 {
         if lat < 31.772_097_08 {
-            return 51;
+            return 51.0;
         }
         if lat < 33.539_934_36 {
-            return 50;
+            return 50.0;
         }
         if lat < 35.228_995_98 {
-            return 49;
+            return 49.0;
         }
         if lat < 36.850_251_08 {
-            return 48;
+            return 48.0;
         }
         if lat < 38.412_418_92 {
-            return 47;
+            return 47.0;
         }
         if lat < 39.922_566_84 {
-            return 46;
+            return 46.0;
         }
         if lat < 41.386_518_32 {
-            return 45;
+            return 45.0;
         }
         if lat < 42.809_140_12 {
-            return 44;
+            return 44.0;
         }
         // < 44.19454951
-        return 43;
+        return 43.0;
     }
     if lat < 59.954_592_77 {
         if lat < 45.546_267_23 {
-            return 42;
+            return 42.0;
         }
         if lat < 46.867_332_52 {
-            return 41;
+            return 41.0;
         }
         if lat < 48.160_391_28 {
-            return 40;
+            return 40.0;
         }
         if lat < 49.427_764_39 {
-            return 39;
+            return 39.0;
         }
         if lat < 50.671_501_66 {
-            return 38;
+            return 38.0;
         }
         if lat < 51.893_424_69 {
-            return 37;
+            return 37.0;
         }
         if lat < 53.095_161_53 {
-            return 36;
+            return 36.0;
         }
         if lat < 54.278_174_72 {
-            return 35;
+            return 35.0;
         }
         if lat < 55.443_784_44 {
-            return 34;
+            return 34.0;
         }
         if lat < 56.593_187_56 {
-            return 33;
+            return 33.0;
         }
         if lat < 57.727_473_54 {
-            return 32;
+            return 32.0;
         }
         if lat < 58.847_637_76 {
-            return 31;
+            return 31.0;
         }
         // < 59.95459277
-        return 30;
+        return 30.0;
     }
     if lat < 61.049_177_74 {
-        return 29;
+        return 29.0;
     }
     if lat < 62.132_166_59 {
-        return 28;
+        return 28.0;
     }
     if lat < 63.204_274_79 {
-        return 27;
+        return 27.0;
     }
     if lat < 64.266_165_23 {
-        return 26;
+        return 26.0;
     }
     if lat < 65.318_453_10 {
-        return 25;
+        return 25.0;
     }
     if lat < 66.361_710_08 {
-        return 24;
+        return 24.0;
     }
     if lat < 67.396_467_74 {
-        return 23;
+        return 23.0;
     }
     if lat < 68.423_220_22 {
-        return 22;
+        return 22.0;
     }
     if lat < 69.442_426_31 {
-        return 21;
+        return 21.0;
     }
     if lat < 70.454_510_75 {
-        return 20;
+        return 20.0;
     }
     if lat < 71.459_864_73 {
-        return 19;
+        return 19.0;
     }
     if lat < 72.458_845_45 {
-        return 18;
+        return 18.0;
     }
     if lat < 73.451_774_42 {
-        return 17;
+        return 17.0;
     }
     if lat < 74.438_934_16 {
-        return 16;
+        return 16.0;
     }
     if lat < 75.420_562_57 {
-        return 15;
+        return 15.0;
     }
     if lat < 76.396_843_91 {
-        return 14;
+        return 14.0;
     }
     if lat < 77.367_894_61 {
-        return 13;
+        return 13.0;
     }
     if lat < 78.333_740_83 {
-        return 12;
+        return 12.0;
     }
     if lat < 79.294_282_25 {
-        return 11;
+        return 11.0;
     }
     if lat < 80.249_232_13 {
-        return 10;
+        return 10.0;
     }
     if lat < 81.198_013_49 {
-        return 9;
+        return 9.0;
     }
     if lat < 82.139_569_81 {
-        return 8;
+        return 8.0;
     }
     if lat < 83.071_994_45 {
-        return 7;
+        return 7.0;
     }
     if lat < 83.991_735_63 {
-        return 6;
+        return 6.0;
     }
     if lat < 84.891_661_91 {
-        return 5;
+        return 5.0;
     }
     if lat < 85.755_416_21 {
-        return 4;
+        return 4.0;
     }
     if lat < 86.535_369_98 {
-        return 3;
+        return 3.0;
     }
     if lat < 87.000_000_00 {
-        return 2;
+        return 2.0;
     }
-    1
+    1.0
 }
 
 #[must_use]
@@ -245,7 +245,7 @@ pub fn haversine_distance(s: (f64, f64), other: (f64, f64)) -> f64 {
     let a = x_lat * x_lat
         + libm::cos(lat1_rad)
             * libm::cos(lat2_rad)
-            * f64::from(libm::powf(libm::sin(x_long) as f32, 2.0));
+            * f64::from(libm::pow(libm::sin(x_long), 2.0));
 
     let c = 2.0 * libm::atan2(libm::sqrt(a), libm::sqrt(1.0 - a));
 
@@ -264,11 +264,11 @@ pub fn get_position_from_locally_unabiguous_surface(
     local: &Position,
     cpr_flag: CPRFormat,
 ) -> Position {
-    let mut i = 0;
+    let mut i = 0.0;
     let d_lat = match cpr_flag {
         CPRFormat::Even => D_LAT_EVEN_SURFACE,
         CPRFormat::Odd => {
-            i = 1;
+            i = 1.0;
             D_LAT_ODD_SURFACE
         }
     };
@@ -280,7 +280,7 @@ pub fn get_position_from_locally_unabiguous_surface(
         + libm::floor(calc_modulo(local.latitude, d_lat) / d_lat - lat_cpr + 0.5);
     let lat = d_lat * (j + lat_cpr);
 
-    let d_lon = 90.0 / libm::fmax((cpr_nl(lat) - i) as f64, 1.0);
+    let d_lon = 90.0 / libm::fmax(cpr_nl(lat) - i, 1.0);
 
     let m = libm::floor(local.longitude / d_lon)
         + libm::floor(calc_modulo(local.longitude, d_lon) / d_lon - lon_cpr + 0.5);
@@ -299,11 +299,11 @@ pub fn get_position_from_locally_unabiguous_airborne(
     local: &Position,
     cpr_flag: CPRFormat,
 ) -> Position {
-    let mut i = 0;
+    let mut i = 0.0;
     let d_lat = match cpr_flag {
         CPRFormat::Even => D_LAT_EVEN_AIRBORNE,
         CPRFormat::Odd => {
-            i = 1;
+            i = 1.0;
             D_LAT_ODD_AIRBORNE
         }
     };
@@ -316,7 +316,7 @@ pub fn get_position_from_locally_unabiguous_airborne(
 
     let lat = d_lat * (j + lat_cpr);
 
-    let d_lon = 360.0 / libm::fmax((cpr_nl(lat) - i) as f64, 1.0);
+    let d_lon = 360.0 / libm::fmax(cpr_nl(lat) - i, 1.0);
 
     let m = libm::floor(local.longitude / d_lon)
         + libm::floor(calc_modulo(local.longitude, d_lon) / d_lon - lon_cpr + 0.5);
@@ -363,7 +363,7 @@ pub fn get_position_from_even_odd_cpr_positions_airborne(
     let nl_even = cpr_nl(lat_even);
     let nl_odd = cpr_nl(lat_odd);
 
-    if nl_even != nl_odd {
+    if (nl_even - nl_odd).abs() > f64::EPSILON {
         debug!("NL even and NL odd are not the same");
         debug!("NL even: {nl_even}");
         debug!("NL odd: {nl_odd}");
@@ -377,10 +377,10 @@ pub fn get_position_from_even_odd_cpr_positions_airborne(
         lat_odd
     };
 
-    let m = libm::floor(cpr_lon_even * (nl_even as f64 - 1.0) - cpr_lon_odd * nl_even as f64 + 0.5);
+    let m = libm::floor(cpr_lon_even * (nl_even - 1.0) - cpr_lon_odd * nl_even + 0.5);
 
-    let n_even = libm::fmax(nl_even as f64, 1.0);
-    let n_odd = libm::fmax(nl_odd as f64 - 1.0, 1.0);
+    let n_even = libm::fmax(nl_even, 1.0);
+    let n_odd = libm::fmax(nl_odd - 1.0, 1.0);
 
     let d_lon_even = 360.0 / n_even;
     let d_lon_odd = 360.0 / n_odd;
@@ -426,7 +426,7 @@ pub fn get_position_from_even_odd_cpr_positions_surface(
     let nl_even = cpr_nl(lat_even);
     let nl_odd = cpr_nl(lat_odd);
 
-    if nl_even != nl_odd {
+    if (nl_even - nl_odd).abs() > f64::EPSILON {
         debug!("NL even and NL odd are not the same");
         debug!("NL even: {nl_even}");
         debug!("NL odd: {nl_odd}");
@@ -441,12 +441,12 @@ pub fn get_position_from_even_odd_cpr_positions_surface(
 
     let lat_southern = &lat_northern - 90.0;
 
-    let m = libm::floor(cpr_lon_even * (nl_even as f64 - 1.0) - cpr_lon_odd * nl_even as f64 + 0.5);
+    let m = libm::floor(cpr_lon_even * (nl_even - 1.0) - cpr_lon_odd * nl_even + 0.5);
 
     let n = if latest_frame_flag == CPRFormat::Even {
-        libm::fmax(nl_even as f64, 1.0)
+        libm::fmax(nl_even, 1.0)
     } else {
-        libm::fmax(nl_odd as f64 - 1.0, 1.0)
+        libm::fmax(nl_odd - 1.0, 1.0)
     };
 
     let d_lon = 90.0 / n;
@@ -585,10 +585,10 @@ mod tests {
 
     #[test]
     fn cpr_nl_high_low_lat() {
-        assert_eq!(cpr_nl(89.9), 1);
-        assert_eq!(cpr_nl(-89.9), 1);
-        assert_eq!(cpr_nl(86.9), 2);
-        assert_eq!(cpr_nl(-86.9), 2);
+        assert_eq!(cpr_nl(89.9), 1.0);
+        assert_eq!(cpr_nl(-89.9), 1.0);
+        assert_eq!(cpr_nl(86.9), 2.0);
+        assert_eq!(cpr_nl(-86.9), 2.0);
     }
 
     #[test]

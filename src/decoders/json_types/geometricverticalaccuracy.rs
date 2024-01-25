@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
+#[serde(try_from = "u8")]
 pub enum GeometricVerticalAccuracy {
     UnknownOrGreaterThan150m,
     LessThanEqual150m,
