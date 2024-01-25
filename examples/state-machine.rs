@@ -42,8 +42,8 @@ use sdre_rust_adsb_parser::{
         encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
     },
     state_machine::state::{
-        expire_planes, generate_aircraft_json, ProcessMessageType, StateMachine,
-        StateMachineBuilder,
+        expire_planes, generate_aircraft_json, ProcessMessageType, Machine,
+        MachineBuilder,
     },
     ADSBMessage, DecodeMessage,
 };
@@ -253,12 +253,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let latitude = args.lat;
     let longitude = args.lon;
 
-    let state_machine = StateMachineBuilder::default().position(Position {
+    let state_machine = MachineBuilder::default().position(Position {
         latitude,
         longitude,
     });
 
-    let mut state_machine: StateMachine = match state_machine.build() {
+    let mut state_machine: Machine = match state_machine.build() {
         Ok(state_machine) => state_machine,
         Err(e) => {
             error!("Error building state machine: {}", e);

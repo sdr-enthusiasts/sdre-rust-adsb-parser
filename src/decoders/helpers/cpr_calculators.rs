@@ -245,7 +245,7 @@ pub fn haversine_distance(s: (f64, f64), other: (f64, f64)) -> f64 {
     let a = x_lat * x_lat
         + libm::cos(lat1_rad)
             * libm::cos(lat2_rad)
-            * f64::from(libm::pow(libm::sin(x_long), 2.0));
+            * libm::pow(libm::sin(x_long), 2.0);
 
     let c = 2.0 * libm::atan2(libm::sqrt(a), libm::sqrt(1.0 - a));
 

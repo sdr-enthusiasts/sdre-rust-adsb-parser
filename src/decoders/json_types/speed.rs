@@ -87,7 +87,7 @@ impl fmt::Display for Speed {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             // cast to u32 to remove the decimal
-            Speed::Knots(speed) => write!(f, "{} knots", *speed as u32),
+            Speed::Knots(speed) => write!(f, "{} knots", *speed),
             Speed::None => write!(f, "None"),
         }
     }

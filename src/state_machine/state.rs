@@ -7,8 +7,8 @@
 /// # Examples
 ///
 /// ```
-/// use sdre_rust_adsb_parser::state_machine::state::StateMachine;
-/// use sdre_rust_adsb_parser::state_machine::state::StateMachineBuilder;
+/// use sdre_rust_adsb_parser::state_machine::state::Machine;
+/// use sdre_rust_adsb_parser::state_machine::state::MachineBuilder;
 /// use sdre_rust_adsb_parser::state_machine::state::ProcessMessageType;
 /// use sdre_rust_adsb_parser::decoders::helpers::cpr_calculators::Position;
 /// use std::process::exit;
@@ -21,7 +21,7 @@
 ///     let longitude = -122.4194;
 ///     let adsb_timeout_in_seconds = 10;
 ///
-///     let state_machine_builder = StateMachineBuilder::default().position(Position { latitude, longitude}).adsb_timeout_in_seconds(adsb_timeout_in_seconds);
+///     let state_machine_builder = MachineBuilder::default().position(Position { latitude, longitude}).adsb_timeout_in_seconds(adsb_timeout_in_seconds);
 ///
 ///     let mut state_machine = match state_machine_builder.build() {
 ///         Ok(state_machine) => state_machine,
@@ -157,13 +157,13 @@ impl fmt::Display for ProcessMessageType {
 
 #[derive(Builder)]
 #[builder(pattern = "owned")]
-pub struct StateMachine {
+pub struct Machine {
     #[builder(default = "Arc::new(Mutex::new(HashMap::new()))")]
     pub airplanes: Arc<Mutex<HashMap<String, Airplane>>>,
     #[builder(default = "90")]
-    pub adsb_timeout_in_seconds: u64,
+    pub adsb_timeout_in_seconds: u32,
     #[builder(default = "360")]
-    pub adsc_timeout_in_seconds: u64,
+    pub adsc_timeout_in_seconds: u32,
     #[builder(default = "Channels::new()")]
     pub channels: Channels,
     #[builder(default = "Arc::new(Mutex::new(0))")]
@@ -174,7 +174,7 @@ pub struct StateMachine {
     pub use_strict_mode: bool,
 }
 
-impl StateMachineBuilder {
+impl MachineBuilder {
     pub fn set_channels(&mut self, channels: Channels) -> &mut Self {
         self.channels = Some(channels);
         self
@@ -185,16 +185,16 @@ impl StateMachineBuilder {
 /// Create the state machine. The state machine will enable the user to set the timeout for ADS-B and ADS-C messages.
 /// The state machine needs a user-defined lat/lon for decoding Surface Position messages. This position is also used
 /// for airborne aircraft positions if the aircraft position cannot be derived from the available messages received.
-impl Default for StateMachine {
+impl Default for Machine {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl StateMachine {
+impl Machine {
     #[must_use]
-    pub fn new() -> StateMachine {
-        StateMachine {
+    pub fn new() -> Machine {
+        Machine {
             airplanes: Arc::new(Mutex::new(HashMap::new())),
             adsb_timeout_in_seconds: 90,
             adsc_timeout_in_seconds: 360,
@@ -445,11 +445,11 @@ pub async fn generate_aircraft_json<S: ::std::hash::BuildHasher>(
 pub async fn expire_planes<S: ::std::hash::BuildHasher>(
     planes: Arc<Mutex<HashMap<String, Airplane, S>>>,
     check_interval_in_seconds: u64,
-    adsb_timeout_in_seconds: u64,
-    satellite_or_hf_timeout_in_seconds: u64,
+    adsb_timeout_in_seconds: u32,
+    satellite_or_hf_timeout_in_seconds: u32,
 ) {
-    let adsb_timeout_in_seconds = adsb_timeout_in_seconds as f64;
-    let satellite_or_hf_timeout_in_seconds = satellite_or_hf_timeout_in_seconds as f64;
+    let adsb_timeout_in_seconds = f64::from(adsb_timeout_in_seconds);
+    let satellite_or_hf_timeout_in_seconds = f64::from(satellite_or_hf_timeout_in_seconds);
 
     loop {
         tokio::time::sleep(tokio::time::Duration::from_secs(check_interval_in_seconds)).await;
