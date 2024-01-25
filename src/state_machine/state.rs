@@ -430,8 +430,8 @@ impl StateMachine {
     }
 }
 
-pub async fn generate_aircraft_json(
-    planes: Arc<Mutex<HashMap<String, Airplane>>>,
+pub async fn generate_aircraft_json<S: ::std::hash::BuildHasher>(
+    planes: Arc<Mutex<HashMap<String, Airplane, S>>>,
     messages: Arc<Mutex<u64>>,
 ) -> Option<AircraftJSON> {
     let airplanes = planes.lock().await;
@@ -442,8 +442,8 @@ pub async fn generate_aircraft_json(
     Some(AircraftJSON::new(vec_of_planes, *total_messages))
 }
 
-pub async fn expire_planes(
-    planes: Arc<Mutex<HashMap<String, Airplane>>>,
+pub async fn expire_planes<S: ::std::hash::BuildHasher>(
+    planes: Arc<Mutex<HashMap<String, Airplane, S>>>,
     check_interval_in_seconds: u64,
     adsb_timeout_in_seconds: u64,
     adsc_timeout_in_seconds: u64,
