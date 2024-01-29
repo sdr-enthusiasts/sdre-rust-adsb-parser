@@ -260,15 +260,14 @@ pub fn update_target_state_and_status_information(
     }
 }
 
-fn update_position(
+fn calculate_position_from_even_odd(
     json: &mut JSONMessage,
     even_frame: &Option<Position>,
     odd_frame: &Option<Position>,
     reference_position: &Position,
     cpr_flag: CPRFormat,
-    current_time: f64,
     position_type: &PositionType,
-) -> Result<(), String> {
+) -> Result<(), ()> {
     // if we have both even and odd, calculate the position
     if let (Some(even_frame), Some(odd_frame)) = (&even_frame, &odd_frame) {
         let calculated_position = if *position_type == PositionType::Airborne {
@@ -311,12 +310,16 @@ fn update_position(
         }
     }
 
-    let aircraft_frame = if cpr_flag == CPRFormat::Even {
-        even_frame.as_ref().unwrap()
-    } else {
-        odd_frame.as_ref().unwrap()
-    };
+    Err(())
+}
 
+fn calculate_position_from_user_reference_position(
+    json: &mut JSONMessage,
+    aircraft_frame: &Position,
+    reference_position: &Position,
+    cpr_flag: CPRFormat,
+    position_type: &PositionType,
+) -> Result<(), ()> {
     // we ended up here because even/odd failed or we didn't have both even and odd
     // if we have a reference position from the user, try to use that to calculate the position
 
@@ -361,8 +364,16 @@ fn update_position(
         debug!("{} {:?}", json.transponder_hex, position);
     }
 
-    // we ended up here because everything else failed. The last try is to use the last known position
+    Err(())
+}
 
+fn calculate_position_from_last_known_position(
+    json: &mut JSONMessage,
+    aircraft_frame: &Position,
+    cpr_flag: CPRFormat,
+    position_type: &PositionType,
+    current_time: f64,
+) -> Result<(), String> {
     if let (Some(lat), Some(lon)) = (&json.latitude, &json.longitude) {
         if lat.latitude == 0.0 || lon.longitude == 0.0 {
             return Err(format!(
@@ -483,11 +494,61 @@ fn update_position(
         }
     }
 
-    // we ended up here because everything else failed.
     Err(format!(
         "{}: Unable to calculate position.",
         json.transponder_hex
     ))
+}
+
+fn update_position(
+    json: &mut JSONMessage,
+    even_frame: &Option<Position>,
+    odd_frame: &Option<Position>,
+    reference_position: &Position,
+    cpr_flag: CPRFormat,
+    current_time: f64,
+    position_type: &PositionType,
+) -> Result<(), String> {
+    if calculate_position_from_even_odd(
+        json,
+        even_frame,
+        odd_frame,
+        reference_position,
+        cpr_flag,
+        position_type,
+    )
+    .is_ok()
+    {
+        return Ok(());
+    }
+
+    let aircraft_frame = if cpr_flag == CPRFormat::Even {
+        even_frame.as_ref().unwrap()
+    } else {
+        odd_frame.as_ref().unwrap()
+    };
+
+    if calculate_position_from_user_reference_position(
+        json,
+        aircraft_frame,
+        reference_position,
+        cpr_flag,
+        position_type,
+    )
+    .is_ok()
+    {
+        return Ok(());
+    }
+
+    // we ended up here because everything else failed. The last try is to use the last known position
+
+    calculate_position_from_last_known_position(
+        json,
+        aircraft_frame,
+        cpr_flag,
+        position_type,
+        current_time,
+    )
 }
 
 fn update_nic_and_radius_of_containment_nic_a_and_b(json: &mut JSONMessage) -> bool {

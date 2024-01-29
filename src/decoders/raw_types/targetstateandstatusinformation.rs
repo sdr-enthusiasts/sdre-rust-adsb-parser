@@ -31,8 +31,7 @@ pub struct TargetStateAndStatusInformation {
     #[deku(
         bits = "9",
         endian = "big",
-        map = "|qnh: u32| -> Result<_, DekuError> {if qnh == 0 { Ok(0.0) } else { Ok(800.0 + (f64::from((qnh - 1))) * 0.8)}}"
-        //map = "|qnh: u32| -> Result<_, DekuError> {if qnh == 0 { Ok(0.0) } else { Ok(800.0 + ((qnh - 1) as f64) * 0.8)}}"
+        map = "|qnh: u32| -> Result<_, DekuError> {if qnh == 0 { Ok(0.0) } else { Ok(800.0 + f64::from(qnh - 1) * 0.8)}}"
     )]
     pub qnh: f64,
     pub is_heading: SelectedHeadingStatus,
