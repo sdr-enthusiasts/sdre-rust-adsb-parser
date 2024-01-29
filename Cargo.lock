@@ -342,6 +342,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "easy-cast"
+version = "0.5.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "10936778145f3bea71fd9bf61332cce28c28e96a380714f7ab34838b80733fd6"
+
+[[package]]
 name = "either"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1271,6 +1277,7 @@ dependencies = [
  "custom_error",
  "deku",
  "derive_builder",
+ "easy-cast",
  "generic-async-http-client",
  "hex",
  "libm",

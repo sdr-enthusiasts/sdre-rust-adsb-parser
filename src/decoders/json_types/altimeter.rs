@@ -8,10 +8,10 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
-#[serde(from = "f32")]
+#[serde(from = "f64")]
 pub struct Altimeter {
     /// Default units are in QNH
-    altimeter: f32,
+    altimeter: f64,
 }
 
 impl Serialize for Altimeter {
@@ -19,12 +19,12 @@ impl Serialize for Altimeter {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_f32(self.altimeter)
+        serializer.serialize_f64(self.altimeter)
     }
 }
 
-impl From<f32> for Altimeter {
-    fn from(altimeter: f32) -> Self {
+impl From<f64> for Altimeter {
+    fn from(altimeter: f64) -> Self {
         Self { altimeter }
     }
 }

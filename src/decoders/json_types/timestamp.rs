@@ -4,6 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
+use easy_cast::traits::ConvFloat;
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
@@ -55,8 +56,9 @@ impl fmt::Display for TimeStamp {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::TimeStampAsF64(seconds) => {
+                let seconds: i64 = i64::conv_nearest(*seconds);
                 // Create a human readable timestamp in current timezone
-                let timestamp = chrono::NaiveDateTime::from_timestamp_opt(*seconds as i64, 0);
+                let timestamp = chrono::NaiveDateTime::from_timestamp_opt(seconds, 0);
                 match timestamp {
                     None => write!(f, "Invalid timestamp"),
                     Some(timestamp) => write!(f, "{}", timestamp.format("%Y-%m-%d %H:%M:%S")),

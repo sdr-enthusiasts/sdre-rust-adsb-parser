@@ -404,12 +404,12 @@ impl JSONMessage {
         }
     }
 
-    fn handle_surface_position(&mut self, surfaceposition: &SurfacePosition, reference_position: &Position) -> Result<(), String> {
-        match update_aircraft_position_surface(
-            self,
-            surfaceposition,
-            reference_position,
-        ) {
+    fn handle_surface_position(
+        &mut self,
+        surfaceposition: &SurfacePosition,
+        reference_position: &Position,
+    ) -> Result<(), String> {
+        match update_aircraft_position_surface(self, surfaceposition, reference_position) {
             Ok(()) => {
                 let latitude = match self.latitude.clone() {
                     Some(latitude) => latitude.latitude,
@@ -424,13 +424,11 @@ impl JSONMessage {
                     latitude,
                     longitude,
                 };
-                let (distance, bearing) =
-                    get_distance_and_direction_from_reference_position(
-                        reference_position,
-                        &aircraft_position,
-                    );
-                self.aircract_distance_from_receiving_station =
-                    Some(km_to_nm(distance).into());
+                let (distance, bearing) = get_distance_and_direction_from_reference_position(
+                    reference_position,
+                    &aircraft_position,
+                );
+                self.aircract_distance_from_receiving_station = Some(km_to_nm(distance).into());
                 self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
                 self.last_time_seen = SecondsAgo::now();
@@ -443,13 +441,13 @@ impl JSONMessage {
         Ok(())
     }
 
-    fn handle_airborne_position(&mut self, altitude: &crate::decoders::raw_types::altitude::Altitude, reference_position: &Position, baro_altitude: bool) -> Result<(), String> {
-        match update_aircraft_position_airborne(
-            self,
-            altitude,
-            baro_altitude,
-            reference_position,
-        ) {
+    fn handle_airborne_position(
+        &mut self,
+        altitude: &crate::decoders::raw_types::altitude::Altitude,
+        reference_position: &Position,
+        baro_altitude: bool,
+    ) -> Result<(), String> {
+        match update_aircraft_position_airborne(self, altitude, baro_altitude, reference_position) {
             Ok(()) => {
                 let latitude = match self.latitude.clone() {
                     Some(latitude) => latitude.latitude,
@@ -464,13 +462,11 @@ impl JSONMessage {
                     latitude,
                     longitude,
                 };
-                let (distance, bearing) =
-                    get_distance_and_direction_from_reference_position(
-                        reference_position,
-                        &aircraft_position,
-                    );
-                self.aircract_distance_from_receiving_station =
-                    Some(km_to_nm(distance).into());
+                let (distance, bearing) = get_distance_and_direction_from_reference_position(
+                    reference_position,
+                    &aircraft_position,
+                );
+                self.aircract_distance_from_receiving_station = Some(km_to_nm(distance).into());
                 self.aircraft_direction_from_receiving_station = Some(bearing.into());
 
                 self.last_time_seen = SecondsAgo::now();
@@ -516,7 +512,11 @@ impl JSONMessage {
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
-                    return self.handle_airborne_position(altitude, reference_position, baro_altitude);
+                    return self.handle_airborne_position(
+                        altitude,
+                        reference_position,
+                        baro_altitude,
+                    );
                 }
                 ME::Reserved0(_) => return Err("Reserved0 is not implemented....".into()),
                 ME::SurfaceSystemStatus(_) => {

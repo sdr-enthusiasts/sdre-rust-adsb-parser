@@ -490,200 +490,219 @@ fn update_position(
     ))
 }
 
-fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
-    // if json.nic_supplement_b and json.nic_supplement_a are both some, lets process
-    if let (Some(nic_supplement_b), Some(nic_supplement_a)) =
-        (&json.nic_supplement_b, &json.nic_supplement_a)
-    {
-        if let Some(airborne_type_code) = json.airborne_type_code {
-            match airborne_type_code {
-                0 | 18 | 22 => {
+fn update_nic_and_radius_of_containment_nic_a_and_b(json: &mut JSONMessage) -> bool {
+    if let (Some(nic_supplement_b), Some(nic_supplement_a), Some(airborne_type_code)) = (
+        &json.nic_supplement_b,
+        &json.nic_supplement_a,
+        &json.airborne_type_code,
+    ) {
+        match airborne_type_code {
+            0 | 18 | 22 => {
+                json.radius_of_containment = None;
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
+                return true;
+            }
+            17 => {
+                // 37.04km
+                json.radius_of_containment = Some(37040.0.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category1);
+                return true;
+            }
+            16 => {
+                if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
+                    // 14.816 km
+                    json.radius_of_containment = Some(14816.0.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category2);
+                    return true;
+                }
+
+                if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
+                    // 7.408 km
+                    json.radius_of_containment = Some(7408.0.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category3);
+                    return true;
+                }
+
+                return false;
+            }
+            15 => {
+                // 3.704 km
+                json.radius_of_containment = Some(3704.0.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category4);
+                return true;
+            }
+            14 => {
+                // 1.852 km
+                json.radius_of_containment = Some(1852.0.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category5);
+                return true;
+            }
+            13 => {
+                if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
+                    // 1111.2 m
+                    json.radius_of_containment = Some(1111.2.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category6);
+                    return true;
+                }
+
+                if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
+                    // 926 m
+                    json.radius_of_containment = Some(926.0.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category6);
+                    return true;
+                }
+
+                if *nic_supplement_a == 0 && *nic_supplement_b == 1 {
+                    // 555.6 m
+                    json.radius_of_containment = Some(555.6.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category6);
+                    return true;
+                }
+
+                return false;
+            }
+            12 => {
+                // 370.4 m
+                json.radius_of_containment = Some(370.4.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category7);
+
+                return true;
+            }
+            11 => {
+                if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
+                    // 185.2 m
+                    json.radius_of_containment = Some(185.2.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category8);
+                    return true;
+                }
+                if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
+                    // 75 m
+                    json.radius_of_containment = Some(75.0.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category9);
+                    return true;
+                }
+
+                return false;
+            }
+            10 | 21 => {
+                // 25 m
+                json.radius_of_containment = Some(25.0.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category10);
+                return true;
+            }
+            9 | 20 => {
+                // 7.5 m
+                json.radius_of_containment = Some(7.5.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category11);
+                return true;
+            }
+            _ => return false,
+        }
+    }
+    false
+}
+
+fn update_nic_and_radius_of_containment_a_and_c(json: &mut JSONMessage) -> bool {
+    if let (Some(nic_supplment_a), Some(nic_supplment_c), Some(surface_type_code)) = (
+        &json.nic_supplement_a,
+        &json.nic_supplement_c,
+        &json.surface_type_code,
+    ) {
+        match surface_type_code {
+            0 => {
+                json.radius_of_containment = None;
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
+                return true;
+            }
+            8 => {
+                if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
                     json.radius_of_containment = None;
                     json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
-                    return;
+                    return true;
                 }
-                17 => {
-                    // 37.04km
-                    json.radius_of_containment = Some(37040.0.into());
-                    json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category1);
-                    return;
-                }
-                16 => {
-                    if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
-                        // 14.816 km
-                        json.radius_of_containment = Some(14816.0.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category2);
-                        return;
-                    }
 
-                    if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
-                        // 7.408 km
-                        json.radius_of_containment = Some(7408.0.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category3);
-                        return;
-                    }
-                }
-                15 => {
-                    // 3.704 km
-                    json.radius_of_containment = Some(3704.0.into());
+                if *nic_supplment_a == 0 && *nic_supplment_c == 1 {
+                    // 1111.2 m
+                    json.radius_of_containment = Some(1111.2.into());
                     json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category4);
-                    return;
+                        Some(NavigationIntegrityCategory::Category6);
+                    return true;
                 }
-                14 => {
-                    // 1.852 km
-                    json.radius_of_containment = Some(1852.0.into());
+
+                if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
+                    // 555.6 m
+                    json.radius_of_containment = Some(555.6.into());
                     json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category5);
-                    return;
+                        Some(NavigationIntegrityCategory::Category6);
+                    return true;
                 }
-                13 => {
-                    if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
-                        // 1111.2 m
-                        json.radius_of_containment = Some(1111.2.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category6);
-                        return;
-                    }
 
-                    if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
-                        // 926 m
-                        json.radius_of_containment = Some(926.0.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category6);
-                        return;
-                    }
-
-                    if *nic_supplement_a == 0 && *nic_supplement_b == 1 {
-                        // 555.6 m
-                        json.radius_of_containment = Some(555.6.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category6);
-                        return;
-                    }
-                }
-                12 => {
+                if *nic_supplment_a == 1 && *nic_supplment_c == 1 {
                     // 370.4 m
                     json.radius_of_containment = Some(370.4.into());
                     json.navigation_integrity_category =
                         Some(NavigationIntegrityCategory::Category7);
+                    return true;
                 }
-                11 => {
-                    if *nic_supplement_a == 0 && *nic_supplement_b == 0 {
-                        // 185.2 m
-                        json.radius_of_containment = Some(185.2.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category8);
-                        return;
-                    }
 
-                    if *nic_supplement_a == 1 && *nic_supplement_b == 1 {
-                        // 75 m
-                        json.radius_of_containment = Some(75.0.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category9);
-                        return;
-                    }
-                }
-                10 | 21 => {
-                    // 25 m
-                    json.radius_of_containment = Some(25.0.into());
-                    json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category10);
-                    return;
-                }
-                9 | 20 => {
-                    // 7.5 m
-                    json.radius_of_containment = Some(7.5.into());
-                    json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category11);
-                    return;
-                }
-                _ => (),
+                return false;
             }
+            7 => {
+                if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
+                    // 185.2 m
+                    json.radius_of_containment = Some(185.2.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category8);
+                    return true;
+                }
+
+                if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
+                    // 75 m
+                    json.radius_of_containment = Some(75.0.into());
+                    json.navigation_integrity_category =
+                        Some(NavigationIntegrityCategory::Category9);
+                    return true;
+                }
+
+                return false;
+            }
+            6 => {
+                // 25 m
+                json.radius_of_containment = Some(25.0.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category10);
+                return true;
+            }
+            5 => {
+                // 7.5 m
+                json.radius_of_containment = Some(7.5.into());
+                json.navigation_integrity_category = Some(NavigationIntegrityCategory::Category11);
+                return true;
+            }
+            _ => return false,
         }
     }
 
-    if let (Some(nic_supplment_a), Some(nic_supplment_c)) =
-        (&json.nic_supplement_a, &json.nic_supplement_c)
-    {
-        if let Some(surface_type_code) = json.surface_type_code {
-            match surface_type_code {
-                0 => {
-                    json.radius_of_containment = None;
-                    json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
-                    return;
-                }
-                8 => {
-                    if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
-                        json.radius_of_containment = None;
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Unknown);
-                        return;
-                    }
+    false
+}
 
-                    if *nic_supplment_a == 0 && *nic_supplment_c == 1 {
-                        // 1111.2 m
-                        json.radius_of_containment = Some(1111.2.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category6);
-                        return;
-                    }
+fn update_nic_and_radius_of_containement(json: &mut JSONMessage) {
+    // if json.nic_supplement_b and json.nic_supplement_a are both some, lets process
 
-                    if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
-                        // 555.6 m
-                        json.radius_of_containment = Some(555.6.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category6);
-                        return;
-                    }
-
-                    if *nic_supplment_a == 1 && *nic_supplment_c == 1 {
-                        // 370.4 m
-                        json.radius_of_containment = Some(370.4.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category7);
-                        return;
-                    }
-                }
-                7 => {
-                    if *nic_supplment_a == 0 && *nic_supplment_c == 0 {
-                        // 185.2 m
-                        json.radius_of_containment = Some(185.2.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category8);
-                        return;
-                    }
-
-                    if *nic_supplment_a == 1 && *nic_supplment_c == 0 {
-                        // 75 m
-                        json.radius_of_containment = Some(75.0.into());
-                        json.navigation_integrity_category =
-                            Some(NavigationIntegrityCategory::Category9);
-                        return;
-                    }
-                }
-                6 => {
-                    // 25 m
-                    json.radius_of_containment = Some(25.0.into());
-                    json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category10);
-                    return;
-                }
-                5 => {
-                    // 7.5 m
-                    json.radius_of_containment = Some(7.5.into());
-                    json.navigation_integrity_category =
-                        Some(NavigationIntegrityCategory::Category11);
-                    return;
-                }
-                _ => (),
-            }
-        }
+    if update_nic_and_radius_of_containment_nic_a_and_b(json) {
+        return;
     }
+
+    if update_nic_and_radius_of_containment_a_and_c(json) {
+        return;
+    }
+
     // We've made it to here and can't sus out the radius of containment. Set it to None.
     json.radius_of_containment = None;
     json.navigation_integrity_category = Some(NavigationIntegrityCategory::Unknown);
