@@ -24,8 +24,12 @@ use super::{
         airbornevelocity::AirborneVelocity,
         airbornevelocitysubtype::AirborneVelocitySubType,
         aircraftstatus::AircraftStatus,
+        autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
         emergencystate::EmergencyState,
+        fms::IsFMS,
+        heading::SelectedHeadingStatus,
         identification::Identification,
+        modevalidity::IsValidMode,
         noposition::NoPosition,
         operationstatus::{CapabilityClass, OperationStatus},
         surfaceposition::SurfacePosition,
@@ -203,13 +207,13 @@ pub fn update_target_state_and_status_information(
 ) {
     let altitude = target_state_and_status_information.altitude;
     json.selected_altimeter = Some(target_state_and_status_information.qnh.into());
-    if target_state_and_status_information.is_fms {
+    if target_state_and_status_information.is_fms == IsFMS::FMS {
         json.flight_management_system_selected_altitude = Some(altitude.into());
     } else {
         json.autopilot_selected_altitude = Some(altitude.into());
     }
 
-    if target_state_and_status_information.is_heading {
+    if target_state_and_status_information.is_heading == SelectedHeadingStatus::Valid {
         json.autopilot_selected_heading = Some(target_state_and_status_information.heading.into());
     }
 
@@ -223,30 +227,30 @@ pub fn update_target_state_and_status_information(
         SourceIntegrityLevel::try_from(target_state_and_status_information.sil).unwrap_or_default(),
     );
 
-    if target_state_and_status_information.mode_validity {
+    if target_state_and_status_information.mode_validity == IsValidMode::ValidMode {
         let mut output_modes: Vec<NavigationModes> = Vec::new();
 
-        if target_state_and_status_information.autopilot {
+        if target_state_and_status_information.autopilot == AutopilotEngaged::Engaged {
             output_modes.push(NavigationModes::Autopilot);
         }
 
-        if target_state_and_status_information.vnac {
+        if target_state_and_status_information.vnac == VNAVEngaged::Engaged {
             output_modes.push(NavigationModes::VNAV);
         }
 
-        if target_state_and_status_information.alt_hold {
+        if target_state_and_status_information.alt_hold == AltitudeHold::Engaged {
             output_modes.push(NavigationModes::AltHold);
         }
 
-        if target_state_and_status_information.approach {
+        if target_state_and_status_information.approach == ApproachMode::Engaged {
             output_modes.push(NavigationModes::Approach);
         }
 
-        if target_state_and_status_information.tcas {
+        if target_state_and_status_information.tcas == TCAS::Engaged {
             output_modes.push(NavigationModes::TCAS);
         }
 
-        if target_state_and_status_information.lnav {
+        if target_state_and_status_information.lnav == LNAV::Engaged {
             output_modes.push(NavigationModes::LNAV);
         }
 

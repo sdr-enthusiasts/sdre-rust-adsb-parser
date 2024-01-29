@@ -7,6 +7,13 @@
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
+use super::{
+    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+    fms::IsFMS,
+    heading::SelectedHeadingStatus,
+    modevalidity::IsValidMode,
+};
+
 /// Target State and Status (§2.2.3.2.7.1)
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, PartialEq)]
 pub struct TargetStateAndStatusInformation {
@@ -14,8 +21,7 @@ pub struct TargetStateAndStatusInformation {
     // TODO Support reserved 2..=3
     #[deku(bits = "2", assert_eq = "1")]
     pub subtype: u8,
-    #[deku(bits = "1")]
-    pub is_fms: bool,
+    pub is_fms: IsFMS,
     #[deku(
         bits = "12",
         endian = "big",
@@ -28,12 +34,11 @@ pub struct TargetStateAndStatusInformation {
         map = "|qnh: u32| -> Result<_, DekuError> {if qnh == 0 { Ok(0.0) } else { Ok(800.0 + ((qnh - 1) as f32) * 0.8)}}"
     )]
     pub qnh: f32,
-    #[deku(bits = "1")]
-    pub is_heading: bool,
+    pub is_heading: SelectedHeadingStatus,
     #[deku(
         bits = "9",
         endian = "big",
-        map = "|heading: u16| -> Result<_, DekuError> {Ok(heading as f32 * 180.0 / 256.0)}"
+        map = "|heading: u16| -> Result<_, DekuError> {Ok(f32::from(heading) * 180.0 / 256.0)}"
     )]
     pub heading: f32,
     #[deku(bits = "4")]
@@ -42,22 +47,15 @@ pub struct TargetStateAndStatusInformation {
     pub nicbaro: u8,
     #[deku(bits = "2")]
     pub sil: u8,
-    #[deku(bits = "1")]
-    pub mode_validity: bool,
-    #[deku(bits = "1")]
-    pub autopilot: bool,
-    #[deku(bits = "1")]
-    pub vnac: bool,
-    #[deku(bits = "1")]
-    pub alt_hold: bool,
+    pub mode_validity: IsValidMode,
+    pub autopilot: AutopilotEngaged,
+    pub vnac: VNAVEngaged,
+    pub alt_hold: AltitudeHold,
     #[deku(bits = "1")]
     pub reserved0: u8,
-    #[deku(bits = "1")]
-    pub approach: bool,
-    #[deku(bits = "1")]
-    pub tcas: bool,
-    #[deku(bits = "1")]
-    pub lnav: bool,
+    pub approach: ApproachMode,
+    pub tcas: TCAS,
+    pub lnav: LNAV,
     #[deku(bits = "2")]
     pub reserved1: u8,
 }
@@ -72,6 +70,7 @@ impl TargetStateAndStatusInformation {
 #[cfg(test)]
 mod test {
     use crate::decoders::raw::NewAdsbRawMessage;
+    use crate::decoders::raw_types::autopilot_modes::{LNAV, TCAS};
     use crate::decoders::raw_types::df::DF;
     use crate::decoders::raw_types::me::ME;
 
@@ -85,22 +84,22 @@ mod test {
 
         let expected = TargetStateAndStatusInformation {
             subtype: 1,
-            is_fms: false,
+            is_fms: IsFMS::Autopilot,
             altitude: 28000,
             qnh: 1013.6,
-            is_heading: true,
+            is_heading: SelectedHeadingStatus::Valid,
             heading: 257.34375,
             nacp: 10,
             nicbaro: 1,
             sil: 3,
-            mode_validity: false,
-            autopilot: false,
-            vnac: false,
+            mode_validity: IsValidMode::InvalidMode,
+            autopilot: AutopilotEngaged::Disengaged,
+            vnac: VNAVEngaged::Disengaged,
             reserved0: 0,
-            alt_hold: false,
-            approach: false,
-            tcas: true,
-            lnav: false,
+            alt_hold: AltitudeHold::Disengaged,
+            approach: ApproachMode::Disengaged,
+            tcas: TCAS::Engaged,
+            lnav: LNAV::Disengaged,
             reserved1: 0,
         };
 

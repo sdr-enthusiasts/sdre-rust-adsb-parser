@@ -42,8 +42,7 @@ use sdre_rust_adsb_parser::{
         encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
     },
     state_machine::state::{
-        expire_planes, generate_aircraft_json, ProcessMessageType, Machine,
-        MachineBuilder,
+        expire_planes, generate_aircraft_json, Machine, MachineBuilder, ProcessMessageType,
     },
     ADSBMessage, DecodeMessage,
 };

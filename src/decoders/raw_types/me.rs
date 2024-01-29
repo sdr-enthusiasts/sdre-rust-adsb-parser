@@ -9,9 +9,17 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Error, Write};
 
 use super::{
-    airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType,
-    aircraftstatus::AircraftStatus, altitude::Altitude, capability::Capability, icao::ICAO,
-    identification::Identification, noposition::NoPosition, operationstatus::OperationStatus,
+    airbornevelocity::AirborneVelocity,
+    airbornevelocitysubtype::AirborneVelocitySubType,
+    aircraftstatus::AircraftStatus,
+    altitude::Altitude,
+    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+    capability::Capability,
+    heading::SelectedHeadingStatus,
+    icao::ICAO,
+    identification::Identification,
+    noposition::NoPosition,
+    operationstatus::OperationStatus,
     surfaceposition::SurfacePosition,
     targetstateandstatusinformation::TargetStateAndStatusInformation,
 };
@@ -127,7 +135,7 @@ impl ME {
                         writeln!(
                             f,
                             "  Speed:         {} kt groundspeed",
-                            libm::floor(ground_speed)
+                            libm::floorf(ground_speed)
                         )?;
                         writeln!(
                             f,
@@ -209,22 +217,25 @@ impl ME {
                 writeln!(f, "  Target State and Status:")?;
                 writeln!(f, "    Target altitude:   MCP, {} ft", target_info.altitude)?;
                 writeln!(f, "    Altimeter setting: {} millibars", target_info.qnh)?;
-                if target_info.is_heading {
+                if target_info.is_heading == SelectedHeadingStatus::Valid {
                     writeln!(f, "    Target heading:    {}", target_info.heading)?;
                 }
-                if target_info.tcas {
+                if target_info.tcas == TCAS::Engaged {
                     write!(f, "    ACAS:              operational ")?;
-                    if target_info.autopilot {
+                    if target_info.autopilot == AutopilotEngaged::Engaged {
                         write!(f, "autopilot ")?;
                     }
-                    if target_info.vnac {
+                    if target_info.vnac == VNAVEngaged::Engaged {
                         write!(f, "vnav ")?;
                     }
-                    if target_info.alt_hold {
+                    if target_info.alt_hold == AltitudeHold::Engaged {
                         write!(f, "altitude-hold ")?;
                     }
-                    if target_info.approach {
+                    if target_info.approach == ApproachMode::Engaged {
                         write!(f, " approach")?;
+                    }
+                    if target_info.lnav == LNAV::Engaged {
+                        write!(f, " lnav")?;
                     }
                     writeln!(f)?;
                 } else {

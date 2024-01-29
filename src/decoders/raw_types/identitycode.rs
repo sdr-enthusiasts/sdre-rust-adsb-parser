@@ -29,12 +29,16 @@ impl IdentityCode {
         let b4: u32 = (num & 0b0_0000_0000_0010) >> 1;
         let d4: u32 = num & 0b0_0000_0000_0001;
 
-        let a: u32 = a4 << 2 | a2 << 1 | a1;
-        let b: u32 = b4 << 2 | b2 << 1 | b1;
-        let c: u32 = c4 << 2 | c2 << 1 | c1;
-        let d: u32 = d4 << 2 | d2 << 1 | d1;
+        let a_id_code: u32 = a4 << 2 | a2 << 1 | a1;
+        let b_id_code: u32 = b4 << 2 | b2 << 1 | b1;
+        let c_id_code: u32 = c4 << 2 | c2 << 1 | c1;
+        let d_id_code: u32 = d4 << 2 | d2 << 1 | d1;
 
-        let num: u16 = (a << 12 | b << 8 | c << 4 | d) as u16;
+        let num: u16 =
+            match u16::try_from(a_id_code << 12 | b_id_code << 8 | c_id_code << 4 | d_id_code) {
+                Ok(success) => success,
+                Err(e) => return Err(e.into()),
+            };
         Ok((rest, num))
     }
 }

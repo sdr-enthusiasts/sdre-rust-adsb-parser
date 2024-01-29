@@ -81,6 +81,7 @@ pub mod decoders {
         pub mod aircraftstatustype;
         pub mod airspeeddecoding;
         pub mod altitude;
+        pub mod autopilot_modes;
         pub mod bds;
         pub mod capability;
         pub mod capabilityclassairborne;
@@ -94,14 +95,17 @@ pub mod decoders {
         pub mod downlinkrequest;
         pub mod emergencystate;
         pub mod flightstatus;
+        pub mod fms;
         pub mod groundspeed;
         pub mod groundspeeddecoding;
+        pub mod heading;
         pub mod helper_functions;
         pub mod icao;
         pub mod identification;
         pub mod identitycode;
         pub mod ke;
         pub mod me;
+        pub mod modevalidity;
         pub mod noposition;
         pub mod operationalmode;
         pub mod operationcodesurface;

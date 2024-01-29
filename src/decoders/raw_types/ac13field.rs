@@ -28,7 +28,11 @@ impl AC13Field {
             let n: u32 = ((num & 0x1f80) >> 2) | ((num & 0x0020) >> 1) | (num & 0x000f);
             let n: u32 = n * 25;
             if n > 1000 {
-                Ok((rest, (n - 1000) as u16))
+                let n = match u16::try_from(n) {
+                    Ok(success) => success,
+                    Err(e) => return Err(e.into()),
+                };
+                Ok((rest, (n - 1000)))
             } else {
                 // TODO: add error
                 Ok((rest, 0))
@@ -36,7 +40,11 @@ impl AC13Field {
         } else {
             // TODO 11 bit gillham coded altitude
             if let Ok(n) = mode_a_to_mode_c(decode_id13_field(num)) {
-                Ok((rest, (100 * n) as u16))
+                let gillham = match u16::try_from(n) {
+                    Ok(success) => success,
+                    Err(e) => return Err(e.into()),
+                };
+                Ok((rest, (100 * gillham)))
             } else {
                 Ok((rest, 0))
             }

@@ -47,7 +47,7 @@ use super::{
         tisb::TiSB,
         transponderhex::TransponderHex,
     },
-    raw_types::{df::DF, me::ME},
+    raw_types::{df::DF, me::ME, surfaceposition::SurfacePosition},
     rawtojson::{
         update_airborne_velocity, update_aircraft_identification,
         update_aircraft_position_airborne, update_aircraft_position_surface,
@@ -404,6 +404,84 @@ impl JSONMessage {
         }
     }
 
+    fn handle_surface_position(&mut self, surfaceposition: &SurfacePosition, reference_position: &Position) -> Result<(), String> {
+        match update_aircraft_position_surface(
+            self,
+            surfaceposition,
+            reference_position,
+        ) {
+            Ok(()) => {
+                let latitude = match self.latitude.clone() {
+                    Some(latitude) => latitude.latitude,
+                    None => return Err("Calculated Latitude is None".into()),
+                };
+                let longitude = match self.longitude.clone() {
+                    Some(longitude) => longitude.longitude,
+                    None => return Err("Calculated Longitude is None".into()),
+                };
+                // update the distance and bearing
+                let aircraft_position = Position {
+                    latitude,
+                    longitude,
+                };
+                let (distance, bearing) =
+                    get_distance_and_direction_from_reference_position(
+                        reference_position,
+                        &aircraft_position,
+                    );
+                self.aircract_distance_from_receiving_station =
+                    Some(km_to_nm(distance).into());
+                self.aircraft_direction_from_receiving_station = Some(bearing.into());
+
+                self.last_time_seen = SecondsAgo::now();
+                self.timestamp = get_time_as_timestamp();
+                self.last_known_position = None;
+            }
+            Err(e) => return Err(e),
+        }
+
+        Ok(())
+    }
+
+    fn handle_airborne_position(&mut self, altitude: &crate::decoders::raw_types::altitude::Altitude, reference_position: &Position, baro_altitude: bool) -> Result<(), String> {
+        match update_aircraft_position_airborne(
+            self,
+            altitude,
+            baro_altitude,
+            reference_position,
+        ) {
+            Ok(()) => {
+                let latitude = match self.latitude.clone() {
+                    Some(latitude) => latitude.latitude,
+                    None => return Err("Calculated Latitude is None".into()),
+                };
+                let longitude = match self.longitude.clone() {
+                    Some(longitude) => longitude.longitude,
+                    None => return Err("Calculated Longitude is None".into()),
+                };
+                // update the distance and bearing
+                let aircraft_position = Position {
+                    latitude,
+                    longitude,
+                };
+                let (distance, bearing) =
+                    get_distance_and_direction_from_reference_position(
+                        reference_position,
+                        &aircraft_position,
+                    );
+                self.aircract_distance_from_receiving_station =
+                    Some(km_to_nm(distance).into());
+                self.aircraft_direction_from_receiving_station = Some(bearing.into());
+
+                self.last_time_seen = SecondsAgo::now();
+                self.timestamp = get_time_as_timestamp();
+                self.last_known_position = None;
+            }
+            Err(e) => return Err(e),
+        }
+        Ok(())
+    }
+
     /// Update the `JSONMessage` from a DF.
     /// # Errors
     /// Returns an error if the DF is not an ADSB message.
@@ -413,6 +491,10 @@ impl JSONMessage {
         reference_position: &Position,
         use_strict_mode: &bool,
     ) -> Result<(), String> {
+        // Reset the last time seen to "now".
+        self.last_time_seen = SecondsAgo::now();
+        self.timestamp = get_time_as_timestamp();
+
         if let DF::ADSB(adsb) = raw_adsb {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
@@ -429,79 +511,12 @@ impl JSONMessage {
                     update_aircraft_identification(self, id);
                 }
                 ME::SurfacePosition(surfaceposition) => {
-                    match update_aircraft_position_surface(
-                        self,
-                        surfaceposition,
-                        reference_position,
-                    ) {
-                        Ok(()) => {
-                            let latitude = match self.latitude.clone() {
-                                Some(latitude) => latitude.latitude,
-                                None => return Err("Calculated Latitude is None".into()),
-                            };
-                            let longitude = match self.longitude.clone() {
-                                Some(longitude) => longitude.longitude,
-                                None => return Err("Calculated Longitude is None".into()),
-                            };
-                            // update the distance and bearing
-                            let aircraft_position = Position {
-                                latitude,
-                                longitude,
-                            };
-                            let (distance, bearing) =
-                                get_distance_and_direction_from_reference_position(
-                                    reference_position,
-                                    &aircraft_position,
-                                );
-                            self.aircract_distance_from_receiving_station =
-                                Some(km_to_nm(distance).into());
-                            self.aircraft_direction_from_receiving_station = Some(bearing.into());
-
-                            self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_time_as_timestamp();
-                            self.last_known_position = None;
-                        }
-                        Err(e) => return Err(e),
-                    }
+                    return self.handle_surface_position(surfaceposition, reference_position);
                 }
                 ME::AirbornePositionGNSSAltitude(altitude)
                 | ME::AirbornePositionBaroAltitude(altitude) => {
                     let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
-                    match update_aircraft_position_airborne(
-                        self,
-                        altitude,
-                        baro_altitude,
-                        reference_position,
-                    ) {
-                        Ok(()) => {
-                            let latitude = match self.latitude.clone() {
-                                Some(latitude) => latitude.latitude,
-                                None => return Err("Calculated Latitude is None".into()),
-                            };
-                            let longitude = match self.longitude.clone() {
-                                Some(longitude) => longitude.longitude,
-                                None => return Err("Calculated Longitude is None".into()),
-                            };
-                            // update the distance and bearing
-                            let aircraft_position = Position {
-                                latitude,
-                                longitude,
-                            };
-                            let (distance, bearing) =
-                                get_distance_and_direction_from_reference_position(
-                                    reference_position,
-                                    &aircraft_position,
-                                );
-                            self.aircract_distance_from_receiving_station =
-                                Some(km_to_nm(distance).into());
-                            self.aircraft_direction_from_receiving_station = Some(bearing.into());
-
-                            self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_time_as_timestamp();
-                            self.last_known_position = None;
-                        }
-                        Err(e) => return Err(e),
-                    }
+                    return self.handle_airborne_position(altitude, reference_position, baro_altitude);
                 }
                 ME::Reserved0(_) => return Err("Reserved0 is not implemented....".into()),
                 ME::SurfaceSystemStatus(_) => {
@@ -534,20 +549,10 @@ impl JSONMessage {
                         return Err("Aircraft Operation Status reserved field is not 0".into());
                     }
 
-                    match update_operational_status(self, operation_status) {
-                        Ok(()) => {
-                            self.last_time_seen = SecondsAgo::now();
-                            self.timestamp = get_time_as_timestamp();
-                        }
-                        Err(e) => return Err(e),
-                    };
+                    return update_operational_status(self, operation_status);
                 }
             }
         }
-
-        // Reset the last time seen to "now". When the serializer is fixed properly
-        self.last_time_seen = SecondsAgo::now();
-        self.timestamp = get_time_as_timestamp();
 
         Ok(())
     }
