@@ -9,19 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Error, Write};
 
 use super::{
-    airbornevelocity::AirborneVelocity,
-    airbornevelocitysubtype::AirborneVelocitySubType,
-    aircraftstatus::AircraftStatus,
-    altitude::Altitude,
-    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
-    capability::Capability,
-    heading::SelectedHeadingStatus,
-    icao::ICAO,
-    identification::Identification,
-    noposition::NoPosition,
-    operationstatus::OperationStatus,
-    surfaceposition::SurfacePosition,
-    targetstateandstatusinformation::TargetStateAndStatusInformation,
+    airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType, aircraftstatus::AircraftStatus, altitude::Altitude, autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS}, capability::Capability, heading::SelectedHeadingStatus, icao::ICAO, identification::Identification, noposition::NoPosition, operationstatus::OperationStatus, operationstatusairborne::OperationStatusAirborne, operationstatussurface::OperationStatusSurface, surfaceposition::SurfacePosition, targetstateandstatusinformation::TargetStateAndStatusInformation
 };
 /// ADS-B Message, 5 first bits are known as Type Code (TC)
 ///
@@ -254,31 +242,74 @@ impl ME {
                 writeln!(f, "  Address:       {icao} {address_type}")?;
             }
             ME::AircraftOperationStatus(OperationStatus::Airborne(opstatus_airborne)) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Aircraft operational status (airborne)",
-                )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
-                writeln!(f, "  Air/Ground:    {capability}")?;
-                write!(f, "  Aircraft Operational Status:\n{opstatus_airborne}")?;
+                let _ = print_operation_status_airborne(&mut f, transponder, icao, capability, address_type, opstatus_airborne);
             }
             ME::AircraftOperationStatus(OperationStatus::Surface(opstatus_surface)) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Aircraft operational status (surface)",
-                )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
-                writeln!(f, "  Air/Ground:    {capability}")?;
-                write!(f, "  Aircraft Operational Status:\n {opstatus_surface}")?;
+                let _ = print_operation_status_surface(
+                    &mut f,
+                    transponder,
+                    icao,
+                    capability,
+                    address_type,
+                    opstatus_surface,
+                );
             }
             ME::AircraftOperationStatus(OperationStatus::Reserved(..)) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Aircraft operational status (reserved)",
-                )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
+                let _ = print_operation_status_reserved(&mut f, transponder, icao, address_type);
             }
         }
         Ok(f)
     }
+}
+
+fn print_operation_status_airborne(f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    capability: Capability,
+    address_type: &str,
+    opstatus_airborne: &OperationStatusAirborne
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Aircraft operational status (airborne)",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+    writeln!(f, "  Air/Ground:    {capability}")?;
+    write!(f, "  Aircraft Operational Status:\n{opstatus_airborne}")?;
+
+    Ok(())
+}
+
+fn print_operation_status_surface(
+    f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    capability: Capability,
+    address_type: &str,
+    opstatus_surface: &OperationStatusSurface,
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Aircraft operational status (surface)",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+    writeln!(f, "  Air/Ground:    {capability}")?;
+    write!(f, "  Aircraft Operational Status:\n {opstatus_surface}")?;
+
+    Ok(())
+}
+
+fn print_operation_status_reserved(
+    f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    address_type: &str,
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Aircraft operational status (reserved)",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+
+    Ok(())
 }
