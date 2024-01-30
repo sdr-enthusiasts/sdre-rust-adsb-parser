@@ -24,7 +24,7 @@ deku = { version = "0.16.0", optional = true }
 custom_error = "1.9.2"
 libm = { version = "0.2.8", optional = true }
 radix_fmt = "1.0.0"
-derive_builder = "0.12.0"
+derive_builder = "0.13.0"
 chrono = "0.4.33"
 easy-cast = "0.5.2"
 
