@@ -161,6 +161,8 @@ impl JSONMessage {
         self.pretty_print_with_options()
     }
 
+    // FIXME: Can/should this be refactored in to less lines?
+    #[allow(clippy::too_many_lines)]
     fn pretty_print_with_options(&self) -> String {
         // Go through each field and print it out
         let mut output: String = String::new();

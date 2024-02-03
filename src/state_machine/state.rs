@@ -241,9 +241,10 @@ impl Machine {
     }
 
     pub async fn print_airplane_by_hex(&self, transponder_hex: &str) {
-        match self.get_airplane_by_hex(transponder_hex).await {
-            Some(airplane) => info!("{airplane}"),
-            None => error!("No airplane found with transponder hex {transponder_hex}"),
+        if let Some(airplane) = self.get_airplane_by_hex(transponder_hex).await {
+            info!("{airplane}");
+        } else {
+            error!("No airplane found with transponder hex {transponder_hex}");
         }
     }
 

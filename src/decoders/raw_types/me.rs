@@ -15,6 +15,7 @@ use super::{
     altitude::Altitude,
     autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
     capability::Capability,
+    emergencystate::EmergencyState,
     heading::SelectedHeadingStatus,
     icao::ICAO,
     identification::Identification,
@@ -74,6 +75,8 @@ pub enum ME {
 
 impl ME {
     /// `to_string` with DF.id() input
+    // FIXME: Can/should this be refactored in to less lines?
+    #[allow(clippy::too_many_lines)]
     pub(crate) fn to_string(
         &self,
         icao: ICAO,
@@ -200,87 +203,145 @@ impl ME {
                 squawk,
                 ..
             }) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Emergency/priority status",
+                print_aircraft_status(
+                    &mut f,
+                    transponder,
+                    icao,
+                    capability,
+                    address_type,
+                    *emergency_state,
+                    *squawk,
                 )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
-                writeln!(f, "  Air/Ground:    {capability}")?;
-                writeln!(f, "  Squawk:        {squawk:02X?}")?;
-                writeln!(f, "  Emergency/priority:    {emergency_state}")?;
             }
             ME::TargetStateAndStatusInformation(target_info) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Target state and status (V2)",
+                print_target_state_and_status_information(
+                    &mut f,
+                    transponder,
+                    icao,
+                    capability,
+                    address_type,
+                    target_info,
                 )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
-                writeln!(f, "  Air/Ground:    {capability}")?;
-                writeln!(f, "  Target State and Status:")?;
-                writeln!(f, "    Target altitude:   MCP, {} ft", target_info.altitude)?;
-                writeln!(f, "    Altimeter setting: {} millibars", target_info.qnh)?;
-                if target_info.is_heading == SelectedHeadingStatus::Valid {
-                    writeln!(f, "    Target heading:    {}", target_info.heading)?;
-                }
-                if target_info.tcas == TCAS::Engaged {
-                    write!(f, "    ACAS:              operational ")?;
-                    if target_info.autopilot == AutopilotEngaged::Engaged {
-                        write!(f, "autopilot ")?;
-                    }
-                    if target_info.vnac == VNAVEngaged::Engaged {
-                        write!(f, "vnav ")?;
-                    }
-                    if target_info.alt_hold == AltitudeHold::Engaged {
-                        write!(f, "altitude-hold ")?;
-                    }
-                    if target_info.approach == ApproachMode::Engaged {
-                        write!(f, " approach")?;
-                    }
-                    if target_info.lnav == LNAV::Engaged {
-                        write!(f, " lnav")?;
-                    }
-                    writeln!(f)?;
-                } else {
-                    writeln!(f, "    ACAS:              NOT operational")?;
-                }
-                writeln!(f, "    NACp:              {}", target_info.nacp)?;
-                writeln!(f, "    NICbaro:           {}", target_info.nicbaro)?;
-                writeln!(f, "    SIL:               {} (per sample)", target_info.sil)?;
-                writeln!(f, "    QNH:               {} millibars", target_info.qnh)?;
             }
             ME::AircraftOperationalCoordination(_) => {
-                writeln!(
-                    f,
-                    " Extended Squitter{transponder}Aircraft Operational Coordination",
+                print_aircraft_operational_coordination_message(
+                    &mut f,
+                    transponder,
+                    icao,
+                    address_type,
                 )?;
-                writeln!(f, "  Address:       {icao} {address_type}")?;
             }
             ME::AircraftOperationStatus(OperationStatus::Airborne(opstatus_airborne)) => {
-                let _ = print_operation_status_airborne(
+                print_operation_status_airborne(
                     &mut f,
                     transponder,
                     icao,
                     capability,
                     address_type,
                     opstatus_airborne,
-                );
+                )?;
             }
             ME::AircraftOperationStatus(OperationStatus::Surface(opstatus_surface)) => {
-                let _ = print_operation_status_surface(
+                print_operation_status_surface(
                     &mut f,
                     transponder,
                     icao,
                     capability,
                     address_type,
                     opstatus_surface,
-                );
+                )?;
             }
             ME::AircraftOperationStatus(OperationStatus::Reserved(..)) => {
-                let _ = print_operation_status_reserved(&mut f, transponder, icao, address_type);
+                print_operation_status_reserved(&mut f, transponder, icao, address_type)?;
             }
         }
         Ok(f)
     }
+}
+
+fn print_aircraft_status(
+    f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    capability: Capability,
+    address_type: &str,
+    emergency_state: EmergencyState,
+    squawk: u32,
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Emergency/priority status",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+    writeln!(f, "  Air/Ground:    {capability}")?;
+    writeln!(f, "  Squawk:        {squawk:02X?}")?;
+    writeln!(f, "  Emergency/priority:    {emergency_state}")?;
+
+    Ok(())
+}
+
+fn print_target_state_and_status_information(
+    f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    capability: Capability,
+    address_type: &str,
+    target_info: &TargetStateAndStatusInformation,
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Target state and status (V2)",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+    writeln!(f, "  Air/Ground:    {capability}")?;
+    writeln!(f, "  Target State and Status:")?;
+    writeln!(f, "    Target altitude:   MCP, {} ft", target_info.altitude)?;
+    writeln!(f, "    Altimeter setting: {} millibars", target_info.qnh)?;
+    if target_info.is_heading == SelectedHeadingStatus::Valid {
+        writeln!(f, "    Target heading:    {}", target_info.heading)?;
+    }
+    if target_info.tcas == TCAS::Engaged {
+        write!(f, "    ACAS:              operational ")?;
+        if target_info.autopilot == AutopilotEngaged::Engaged {
+            write!(f, "autopilot ")?;
+        }
+        if target_info.vnac == VNAVEngaged::Engaged {
+            write!(f, "vnav ")?;
+        }
+        if target_info.alt_hold == AltitudeHold::Engaged {
+            write!(f, "altitude-hold ")?;
+        }
+        if target_info.approach == ApproachMode::Engaged {
+            write!(f, " approach")?;
+        }
+        if target_info.lnav == LNAV::Engaged {
+            write!(f, " lnav")?;
+        }
+        writeln!(f)?;
+    } else {
+        writeln!(f, "    ACAS:              NOT operational")?;
+    }
+    writeln!(f, "    NACp:              {}", target_info.nacp)?;
+    writeln!(f, "    NICbaro:           {}", target_info.nicbaro)?;
+    writeln!(f, "    SIL:               {} (per sample)", target_info.sil)?;
+    writeln!(f, "    QNH:               {} millibars", target_info.qnh)?;
+
+    Ok(())
+}
+
+fn print_aircraft_operational_coordination_message(
+    f: &mut String,
+    transponder: &str,
+    icao: ICAO,
+    address_type: &str,
+) -> Result<(), Error> {
+    writeln!(
+        f,
+        " Extended Squitter{transponder}Aircraft Operational Coordination",
+    )?;
+    writeln!(f, "  Address:       {icao} {address_type}")?;
+
+    Ok(())
 }
 
 fn print_operation_status_airborne(

@@ -45,6 +45,8 @@ enum FrameType {
 /// Returns a vector of bytes, with each element of the array being a frame that can be passed in to the ADSB Beast parser.
 
 #[must_use]
+// FIXME: Can/should this be refactored in to less lines?
+#[allow(clippy::too_many_lines)]
 pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
     let mut formatted_frames: Vec<Vec<u8>> = Vec::new();
     let mut leftbytes: Vec<u8> = Vec::new();
