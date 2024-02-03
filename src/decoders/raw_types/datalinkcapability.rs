@@ -7,6 +7,8 @@
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
+// FIXME: remove this lint when the issue is fixed
+#[allow(clippy::struct_excessive_bools)]
 /// To report the data link capability of the Mode S transponder/data link installation
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq)]
 pub struct DataLinkCapability {
