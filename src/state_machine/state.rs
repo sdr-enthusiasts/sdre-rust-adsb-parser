@@ -11,9 +11,12 @@
 /// use sdre_rust_adsb_parser::state_machine::state::MachineBuilder;
 /// use sdre_rust_adsb_parser::state_machine::state::ProcessMessageType;
 /// use sdre_rust_adsb_parser::decoders::helpers::cpr_calculators::Position;
+/// use sdre_rust_logging::SetupLogging;
+/// use log::info;
 /// use std::process::exit;
 ///
 /// async fn process_message() {
+///     3u8.enable_logging();
 ///     // Create a raw ADS-B message. Generally input will be from a receiver.
 ///     let raw_message = "8D4840D6202CC371C32CE0576098".to_string();
 ///     // Create a new state machine with a timeout of 10 seconds for ADS-B messages
@@ -26,7 +29,7 @@
 ///     let mut state_machine = match state_machine_builder.build() {
 ///         Ok(state_machine) => state_machine,
 ///         Err(e) => {
-///             println!("Error building state machine: {}", e);
+///             info!("Error building state machine: {}", e);
 ///             exit(1);
 ///         }
 ///     };
@@ -239,8 +242,8 @@ impl Machine {
 
     pub async fn print_airplane_by_hex(&self, transponder_hex: &str) {
         match self.get_airplane_by_hex(transponder_hex).await {
-            Some(airplane) => println!("{airplane}"),
-            None => println!("No airplane found with transponder hex {transponder_hex}"),
+            Some(airplane) => info!("{airplane}"),
+            None => error!("No airplane found with transponder hex {transponder_hex}"),
         }
     }
 
@@ -248,7 +251,7 @@ impl Machine {
         let airplanes = self.airplanes.lock().await;
 
         for (_, airplane) in airplanes.iter() {
-            println!("{airplane}");
+            info!("{airplane}");
         }
     }
 

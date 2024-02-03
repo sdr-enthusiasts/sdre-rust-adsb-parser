@@ -7,13 +7,27 @@
 use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
+#[derive(Deserialize, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
 #[serde(try_from = "u8")]
 pub enum GeometricVerticalAccuracy {
     UnknownOrGreaterThan150m,
     LessThanEqual150m,
     LessThanEqual45m,
     LessThanEqual10m,
+}
+
+impl Serialize for GeometricVerticalAccuracy {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::ser::Serializer,
+    {
+        match self {
+            GeometricVerticalAccuracy::UnknownOrGreaterThan150m => serializer.serialize_u8(0),
+            GeometricVerticalAccuracy::LessThanEqual150m => serializer.serialize_u8(1),
+            GeometricVerticalAccuracy::LessThanEqual45m => serializer.serialize_u8(2),
+            GeometricVerticalAccuracy::LessThanEqual10m => serializer.serialize_u8(3),
+        }
+    }
 }
 
 impl From<u8> for GeometricVerticalAccuracy {

@@ -24,6 +24,8 @@ pub struct Identification {
 #[cfg(test)]
 
 pub mod test {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::df::DF;
@@ -31,10 +33,12 @@ pub mod test {
 
     #[test]
     fn decode_identification() {
+        "debug".enable_logging();
+
         let message = "8DA69B9C223B5CB5082820C97A87";
         let decoded = message.to_adsb_raw().unwrap();
 
-        println!("{:?}", decoded);
+        info!("{:?}", decoded);
 
         let expected = Identification {
             tc: TypeCoding::A,

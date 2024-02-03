@@ -102,6 +102,8 @@ impl AirborneVelocity {
 
 #[cfg(test)]
 mod tests {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::{
         raw::NewAdsbRawMessage,
@@ -110,6 +112,8 @@ mod tests {
 
     #[test]
     fn test_airborne_velocity() {
+        "debug".enable_logging();
+
         let message = "8DC05BCF9909CF0DD00417286F1E";
         let decoded = message.to_adsb_raw().unwrap();
 
@@ -132,7 +136,7 @@ mod tests {
             gnss_baro_diff: 550,
         };
 
-        println!("Decoded Message: {:?}", &decoded);
+        info!("Decoded Message: {:?}", &decoded);
 
         if let DF::ADSB(adsb) = decoded.df {
             match adsb.me {

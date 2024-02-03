@@ -272,18 +272,20 @@ impl AdsbRawMessage {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use sdre_rust_logging::SetupLogging;
 
     #[test]
     fn test_message_by_itself() {
+        "debug".enable_logging();
         let input = "8DA0CA2DEA57F866C15C088DEF6F";
 
         let result = input.to_adsb_raw();
-        println!("Result: {:?}", result);
+        info!("Result: {:?}", result);
         assert!(result.is_ok(), "Failed to decode message: {:?}", result);
 
         let input = "8DAE54CAF8050002004AB867A40E";
         let result = input.to_adsb_raw();
-        println!("Result: {:?}", result);
+        info!("Result: {:?}", result);
         assert!(result.is_ok(), "Failed to decode message: {:?}", result);
     }
 }

@@ -49,18 +49,22 @@ impl NoPosition {
 
 #[cfg(test)]
 mod tests {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::raw::NewAdsbRawMessage;
 
     #[test]
     fn test_no_position_decoder() {
+        "debug".enable_logging();
+
         let message = "8DADC035002D8000000000B16E64";
         let decoded = message.to_adsb_raw().unwrap();
         let expected = NoPosition {
             st: 0,
             altitude: Some(8000),
         };
-        println!("{:?}", decoded);
+        info!("{:?}", decoded);
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {
@@ -74,13 +78,15 @@ mod tests {
 
     #[test]
     fn test_no_position_alternate() {
+        "debug".enable_logging();
+
         let message = "8EADC035002D800000000059FDEC";
         let decoded = message.to_adsb_raw().unwrap();
         let expected = NoPosition {
             st: 0,
             altitude: Some(8000),
         };
-        println!("{:?}", decoded);
+        info!("{:?}", decoded);
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {
@@ -94,13 +100,15 @@ mod tests {
 
     #[test]
     fn test_no_position_last() {
+        "debug".enable_logging();
+
         let message = "8EADC035002D7000000000B02845";
         let decoded = message.to_adsb_raw().unwrap();
         let expected = NoPosition {
             st: 0,
             altitude: Some(7975),
         };
-        println!("{:?}", decoded);
+        info!("{:?}", decoded);
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {

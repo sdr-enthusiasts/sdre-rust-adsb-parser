@@ -595,6 +595,8 @@ pub fn is_lat_lon_sane(position: Position) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::{
         raw::NewAdsbRawMessage,
@@ -611,6 +613,7 @@ mod tests {
 
     #[test]
     fn calculate_surface_position() {
+        "debug".enable_logging();
         let even = Position {
             latitude: 115609.0,
             longitude: 116941.0,
@@ -632,8 +635,8 @@ mod tests {
         .unwrap();
         let expected_lat = 52.320607072215964;
         let expected_lon = 4.730472564697266;
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -646,6 +649,7 @@ mod tests {
 
     #[test]
     fn calculate_surface_position_from_local() {
+        "debug".enable_logging();
         let aircraft_frame = Position {
             latitude: 39195.0,
             longitude: 110320.0,
@@ -662,8 +666,8 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -675,6 +679,7 @@ mod tests {
 
     #[test]
     fn calculate_surface_position_from_local_again() {
+        "debug".enable_logging();
         let aircraft_frame = Position {
             latitude: 39199.0,
             longitude: 110269.0,
@@ -691,8 +696,8 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -704,6 +709,7 @@ mod tests {
 
     #[test]
     fn calculate_surface_position_from_local_kabq() {
+        "debug".enable_logging();
         let aircraft_frame = Position {
             latitude: 126995.0,
             longitude: 18218.0,
@@ -720,8 +726,8 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -733,6 +739,7 @@ mod tests {
 
     #[test]
     fn decode_from_raw_surface_position() {
+        "debug".enable_logging();
         let message = "8CAAC4BB401C0175F7E88A134707";
 
         // DF: 10001 (17/ADSB)
@@ -761,7 +768,7 @@ mod tests {
 
             match adsb.me {
                 crate::decoders::raw_types::me::ME::SurfacePosition(surface_position) => {
-                    println!("Surface position: {:?}", surface_position);
+                    info!("Surface position: {:?}", surface_position);
                     //assert_eq!(surface_position.mov.calculate(), Some(17.0));
                     //assert_eq!(surface_position.get_heading(), Some(14.1));
                     let local = Position {
@@ -782,8 +789,8 @@ mod tests {
                         &local,
                         CPRFormat::Even,
                     );
-                    println!("Calculated position: {:?}", position);
-                    println!(
+                    info!("Calculated position: {:?}", position);
+                    info!(
                         "Expected position: {:?}",
                         Position {
                             latitude: expected_lat,
@@ -796,7 +803,7 @@ mod tests {
                 }
                 _ => {
                     // return an error
-                    println!("Not a surface position");
+                    error!("Not a surface position");
                 }
             }
         }
@@ -804,6 +811,7 @@ mod tests {
 
     #[test]
     fn calculate_local_unambiguous() {
+        "debug".enable_logging();
         let aircraft_frame = Position {
             latitude: 93000.0,
             longitude: 51372.0,
@@ -817,8 +825,8 @@ mod tests {
         let expected_lon = 3.919_372_558_593_75;
         let position =
             get_position_from_locally_unabiguous_airborne(&aircraft_frame, &local, CPRFormat::Even);
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -831,6 +839,7 @@ mod tests {
 
     #[test]
     fn cpr_calculate_position() {
+        "debug".enable_logging();
         let odd = Position {
             latitude: 74158.0,
             longitude: 50194.0,
@@ -845,8 +854,8 @@ mod tests {
                 .unwrap();
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -859,6 +868,7 @@ mod tests {
 
     #[test]
     fn cpr_calculate_position_high_lat() {
+        "debug".enable_logging();
         let even = Position {
             latitude: 108_011.0,
             longitude: 110_088.0,
@@ -871,8 +881,8 @@ mod tests {
             get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = 88.917_474_261_784_96;
         let expected_lon = 101.011_047_363_281_25;
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,
@@ -885,6 +895,8 @@ mod tests {
 
     #[test]
     fn cpr_calculate_position_negative_m() {
+        "debug".enable_logging();
+
         /*
          * The `m` value can be negative. This test provides input
          * to test that code path.
@@ -904,8 +916,8 @@ mod tests {
             get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = -35.840_195_478_019_1;
         let expected_lon = 150.283_852_435_172_9;
-        println!("Calculated position: {:?}", position);
-        println!(
+        info!("Calculated position: {:?}", position);
+        info!(
             "Expected position: {:?}",
             Position {
                 latitude: expected_lat,

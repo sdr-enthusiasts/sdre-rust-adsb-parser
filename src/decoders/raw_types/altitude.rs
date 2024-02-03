@@ -82,6 +82,8 @@ impl Altitude {
 #[cfg(test)]
 
 pub mod test {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::df::DF;
@@ -89,6 +91,8 @@ pub mod test {
 
     #[test]
     fn decode_altitude() {
+        "debug".enable_logging();
+
         let message = "8FA4955D597D8288F8C756559A37";
         let decoded = message.to_adsb_raw().unwrap();
 
@@ -103,7 +107,7 @@ pub mod test {
             lon_cpr: 51030,
         };
 
-        println!("Decoded Message: {:?}", &decoded);
+        info!("Decoded Message: {:?}", &decoded);
 
         if let DF::ADSB(adsb) = decoded.df {
             match adsb.me {

@@ -9,7 +9,11 @@
 //! # Example
 //!
 //! ```
+//! use log::info;
 //! use sdre_rust_adsb_parser::DecodeMessage;
+//! use sdre_rust_logging::SetupLogging;
+//!
+//! 3u8.enable_logging();
 //!
 //! let message = "8EADC035002D7000000000B02845";
 //!
@@ -17,13 +21,13 @@
 //!
 //! match decoded_message {
 //!     sdre_rust_adsb_parser::ADSBMessage::JSONMessage(aircraft) => {
-//!         println!("ICAO: {}", aircraft.transponder_hex);
-//!         println!("Altitude: {:?} feet", aircraft.barometric_altitude);
-//!         println!("Latitude: {:?}", aircraft.latitude);
-//!         println!("Longitude: {:?}", aircraft.longitude);
+//!         info!("ICAO: {}", aircraft.transponder_hex);
+//!         info!("Altitude: {:?} feet", aircraft.barometric_altitude);
+//!         info!("Latitude: {:?}", aircraft.latitude);
+//!         info!("Longitude: {:?}", aircraft.longitude);
 //!     }
 //!     _ => {
-//!         println!("Invalid message type");
+//!         info!("Invalid message type");
 //!     }
 //! }
 //! ```

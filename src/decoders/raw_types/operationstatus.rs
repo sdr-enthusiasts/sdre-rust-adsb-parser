@@ -176,6 +176,8 @@ impl OperationStatus {
 
 #[cfg(test)]
 mod test {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::common_types::sda::SystemDesignAssurance;
     use crate::decoders::raw::NewAdsbRawMessage;
@@ -189,9 +191,11 @@ mod test {
 
     #[test]
     fn test_operation_status_airborne() {
+        "debug".enable_logging();
+
         let message = "8DABBD47F8230006004AB87B5E9E";
         let decoded = message.to_adsb_raw().unwrap();
-        println!("Decoded {:?}", decoded);
+        info!("Decoded {:?}", decoded);
 
         let expected = OperationStatus::Airborne(OperationStatusAirborne {
             capability_class: CapabilityClassAirborne {
@@ -236,6 +240,8 @@ mod test {
 
     #[test]
     fn test_operational_status_surface() {
+        "debug".enable_logging();
+
         let message = "8CA231A6F9004402874A38F61073";
 
         let decoded = message.to_adsb_raw().unwrap();
@@ -272,7 +278,7 @@ mod test {
             reserved1: 0,
         });
 
-        println!("Decoded {:?}", decoded);
+        info!("Decoded {:?}", decoded);
 
         match decoded.df {
             DF::ADSB(adsb) => match adsb.me {

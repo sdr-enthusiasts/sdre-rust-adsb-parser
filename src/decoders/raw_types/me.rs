@@ -9,7 +9,21 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Error, Write};
 
 use super::{
-    airbornevelocity::AirborneVelocity, airbornevelocitysubtype::AirborneVelocitySubType, aircraftstatus::AircraftStatus, altitude::Altitude, autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS}, capability::Capability, heading::SelectedHeadingStatus, icao::ICAO, identification::Identification, noposition::NoPosition, operationstatus::OperationStatus, operationstatusairborne::OperationStatusAirborne, operationstatussurface::OperationStatusSurface, surfaceposition::SurfacePosition, targetstateandstatusinformation::TargetStateAndStatusInformation
+    airbornevelocity::AirborneVelocity,
+    airbornevelocitysubtype::AirborneVelocitySubType,
+    aircraftstatus::AircraftStatus,
+    altitude::Altitude,
+    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+    capability::Capability,
+    heading::SelectedHeadingStatus,
+    icao::ICAO,
+    identification::Identification,
+    noposition::NoPosition,
+    operationstatus::OperationStatus,
+    operationstatusairborne::OperationStatusAirborne,
+    operationstatussurface::OperationStatusSurface,
+    surfaceposition::SurfacePosition,
+    targetstateandstatusinformation::TargetStateAndStatusInformation,
 };
 /// ADS-B Message, 5 first bits are known as Type Code (TC)
 ///
@@ -242,7 +256,14 @@ impl ME {
                 writeln!(f, "  Address:       {icao} {address_type}")?;
             }
             ME::AircraftOperationStatus(OperationStatus::Airborne(opstatus_airborne)) => {
-                let _ = print_operation_status_airborne(&mut f, transponder, icao, capability, address_type, opstatus_airborne);
+                let _ = print_operation_status_airborne(
+                    &mut f,
+                    transponder,
+                    icao,
+                    capability,
+                    address_type,
+                    opstatus_airborne,
+                );
             }
             ME::AircraftOperationStatus(OperationStatus::Surface(opstatus_surface)) => {
                 let _ = print_operation_status_surface(
@@ -262,12 +283,13 @@ impl ME {
     }
 }
 
-fn print_operation_status_airborne(f: &mut String,
+fn print_operation_status_airborne(
+    f: &mut String,
     transponder: &str,
     icao: ICAO,
     capability: Capability,
     address_type: &str,
-    opstatus_airborne: &OperationStatusAirborne
+    opstatus_airborne: &OperationStatusAirborne,
 ) -> Result<(), Error> {
     writeln!(
         f,

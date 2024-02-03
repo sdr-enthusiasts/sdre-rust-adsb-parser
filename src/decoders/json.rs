@@ -778,6 +778,8 @@ pub struct JSONMessage {
 
 #[cfg(test)]
 mod tests {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::DecodeMessage;
     use std::fs::{read_dir, File};
@@ -785,6 +787,7 @@ mod tests {
 
     #[test]
     fn decode_directly_as_json() {
+        "debug".enable_logging();
         // open all json_*.json files in test data. convert to JSONMessage and then back to string
         let test_data: std::fs::ReadDir = read_dir("test_data").unwrap();
         for entry in test_data {
@@ -794,7 +797,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {file_name}");
+                    info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 
@@ -817,7 +820,7 @@ mod tests {
                                 );
                                 let json_message = final_message_to_process.to_json();
 
-                                println!("JSONMessage: {:?}", json_message,);
+                                info!("JSONMessage: {:?}", json_message,);
 
                                 assert!(
                                     json_message.is_ok(),
@@ -825,7 +828,7 @@ mod tests {
                                     final_message_to_process
                                 );
                             } else {
-                                println!("Skipping line {line_number}");
+                                info!("Skipping line {line_number}");
                             }
                             line_number += 1;
                         });
@@ -836,6 +839,7 @@ mod tests {
 
     #[test]
     fn decode_json_message_as_aircraft_json() {
+        "debug".enable_logging();
         let test_data: std::fs::ReadDir = read_dir("test_data").unwrap();
         for entry in test_data {
             let entry: std::fs::DirEntry = entry.unwrap();
@@ -844,7 +848,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {file_name}");
+                    info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 
@@ -866,7 +870,7 @@ mod tests {
                                     line_number
                                 );
                                 let json_message = final_message_to_process.decode_message();
-                                println!("JSONMessage: {:?}", json_message,);
+                                info!("JSONMessage: {:?}", json_message,);
 
                                 assert!(
                                     json_message.is_ok(),
@@ -883,6 +887,7 @@ mod tests {
 
     #[test]
     fn decode_json_message_individually() {
+        "debug".enable_logging();
         // open all json_*.json files in test data. convert to JSONMessage and then back to string
         let test_data: std::fs::ReadDir = read_dir("test_data").unwrap();
         for entry in test_data {
@@ -892,7 +897,7 @@ mod tests {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
                 if file_name.starts_with("json_") && file_name.ends_with(".json") {
-                    println!("Processing file: {file_name}");
+                    info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
 

@@ -69,6 +69,8 @@ impl TargetStateAndStatusInformation {
 
 #[cfg(test)]
 mod test {
+    use sdre_rust_logging::SetupLogging;
+
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::autopilot_modes::{LNAV, TCAS};
     use crate::decoders::raw_types::df::DF;
@@ -78,9 +80,11 @@ mod test {
 
     #[test]
     fn test_status_information() {
+        "debug".enable_logging();
+
         let message = "8DABEBE0EA36C866DD5C082732C5";
         let decoded = message.to_adsb_raw().unwrap();
-        println!("Decoded {:?}", decoded);
+        info!("Decoded {:?}", decoded);
 
         let expected = TargetStateAndStatusInformation {
             subtype: 1,

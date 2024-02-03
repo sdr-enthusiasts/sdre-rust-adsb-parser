@@ -39,6 +39,8 @@ impl AircraftStatus {
 #[cfg(test)]
 
 pub mod test {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::aircraftstatus::AircraftStatus;
@@ -46,10 +48,12 @@ pub mod test {
 
     #[test]
     fn decode_aircraftstatus() {
+        "debug".enable_logging();
+
         let message = "8DAB44A7E10289000000008922C1";
         let decoded = message.to_adsb_raw().unwrap();
 
-        println!("{:?}", decoded);
+        info!("{:?}", decoded);
 
         let expected = AircraftStatus {
             sub_type: AircraftStatusType::EmergencyPriorityStatus,

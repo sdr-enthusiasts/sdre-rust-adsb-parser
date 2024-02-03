@@ -258,10 +258,14 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
 
 #[cfg(test)]
 mod tests {
+    use sdre_rust_logging::SetupLogging;
+
     use super::*;
 
     #[test]
     fn test_adsb_beast_parsing_input() {
+        "debug".enable_logging();
+
         // there are 33 frames in this input. 5 of the are MODEAC frames, which we don't want to decode
         let raw_frames = [
             0x1a as u8, 0x31, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1a, 0x31, 0x0, 0x0,
@@ -321,7 +325,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:02X?}", frame);
+            info!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
@@ -349,6 +353,8 @@ mod tests {
 
     #[test]
     fn test_extra_bytes_in_input() {
+        "debug".enable_logging();
+
         // there are 33 frames in this input. 5 of the are MODEAC frames, which we don't want to decode
         let raw_frames = [
             0x1a as u8, 0x31, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1a, 0x31, 0x0, 0x0,
@@ -408,7 +414,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:02X?}", frame);
+            info!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
@@ -436,6 +442,8 @@ mod tests {
 
     #[test]
     fn test_extra_bytes_at_end_input() {
+        "debug".enable_logging();
+
         // there are 33 frames in this input. 5 of the are MODEAC frames, which we don't want to decode
         let raw_frames = [
             0x1a as u8, 0x31, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x1a, 0x31, 0x0, 0x0,
@@ -496,7 +504,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in frames.frames.iter() {
-            println!("Frame: {:02X?}", frame);
+            info!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 38,
@@ -524,6 +532,8 @@ mod tests {
 
     #[test]
     fn test_buffer_left_over_reassembly() {
+        "debug".enable_logging();
+
         let raw_frames = [
             0x1A as u8, 0x33, 0x01, 0x9B, 0x52, 0x68, 0xF7, 0xAE, 0x2F, 0x8D, 0xA6, 0x1F, 0x0E,
             0x99, 0x15, 0x31, 0x19, 0xB0, 0x04, 0x13, 0x2C, 0xE9, 0xFC, 0x1A, 0x32, 0x01, 0x9B,
@@ -577,10 +587,10 @@ mod tests {
 
         // grab the leftover bytes and prepend them to the next buffer
         let raw_frame = [frames.left_over, raw_frames.to_vec()].concat();
-        println!("using this frame: {:02X?}", raw_frame);
+        info!("using this frame: {:02X?}", raw_frame);
         let frames = format_adsb_beast_frames_from_bytes(&raw_frame);
         for frame in frames.frames.iter() {
-            println!("Frame: {:02X?}", frame);
+            info!("Frame: {:02X?}", frame);
         }
         assert!(
             frames.frames.len() == 22,
@@ -596,6 +606,8 @@ mod tests {
 
     #[test]
     fn test_double_ends_in_message_and_end_of_frame() {
+        "debug".enable_logging();
+
         let raw_frame = [
             0x1A as u8, 0x33, 0x01, 0xB5, 0xBF, 0x52, 0x0C, 0x77, 0x1D, 0x8D, 0xAB, 0x97, 0x40,
             0x59, 0x2F, 0x16, 0x98, 0xB5, 0x94, 0x6E, 0xDE, 0x10, 0x8E, 0x1A, 0x33, 0x01, 0xB5,
@@ -634,7 +646,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frame);
         for frame in frames.frames.iter() {
-            println!("Frame: {:02X?}", frame);
+            info!("Frame: {:02X?}", frame);
         }
 
         assert!(
