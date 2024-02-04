@@ -38,3 +38,6 @@ default = ["json", "raw", "beast"]
 json = []
 raw = ["dep:deku", "dep:hex", "dep:libm"]
 beast = ["raw"]
+
+[profile.release]
+lto = true

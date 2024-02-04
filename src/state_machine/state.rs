@@ -518,7 +518,7 @@ pub async fn expire_planes<S: ::std::hash::BuildHasher>(
             }
         });
 
-        info!(
+        debug!(
             "Tracking {} airplane{}. Removing {} for a new total of {}",
             airplanes.len() + planes_removed,
             if airplanes.len() + planes_removed == 1 {
