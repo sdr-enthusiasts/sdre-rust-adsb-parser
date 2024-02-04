@@ -5,6 +5,7 @@
 // https://opensource.org/licenses/MIT.
 
 use deku::prelude::*;
+use radix_fmt::radix;
 use serde::{Deserialize, Serialize};
 
 use super::{
@@ -33,6 +34,11 @@ impl AircraftStatus {
     #[must_use]
     pub const fn is_reserved_zero(&self) -> bool {
         self.reserved == 0
+    }
+
+    #[must_use]
+    pub fn get_squawk_as_octal_string(&self) -> String {
+        format!("{:04}", radix(self.squawk, 16))
     }
 }
 

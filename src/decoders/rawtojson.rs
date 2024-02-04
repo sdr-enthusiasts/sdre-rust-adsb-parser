@@ -1,5 +1,3 @@
-use radix_fmt::radix;
-
 use crate::decoders::{
     helpers::cpr_calculators::{
         get_position_from_even_odd_cpr_positions_airborne,
@@ -193,8 +191,7 @@ pub fn update_aircraft_status(json: &mut JSONMessage, operation_status: &Aircraf
         }
     }
 
-    json.transponder_squawk_code =
-        Some(format!("{:04}", radix(operation_status.squawk, 16)).into());
+    json.transponder_squawk_code = Some(operation_status.get_squawk_as_octal_string().into());
 }
 
 pub fn update_from_no_position(json: &mut JSONMessage, no_position: &NoPosition) {
