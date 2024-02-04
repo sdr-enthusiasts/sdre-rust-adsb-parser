@@ -12,6 +12,7 @@ use crate::decoders::{
 };
 
 use super::{
+    common_types::surveillancestatus::SurveillanceStatus,
     helpers::{cpr_calculators::Position, time::get_time_as_timestamp},
     json::JSONMessage,
     json_types::{
@@ -33,7 +34,6 @@ use super::{
         noposition::NoPosition,
         operationstatus::{CapabilityClass, OperationStatus},
         surfaceposition::SurfacePosition,
-        surveillancestatus::SurveillanceStatus,
         targetstateandstatusinformation::TargetStateAndStatusInformation,
         verticleratesource::VerticalRateSource,
     },
@@ -879,16 +879,13 @@ pub fn update_aircraft_position_airborne(
 
     // TODO: I feel like the alert bit should maybe be set with the SPI condition
     // but somewhere else from another value. Maybe perhaps. I don't know. I'm not sure.
+    json.flight_status = Some(altitude.ss);
     match altitude.ss {
         SurveillanceStatus::NoCondition => {
-            json.flight_status = Some(0);
             json.flight_status_special_position_id_bit = Some(0);
         }
-        SurveillanceStatus::PermanentAlert | SurveillanceStatus::TemporaryAlert => {
-            json.flight_status = Some(1);
-        }
+        SurveillanceStatus::PermanentAlert | SurveillanceStatus::TemporaryAlert => (),
         SurveillanceStatus::SPICondition => {
-            json.flight_status = Some(0);
             json.flight_status_special_position_id_bit = Some(1);
         }
     }

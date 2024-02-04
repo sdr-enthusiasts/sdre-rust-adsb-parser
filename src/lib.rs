@@ -1,5 +1,3 @@
-#![warn(clippy::pedantic)]
-
 //! This module contains the implementation of a Rust ADS-B parser.
 //!
 //! The parser supports decoding messages in JSON, Beast, and Raw formats.
@@ -49,6 +47,8 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
+
+#![warn(clippy::pedantic)]
 
 extern crate serde;
 extern crate serde_json;
@@ -122,7 +122,6 @@ pub mod decoders {
         pub mod sourcebitverticalrate;
         pub mod statusforgroundtrack;
         pub mod surfaceposition;
-        pub mod surveillancestatus;
         pub mod targetstateandstatusinformation;
         pub mod typecoding;
         pub mod utilitymessage;
@@ -173,6 +172,7 @@ pub mod decoders {
     }
     pub mod common_types {
         pub mod sda;
+        pub mod surveillancestatus;
     }
     #[cfg(feature = "raw")]
     pub mod raw;

@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 use super::{
-    common_types::sda::SystemDesignAssurance,
+    common_types::{sda::SystemDesignAssurance, surveillancestatus::SurveillanceStatus},
     helpers::{
         cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
         prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
@@ -576,7 +576,7 @@ pub struct JSONMessage {
     pub timestamp: TimeStamp,
     /// The Flight Status bit field. 2.2.3.2.3.2
     #[serde(skip_serializing_if = "Option::is_none", rename = "alert")]
-    pub flight_status: Option<u8>,
+    pub flight_status: Option<SurveillanceStatus>,
     #[serde(skip_serializing_if = "Option::is_none", rename = "alt_baro")]
     /// Aircraft altitude reported from the barometric altimeter.
     pub barometric_altitude: Option<Altitude>,

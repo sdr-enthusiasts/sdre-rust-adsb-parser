@@ -6,6 +6,7 @@
 
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
+use std::fmt::{self, Formatter};
 
 /// SPI Condition
 #[derive(
@@ -18,4 +19,15 @@ pub enum SurveillanceStatus {
     PermanentAlert = 1,
     TemporaryAlert = 2,
     SPICondition = 3,
+}
+
+impl fmt::Display for SurveillanceStatus {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            SurveillanceStatus::NoCondition => write!(f, "No condition"),
+            SurveillanceStatus::PermanentAlert => write!(f, "Permanent alert"),
+            SurveillanceStatus::TemporaryAlert => write!(f, "Temporary alert"),
+            SurveillanceStatus::SPICondition => write!(f, "SPI condition"),
+        }
+    }
 }

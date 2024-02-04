@@ -9,8 +9,10 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
+use crate::decoders::common_types::surveillancestatus::SurveillanceStatus;
+
+use super::cprheaders::CPRFormat;
 use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
-use super::{cprheaders::CPRFormat, surveillancestatus::SurveillanceStatus};
 
 /// Latitude, Longitude and Altitude information
 #[derive(
@@ -87,7 +89,6 @@ pub mod test {
     use super::*;
     use crate::decoders::raw::NewAdsbRawMessage;
     use crate::decoders::raw_types::df::DF;
-    use crate::decoders::raw_types::surveillancestatus::SurveillanceStatus;
 
     #[test]
     fn decode_altitude() {
