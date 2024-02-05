@@ -11,6 +11,7 @@ use std::fmt;
 
 use super::{
     common_types::{sda::SystemDesignAssurance, surveillancestatus::SurveillanceStatus},
+    errors::conversion::ConversionError,
     helpers::{
         cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
         prettyprint::{pretty_print_field, pretty_print_field_from_option, pretty_print_label},
@@ -410,16 +411,16 @@ impl JSONMessage {
         &mut self,
         surfaceposition: &SurfacePosition,
         reference_position: &Position,
-    ) -> Result<(), String> {
+    ) -> Result<(), ConversionError> {
         match update_aircraft_position_surface(self, surfaceposition, reference_position) {
             Ok(()) => {
                 let latitude = match self.latitude.clone() {
                     Some(latitude) => latitude.latitude,
-                    None => return Err("Calculated Latitude is None".into()),
+                    None => return Err(ConversionError::LatitudeIsNone),
                 };
                 let longitude = match self.longitude.clone() {
                     Some(longitude) => longitude.longitude,
-                    None => return Err("Calculated Longitude is None".into()),
+                    None => return Err(ConversionError::LongitudeIsNone),
                 };
                 // update the distance and bearing
                 let aircraft_position = Position {
@@ -448,16 +449,16 @@ impl JSONMessage {
         altitude: &crate::decoders::raw_types::altitude::Altitude,
         reference_position: &Position,
         baro_altitude: bool,
-    ) -> Result<(), String> {
+    ) -> Result<(), ConversionError> {
         match update_aircraft_position_airborne(self, altitude, baro_altitude, reference_position) {
             Ok(()) => {
                 let latitude = match self.latitude.clone() {
                     Some(latitude) => latitude.latitude,
-                    None => return Err("Calculated Latitude is None".into()),
+                    None => return Err(ConversionError::LatitudeIsNone),
                 };
                 let longitude = match self.longitude.clone() {
                     Some(longitude) => longitude.longitude,
-                    None => return Err("Calculated Longitude is None".into()),
+                    None => return Err(ConversionError::LongitudeIsNone),
                 };
                 // update the distance and bearing
                 let aircraft_position = Position {
@@ -488,7 +489,7 @@ impl JSONMessage {
         raw_adsb: &DF,
         reference_position: &Position,
         use_strict_mode: &bool,
-    ) -> Result<(), String> {
+    ) -> Result<(), ConversionError> {
         // Reset the last time seen to "now".
         self.last_time_seen = SecondsAgo::now();
         self.timestamp = get_time_as_timestamp();
@@ -497,7 +498,9 @@ impl JSONMessage {
             match &adsb.me {
                 ME::AirborneVelocity(velocity) => {
                     if *use_strict_mode && !velocity.is_reserved_zero() {
-                        return Err("Airborne Velocity reserved field(s) are not 0".into());
+                        return Err(ConversionError::ReservedIsNotZero {
+                            source_name: "Airborne Velocity".into(),
+                        });
                     }
 
                     update_airborne_velocity(self, velocity);
@@ -520,23 +523,35 @@ impl JSONMessage {
                         baro_altitude,
                     );
                 }
-                ME::Reserved0(_) => return Err("Reserved0 is not implemented....".into()),
-                ME::SurfaceSystemStatus(_) => {
-                    return Err("SurfaceSystemStatus is not implemented....".into())
+                ME::Reserved0(_) => {
+                    return Err(ConversionError::NotImplemented {
+                        source_name: "Reserved0".into(),
+                    })
                 }
-                ME::Reserved1(_) => return Err("Reserved1 is not implemented....".into()),
+                ME::SurfaceSystemStatus(_) => {
+                    return Err(ConversionError::NotImplemented {
+                        source_name: "Surface System Status".into(),
+                    });
+                }
+                ME::Reserved1(_) => {
+                    return Err(ConversionError::NotImplemented {
+                        source_name: "Reserved1".into(),
+                    })
+                }
                 ME::AircraftStatus(status) => {
                     if *use_strict_mode && !status.is_reserved_zero() {
-                        return Err("Aircraft Status reserved field is not 0".into());
+                        return Err(ConversionError::ReservedIsNotZero {
+                            source_name: "Aircraft Status".into(),
+                        });
                     }
 
                     update_aircraft_status(self, status);
                 }
                 ME::TargetStateAndStatusInformation(target_state_and_status_information) => {
                     if *use_strict_mode && !target_state_and_status_information.is_reserved_zero() {
-                        return Err(
-                            "Target State and Status Information reserved field is not 0".into(),
-                        );
+                        return Err(ConversionError::ReservedIsNotZero {
+                            source_name: "Target State and Status Information".into(),
+                        });
                     }
                     update_target_state_and_status_information(
                         self,
@@ -544,11 +559,15 @@ impl JSONMessage {
                     );
                 }
                 ME::AircraftOperationalCoordination(_) => {
-                    return Err("AircraftOperationalCoordination is not implemented....".into())
+                    return Err(ConversionError::NotImplemented {
+                        source_name: "Aircraft Operational Coordination".into(),
+                    });
                 }
                 ME::AircraftOperationStatus(operation_status) => {
                     if *use_strict_mode && !operation_status.is_reserved_zero() {
-                        return Err("Aircraft Operation Status reserved field is not 0".into());
+                        return Err(ConversionError::ReservedIsNotZero {
+                            source_name: "Aircraft Operation Status".into(),
+                        });
                     }
 
                     return update_operational_status(self, operation_status);

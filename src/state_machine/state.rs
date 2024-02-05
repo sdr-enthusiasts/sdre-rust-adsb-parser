@@ -87,6 +87,7 @@ use std::sync::Arc;
 use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
 
+use crate::decoders::errors::conversion::ConversionError;
 use crate::decoders::helpers::cpr_calculators::Position;
 use crate::decoders::helpers::time::get_time_as_f64;
 use crate::decoders::json_types::lastknownposition::LastKnownPosition;
@@ -273,7 +274,7 @@ impl Machine {
         }
 
         while let Some(message) = self.channels.output_channel.recv().await {
-            let mut result: Result<(), String> = Ok(());
+            let mut result: Result<(), ConversionError> = Ok(());
 
             match message.clone() {
                 ProcessMessageType::Raw(raw_message) => {
@@ -386,7 +387,10 @@ impl Machine {
     /// If the airplane exists, it is updated.
     /// # Errors
     /// If the message cannot be decoded, an error is returned.
-    pub async fn process_aircraft_raw(&mut self, message: AdsbRawMessage) -> Result<(), String> {
+    pub async fn process_aircraft_raw(
+        &mut self,
+        message: AdsbRawMessage,
+    ) -> Result<(), ConversionError> {
         if let DF::ADSB(adsb) = &message.df {
             let mut airplanes = self.airplanes.lock().await;
 
@@ -429,7 +433,7 @@ impl Machine {
     pub async fn process_aircraft_beast(
         &mut self,
         message: AdsbBeastMessage,
-    ) -> Result<(), String> {
+    ) -> Result<(), ConversionError> {
         self.process_aircraft_raw(message.raw_message).await
     }
 }

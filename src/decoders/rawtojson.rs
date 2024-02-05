@@ -11,6 +11,7 @@ use crate::decoders::{
 
 use super::{
     common_types::surveillancestatus::SurveillanceStatus,
+    errors::conversion::ConversionError,
     helpers::{cpr_calculators::Position, time::get_time_as_timestamp},
     json::JSONMessage,
     json_types::{
@@ -88,10 +89,13 @@ pub fn update_aircraft_identification(json: &mut JSONMessage, id: &Identificatio
 pub fn update_operational_status(
     json: &mut JSONMessage,
     operation_status: &OperationStatus,
-) -> Result<(), String> {
+) -> Result<(), ConversionError> {
     // If this is not an airborne message or sufrace we can't do anything with it.
     if operation_status.is_reserved() {
-        return Err("Reserved operation status".into());
+        return Err(ConversionError::UnknownMessageType {
+            message_me: "Operation Status".into(),
+            me_type: "Reserved0".into(),
+        });
     }
 
     if operation_status.is_surface() {
@@ -112,7 +116,7 @@ pub fn update_operational_status(
             json.version = Some(ADSBVersion::Version3);
         }
         super::raw_types::adsbversion::ADSBVersion::Unknown => {
-            return Err("Unknown ADSB version".into());
+            return Err(ConversionError::UnknownADSBVersion);
         }
     }
 
@@ -125,7 +129,7 @@ pub fn update_operational_status(
             json.nic_supplement_b = None;
         }
         CapabilityClass::Unknown => {
-            return Err("Unknown capability class".into());
+            return Err(ConversionError::UknownCapabilityClass);
         }
     }
 
@@ -136,7 +140,7 @@ pub fn update_operational_status(
             // TODO: handle TCAS RA active
         }
         None => {
-            return Err("Unknown operational mode".into());
+            return Err(ConversionError::UnknownOperationalMode);
         }
     }
 
@@ -370,13 +374,13 @@ fn calculate_position_from_last_known_position(
     cpr_flag: CPRFormat,
     position_type: &PositionType,
     current_time: f64,
-) -> Result<(), String> {
+) -> Result<(), ConversionError> {
     if let (Some(lat), Some(lon)) = (&json.latitude, &json.longitude) {
         if lat.latitude == 0.0 || lon.longitude == 0.0 {
-            return Err(format!(
-                "{}: Last known position is {}, {}. Unable to calculate position.",
-                json.transponder_hex, lat.latitude, lon.longitude
-            ));
+            return Err(ConversionError::LatitudeOrLongitudeIsZero {
+                lat: lat.latitude,
+                lon: lon.longitude,
+            });
         }
 
         let reference_position = Position {
@@ -451,12 +455,12 @@ fn calculate_position_from_last_known_position(
 
             if speed != 0.0 && distance_traveled != 0.0 {
                 if distance_traveled <= distance * 1.1 && distance_traveled >= distance * 0.9 {
-                    info!(
+                    error!(
                     "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
                     json.transponder_hex, distance_traveled, distance
                 );
                 } else {
-                    info!(
+                    error!(
                     "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
                     json.transponder_hex, distance_traveled, distance
                 );
@@ -491,10 +495,7 @@ fn calculate_position_from_last_known_position(
         }
     }
 
-    Err(format!(
-        "{}: Unable to calculate position.",
-        json.transponder_hex
-    ))
+    Err(ConversionError::UnableToCalculatePosition)
 }
 
 fn update_position(
@@ -505,7 +506,7 @@ fn update_position(
     cpr_flag: CPRFormat,
     current_time: f64,
     position_type: &PositionType,
-) -> Result<(), String> {
+) -> Result<(), ConversionError> {
     if calculate_position_from_even_odd(
         json,
         even_frame,
@@ -773,7 +774,7 @@ pub fn update_aircraft_position_surface(
     json: &mut JSONMessage,
     surface_position: &SurfacePosition,
     reference_position: &Position,
-) -> Result<(), String> {
+) -> Result<(), ConversionError> {
     json.barometric_altitude = Some("ground".into());
     json.surface_type_code = Some(surface_position.type_code);
 
@@ -859,7 +860,7 @@ pub fn update_aircraft_position_airborne(
     altitude: &super::raw_types::altitude::Altitude,
     baro_altitude: bool,
     reference_position: &Position,
-) -> Result<(), String> {
+) -> Result<(), ConversionError> {
     if let Some(alt) = &altitude.alt {
         if baro_altitude {
             json.barometric_altitude = Some((*alt).into());

@@ -181,6 +181,10 @@ pub mod decoders {
         pub mod prettyprint;
         pub mod time;
     }
+
+    pub mod errors {
+        pub mod conversion;
+    }
 }
 
 pub mod error_handling {
