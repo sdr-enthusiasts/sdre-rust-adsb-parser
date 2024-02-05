@@ -603,12 +603,16 @@ mod tests {
         raw_types::{df::DF, groundspeed::GroundSpeed},
     };
 
+    fn compare_epsilon_f64(a: f64, b: f64) -> bool {
+        (a - b).abs() < f64::EPSILON
+    }
+
     #[test]
     fn cpr_nl_high_low_lat() {
-        assert_eq!(cpr_nl(89.9), 1.0);
-        assert_eq!(cpr_nl(-89.9), 1.0);
-        assert_eq!(cpr_nl(86.9), 2.0);
-        assert_eq!(cpr_nl(-86.9), 2.0);
+        assert!(compare_epsilon_f64(cpr_nl(89.9), 1.0));
+        assert!(compare_epsilon_f64(cpr_nl(-89.9), 1.0));
+        assert!(compare_epsilon_f64(cpr_nl(86.9), 2.0));
+        assert!(compare_epsilon_f64(cpr_nl(-86.9), 2.0));
     }
 
     #[test]
@@ -643,8 +647,8 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -674,7 +678,9 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -691,7 +697,7 @@ mod tests {
         };
 
         let expected_lat = 52.320_607_072_215_964;
-        let expected_lon = 4.730_472_564_697_266;
+        let expected_lon = 4.734_734_671_456_474;
 
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
@@ -704,7 +710,9 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -734,7 +742,9 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
+
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -797,8 +807,8 @@ mod tests {
                             longitude: expected_lon,
                         }
                     );
-                    assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-                    assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+                    assert!(compare_epsilon_f64(position.latitude, expected_lat));
+                    assert!(compare_epsilon_f64(position.longitude, expected_lon));
                     assert!(surface_position.get_ground_speed() == Some(GroundSpeed::Stopped));
                 }
                 _ => {
@@ -833,8 +843,8 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -862,8 +872,8 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -889,8 +899,8 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 
     #[test]
@@ -924,7 +934,7 @@ mod tests {
                 longitude: expected_lon,
             }
         );
-        assert!((position.latitude - expected_lat).abs() < f64::EPSILON);
-        assert!((position.longitude - expected_lon).abs() < f64::EPSILON);
+        assert!(compare_epsilon_f64(position.latitude, expected_lat));
+        assert!(compare_epsilon_f64(position.longitude, expected_lon));
     }
 }

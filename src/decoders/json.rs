@@ -818,7 +818,7 @@ mod tests {
             if path.is_file() {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
-                if file_name.starts_with("json_") && file_name.ends_with(".json") {
+                if file_name.starts_with("json_") && file_name.to_lowercase().ends_with(".json") {
                     info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
@@ -867,7 +867,7 @@ mod tests {
             if path.is_file() {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
-                if file_name.starts_with("json_") && file_name.ends_with(".json") {
+                if file_name.starts_with("json_") && file_name.to_lowercase().ends_with(".json") {
                     info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);
@@ -914,7 +914,7 @@ mod tests {
             if path.is_file() {
                 let mut line_number: i32 = 1;
                 let file_name: &str = path.file_name().unwrap().to_str().unwrap();
-                if file_name.starts_with("json_") && file_name.ends_with(".json") {
+                if file_name.starts_with("json_") && file_name.to_lowercase().ends_with(".json") {
                     info!("Processing file: {file_name}");
                     let file: File = File::open(path).unwrap();
                     let reader: std::io::BufReader<File> = std::io::BufReader::new(file);

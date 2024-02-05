@@ -119,6 +119,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn test_ground_speed() {
         assert_eq!(GroundSpeed::None.calculate(), None);
         assert_eq!(GroundSpeed::Stopped.calculate(), Some(0.0));

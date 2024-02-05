@@ -216,6 +216,7 @@ mod test {
     }
 
     #[test]
+    #[allow(clippy::too_many_lines)]
     fn test_adsb_json_parsing_input_multiple_frames_with_leftover_from_bytes() {
         let input = [
             0x7b_u8, 0x22, 0x6e, 0x6f, 0x77, 0x22, 0x20, 0x3a, 0x20, 0x31, 0x37, 0x30, 0x31, 0x31,
