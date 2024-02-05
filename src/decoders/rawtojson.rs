@@ -167,6 +167,8 @@ pub fn update_operational_status(
     if let Some(sil) = operation_status.get_source_integrity_level() {
         json.source_integrity_level =
             Some(SourceIntegrityLevel::try_from(sil).unwrap_or(SourceIntegrityLevel::Level0));
+    } else {
+        json.source_integrity_level = Some(SourceIntegrityLevel::Level0);
     }
 
     Ok(())
