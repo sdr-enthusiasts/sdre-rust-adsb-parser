@@ -140,7 +140,7 @@ impl ME {
                         writeln!(
                             f,
                             "  Speed:         {} kt groundspeed",
-                            libm::floorf(ground_speed)
+                            libm::floor(ground_speed.get_speed())
                         )?;
                         writeln!(
                             f,

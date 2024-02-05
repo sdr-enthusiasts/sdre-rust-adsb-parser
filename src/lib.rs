@@ -164,7 +164,6 @@ pub mod decoders {
         pub mod signalpower;
         pub mod sil;
         pub mod sourceintegritylevel;
-        pub mod speed;
         pub mod squawk;
         pub mod timestamp;
         pub mod tisb;
@@ -172,6 +171,7 @@ pub mod decoders {
     }
     pub mod common_types {
         pub mod sda;
+        pub mod speed;
         pub mod surveillancestatus;
     }
     #[cfg(feature = "raw")]

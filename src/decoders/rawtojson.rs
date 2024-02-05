@@ -58,10 +58,10 @@ pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVeloc
 
         match velocity.sub_type {
             AirborneVelocitySubType::GroundSpeedDecoding(_ground_speed_decoding) => {
-                json.ground_speed = Some(ground_speed.into());
+                json.ground_speed = Some(ground_speed);
             }
             AirborneVelocitySubType::AirspeedDecoding(_airspeed_decoding) => {
-                json.indicated_air_speed = Some(ground_speed.into());
+                json.indicated_air_speed = Some(ground_speed);
             }
             _ => (),
         }

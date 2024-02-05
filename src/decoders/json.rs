@@ -10,7 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::fmt;
 
 use super::{
-    common_types::{sda::SystemDesignAssurance, surveillancestatus::SurveillanceStatus},
+    common_types::{
+        sda::SystemDesignAssurance, speed::Speed, surveillancestatus::SurveillanceStatus,
+    },
     errors::conversion::ConversionError,
     helpers::{
         cpr_calculators::{get_distance_and_direction_from_reference_position, km_to_nm},
@@ -42,7 +44,6 @@ use super::{
         signalpower::SignalPower,
         sil::SourceIntegrityLevel,
         sourceintegritylevel::SourceIntegrityLevelType,
-        speed::Speed,
         squawk::Squawk,
         timestamp::TimeStamp,
         tisb::TiSB,
