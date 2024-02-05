@@ -158,10 +158,15 @@ pub fn update_operational_status(
             Some(NavigationIntegrityCategory::try_from(nacp).unwrap_or_default());
     }
 
-    if let Some(sil_supplement) = operation_status.get_source_integrity_level() {
+    if let Some(sil_supplement) = operation_status.get_sil_supplement() {
         json.sil_type = Some(sil_supplement.into());
     } else {
         json.sil_type = Some(SourceIntegrityLevelType::Unknown);
+    }
+
+    if let Some(sil) = operation_status.get_source_integrity_level() {
+        json.source_integrity_level =
+            Some(SourceIntegrityLevel::try_from(sil).unwrap_or(SourceIntegrityLevel::Level0));
     }
 
     Ok(())
