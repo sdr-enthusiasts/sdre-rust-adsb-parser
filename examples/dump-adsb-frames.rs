@@ -60,19 +60,14 @@ use std::str::FromStr;
 use std::time::{Duration, Instant};
 use tokio::{io::AsyncReadExt, time::sleep};
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 enum Modes {
+    #[default]
     JSONFromURLIndividual,
     JSONFromUrlBulk,
     JSONFromTCP,
     Raw,
     Beast,
-}
-
-impl Default for Modes {
-    fn default() -> Self {
-        Modes::JSONFromURLIndividual
-    }
 }
 
 impl FromStr for Modes {
@@ -185,11 +180,11 @@ impl Args {
         };
 
         Ok(Args {
-            url: url,
-            log_verbosity: log_verbosity,
-            mode: mode,
-            only_show_errors: only_show_errors,
-            direct_decode: direct_decode,
+            url,
+            log_verbosity,
+            mode,
+            only_show_errors,
+            direct_decode,
         })
     }
 

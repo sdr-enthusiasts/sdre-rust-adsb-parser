@@ -46,7 +46,7 @@ enum PositionType {
 
 pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVelocity) {
     if let Some((heading, ground_speed, vert_speed)) = velocity.calculate() {
-        json.true_track_over_ground = Some(heading.into());
+        json.true_track_over_ground = Some(heading);
         match velocity.vrate_src {
             VerticalRateSource::BarometricPressureAltitude => {
                 json.barometric_altitude_rate = Some(vert_speed.into());

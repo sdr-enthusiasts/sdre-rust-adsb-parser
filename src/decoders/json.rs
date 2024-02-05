@@ -11,7 +11,8 @@ use std::fmt;
 
 use super::{
     common_types::{
-        sda::SystemDesignAssurance, speed::Speed, surveillancestatus::SurveillanceStatus,
+        heading::Heading, sda::SystemDesignAssurance, speed::Speed,
+        surveillancestatus::SurveillanceStatus,
     },
     errors::conversion::ConversionError,
     helpers::{
@@ -29,7 +30,6 @@ use super::{
         emergency::Emergency,
         emmittercategory::EmitterCategory,
         geometricverticalaccuracy::GeometricVerticalAccuracy,
-        heading::Heading,
         lastknownposition::LastKnownPosition,
         latitude::Latitude,
         longitude::Longitude,
@@ -831,14 +831,13 @@ mod tests {
                             line = l.unwrap();
 
                             // if the line starts with anything but a {, skip it
-                            if line.starts_with("{") && line.trim().len() > 0 {
+                            if line.starts_with('{') && !line.trim().is_empty() {
                                 // encode the line as JSONMessage
                                 // remove the trailing newline and any other characters after the '}'
                                 let final_message_to_process = line.trim().trim_end_matches(',');
                                 assert!(
-                                    final_message_to_process.ends_with("}"),
-                                    "Line {} in file does not end with a curly bracket",
-                                    line_number
+                                    final_message_to_process.ends_with('}'),
+                                    "Line {line_number} in file does not end with a curly bracket"
                                 );
                                 let json_message = final_message_to_process.to_json();
 
@@ -846,8 +845,7 @@ mod tests {
 
                                 assert!(
                                     json_message.is_ok(),
-                                    "Failed to decode JSONMessage {:?}",
-                                    final_message_to_process
+                                    "Failed to decode JSONMessage {final_message_to_process:?}"
                                 );
                             } else {
                                 info!("Skipping line {line_number}");
@@ -882,22 +880,20 @@ mod tests {
                             line = l.unwrap();
 
                             // if the line starts with anything but a {, skip it
-                            if line.starts_with("{") && line.trim().len() > 0 {
+                            if line.starts_with('{') && !line.trim().is_empty() {
                                 // encode the line as JSONMessage
                                 // remove the trailing newline and any other characters after the '}'
                                 let final_message_to_process = line.trim().trim_end_matches(',');
                                 assert!(
-                                    final_message_to_process.ends_with("}"),
-                                    "Line {} in file does not end with a curly bracket",
-                                    line_number
+                                    final_message_to_process.ends_with('}'),
+                                    "Line {line_number} in file does not end with a curly bracket"
                                 );
                                 let json_message = final_message_to_process.decode_message();
                                 info!("JSONMessage: {:?}", json_message,);
 
                                 assert!(
                                     json_message.is_ok(),
-                                    "Failed to decode JSONMessage {:?}",
-                                    final_message_to_process
+                                    "Failed to decode JSONMessage {final_message_to_process:?}"
                                 );
                             }
                             line_number += 1;
@@ -931,21 +927,19 @@ mod tests {
                             line = l.unwrap();
 
                             // if the line starts with anything but a {, skip it
-                            if line.starts_with("{") && line.trim().len() > 0 {
+                            if line.starts_with('{') && !line.trim().is_empty() {
                                 // encode the line as JSONMessage
                                 // remove the trailing newline and any other characters after the '}'
                                 let final_message_to_process = line.trim().trim_end_matches(',');
                                 assert!(
-                                    final_message_to_process.ends_with("}"),
-                                    "Line {} in file does not end with a curly bracket",
-                                    line_number
+                                    final_message_to_process.ends_with('}'),
+                                    "Line {line_number} in file does not end with a curly bracket"
                                 );
                                 let json_message = final_message_to_process.decode_message();
 
                                 assert!(
                                     json_message.is_ok(),
-                                    "Failed to decode JSONMessage {:?}",
-                                    final_message_to_process
+                                    "Failed to decode JSONMessage {final_message_to_process:?}"
                                 );
                             }
                             line_number += 1;

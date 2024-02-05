@@ -149,7 +149,6 @@ pub mod decoders {
         pub mod emergency;
         pub mod emmittercategory;
         pub mod geometricverticalaccuracy;
-        pub mod heading;
         pub mod lastknownposition;
         pub mod latitude;
         pub mod longitude;
@@ -170,6 +169,7 @@ pub mod decoders {
         pub mod transponderhex;
     }
     pub mod common_types {
+        pub mod heading;
         pub mod sda;
         pub mod speed;
         pub mod surveillancestatus;

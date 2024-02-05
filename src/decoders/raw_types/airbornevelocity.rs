@@ -7,7 +7,7 @@
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
-use crate::decoders::common_types::speed::Speed;
+use crate::decoders::common_types::{heading::Heading, speed::Speed};
 
 use super::{
     airbornevelocitysubtype::AirborneVelocitySubType, sign::Sign,
@@ -49,7 +49,7 @@ impl AirborneVelocity {
 
     /// Return effective (`heading`, `ground_speed`, `vertical_rate`) for groundspeed
     #[must_use]
-    pub fn calculate(&self) -> Option<(f32, Speed, i16)> {
+    pub fn calculate(&self) -> Option<(Heading, Speed, i16)> {
         let AirborneVelocitySubType::GroundSpeedDecoding(ground_speed) = self.sub_type else {
             return None;
         };
@@ -98,7 +98,7 @@ impl AirborneVelocity {
         // let Some(vrate) = vrate else {
         //     return None;
         // };
-        Some((heading, libm::hypotf(v_ew, v_ns).into(), vrate))
+        Some((heading.into(), libm::hypotf(v_ew, v_ns).into(), vrate))
     }
 }
 
@@ -132,7 +132,7 @@ mod tests {
             }),
             vrate_src: VerticalRateSource::GeometricAltitude,
             vrate_sign: Sign::Positive,
-            vrate_value: 0b000000001,
+            vrate_value: 0b0_0000_0001,
             reserved2: 0b00,
             gnss_sign: Sign::Positive,
             gnss_baro_diff: 550,
@@ -145,8 +145,8 @@ mod tests {
                 crate::decoders::raw_types::me::ME::AirborneVelocity(me) => {
                     assert_eq!(me, expected);
                     let (heading, ground_speed, vertical_rate) = me.calculate().unwrap();
-                    assert_eq!(heading, 76.724915);
-                    assert_eq!(ground_speed, Speed::KnotsAsF32(474.68410548490033));
+                    assert_eq!(heading, Heading::HeadingAsFloat(76.724_915));
+                    assert_eq!(ground_speed, Speed::KnotsAsF32(474.684_1));
                     assert_eq!(vertical_rate, 0);
                 }
                 _ => panic!("Expected AirborneVelocity"),

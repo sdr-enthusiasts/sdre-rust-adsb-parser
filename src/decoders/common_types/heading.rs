@@ -17,6 +17,18 @@ pub enum Heading {
     None,
 }
 
+impl Heading {
+    #[must_use]
+    pub const fn get_heading(&self) -> Option<f64> {
+        match self {
+            Heading::HeadingAsInteger(heading) => Some(*heading as f64),
+            Heading::HeadingAsFloat(heading) => Some(*heading as f64),
+            Heading::HeadingAsFloat64(heading) => Some(*heading),
+            Heading::None => None,
+        }
+    }
+}
+
 impl Serialize for Heading {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where

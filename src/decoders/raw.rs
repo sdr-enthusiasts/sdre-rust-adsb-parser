@@ -281,11 +281,11 @@ mod tests {
 
         let result = input.to_adsb_raw();
         info!("Result: {:?}", result);
-        assert!(result.is_ok(), "Failed to decode message: {:?}", result);
+        assert!(result.is_ok(), "Failed to decode message: {result:?}");
 
         let input = "8DAE54CAF8050002004AB867A40E";
         let result = input.to_adsb_raw();
         info!("Result: {:?}", result);
-        assert!(result.is_ok(), "Failed to decode message: {:?}", result);
+        assert!(result.is_ok(), "Failed to decode message: {result:?}");
     }
 }

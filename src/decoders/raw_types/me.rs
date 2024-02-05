@@ -136,7 +136,9 @@ impl ME {
                     if let Some((heading, ground_speed, vertical_rate)) =
                         airborne_velocity.calculate()
                     {
-                        writeln!(f, "  Heading:       {}", libm::ceil(f64::from(heading)))?;
+                        if let Some(heading) = heading.get_heading() {
+                            writeln!(f, "  Heading:       {}", libm::ceil(heading))?;
+                        }
                         writeln!(
                             f,
                             "  Speed:         {} kt groundspeed",
