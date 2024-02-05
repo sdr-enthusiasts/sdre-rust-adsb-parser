@@ -143,7 +143,6 @@ pub mod decoders {
         pub mod adsbversion;
         pub mod altimeter;
         pub mod altitude;
-        pub mod barorate;
         pub mod calculatedbestflightid;
         pub mod dbflags;
         pub mod emergency;
@@ -169,6 +168,7 @@ pub mod decoders {
         pub mod transponderhex;
     }
     pub mod common_types {
+        pub mod barorate;
         pub mod heading;
         pub mod sda;
         pub mod speed;

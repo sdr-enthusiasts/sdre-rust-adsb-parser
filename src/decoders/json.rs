@@ -11,7 +11,7 @@ use std::fmt;
 
 use super::{
     common_types::{
-        heading::Heading, sda::SystemDesignAssurance, speed::Speed,
+        barorate::BaroRate, heading::Heading, sda::SystemDesignAssurance, speed::Speed,
         surveillancestatus::SurveillanceStatus,
     },
     errors::conversion::ConversionError,
@@ -24,7 +24,6 @@ use super::{
         adsbversion::ADSBVersion,
         altimeter::Altimeter,
         altitude::Altitude,
-        barorate::BaroRate,
         calculatedbestflightid::CalculatedBestFlightID,
         dbflags::DBFlags,
         emergency::Emergency,

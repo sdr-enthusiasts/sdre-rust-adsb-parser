@@ -49,10 +49,10 @@ pub fn update_airborne_velocity(json: &mut JSONMessage, velocity: &AirborneVeloc
         json.true_track_over_ground = Some(heading);
         match velocity.vrate_src {
             VerticalRateSource::BarometricPressureAltitude => {
-                json.barometric_altitude_rate = Some(vert_speed.into());
+                json.barometric_altitude_rate = Some(vert_speed);
             }
             VerticalRateSource::GeometricAltitude => {
-                json.geometric_altitude_rate = Some(vert_speed.into());
+                json.geometric_altitude_rate = Some(vert_speed);
             }
         }
 
