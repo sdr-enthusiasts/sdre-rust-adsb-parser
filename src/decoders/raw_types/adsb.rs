@@ -23,7 +23,7 @@ pub struct Adsb {
 }
 
 impl Adsb {
-    /// `to_string` with DF.id() input
+    /// `to_string` with `DF.id()` input
     #[must_use]
     pub fn to_string(&self, address_type: &str) -> String {
         match self

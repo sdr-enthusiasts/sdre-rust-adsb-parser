@@ -74,7 +74,7 @@ pub enum ME {
 }
 
 impl ME {
-    /// `to_string` with DF.id() input
+    /// `to_string` with `DF.id()` input
     // FIXME: Can/should this be refactored in to less lines?
     #[allow(clippy::too_many_lines)]
     pub(crate) fn to_string(
