@@ -32,7 +32,7 @@ anyhow = "1.0.86"
 [dev-dependencies]
 generic-async-http-client = { version = "0.5.1", features = ["use_hyper"] }
 sdre-stubborn-io = "0.5.5"
-rocket = { version = "0.5.0", features = ["json"] }
+rocket = { version = "0.5.1", features = ["json"] }
 
 [features]
 default = ["json", "raw", "beast"]
