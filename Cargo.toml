@@ -20,7 +20,7 @@ serde_json = "1.0.128"
 log = "0.4.22"
 tokio = { version = "1.40.0", features = ["full"] }
 sdre-rust-logging = "0.3.4"
-deku = { version = "0.17.0", optional = true }
+deku = { version = "0.18.0", optional = true }
 custom_error = "1.9.2"
 libm = { version = "0.2.8", optional = true }
 radix_fmt = "1.0.0"
@@ -31,7 +31,7 @@ anyhow = "1.0.87"
 
 [dev-dependencies]
 generic-async-http-client = { version = "0.5.1", features = ["use_hyper"] }
-sdre-stubborn-io = "0.5.8"
+sdre-stubborn-io = "0.5.9"
 rocket = { version = "0.5.1", features = ["json"] }
 
 [features]
