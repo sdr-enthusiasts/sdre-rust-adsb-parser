@@ -27,7 +27,7 @@ radix_fmt = "1.0.0"
 derive_builder = "0.20.0"
 chrono = "0.4.38"
 easy-cast = "0.5.2"
-anyhow = "1.0.86"
+anyhow = "1.0.87"
 
 [dev-dependencies]
 generic-async-http-client = { version = "0.5.1", features = ["use_hyper"] }
