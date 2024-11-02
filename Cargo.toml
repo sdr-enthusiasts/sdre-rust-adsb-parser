@@ -22,7 +22,7 @@ tokio = { version = "1.41.0", features = ["full"] }
 sdre-rust-logging = "0.3.4"
 deku = { version = "0.18.1", optional = true }
 custom_error = "1.9.2"
-libm = { version = "0.2.8", optional = true }
+libm = { version = "0.2.11", optional = true }
 radix_fmt = "1.0.0"
 derive_builder = "0.20.2"
 chrono = "0.4.38"
