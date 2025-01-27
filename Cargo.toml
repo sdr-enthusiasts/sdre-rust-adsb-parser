@@ -16,10 +16,10 @@ description = "A Rust library for parsing ADS-B messages from a Beast, JSON or r
 [dependencies]
 hex = { version = "0.4.3", optional = true }
 serde = { version = "1.0.217", features = ["derive"] }
-serde_json = "1.0.134"
-log = "0.4.22"
-tokio = { version = "1.42.0", features = ["full"] }
-sdre-rust-logging = "0.3.8"
+serde_json = "1.0.137"
+log = "0.4.25"
+tokio = { version = "1.43.0", features = ["full"] }
+sdre-rust-logging = "0.3.10"
 deku = { version = "0.18.1", optional = true }
 custom_error = "1.9.2"
 libm = { version = "0.2.11", optional = true }
@@ -30,8 +30,8 @@ easy-cast = "0.5.3"
 anyhow = "1.0.95"
 
 [dev-dependencies]
-generic-async-http-client = { version = "0.5.1", features = ["use_hyper"] }
-sdre-stubborn-io = "0.5.13"
+generic-async-http-client = { version = "0.6.2", features = ["use_hyper"] }
+sdre-stubborn-io = "0.6.0"
 rocket = { version = "0.5.1", features = ["json"] }
 
 [features]
