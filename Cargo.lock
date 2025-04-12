@@ -604,9 +604,9 @@ dependencies = [
 
 [[package]]
 name = "generic-async-http-client"
-version = "0.6.3"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5a453aa4984a2c67877ae6b13d433b46ce79bf6b6fa23c2da29b93b9f00ac744"
+checksum = "fd90d06d306744c0746788fc20e7cfde3e26cb03713dfb74918a87c6dd53cd75"
 dependencies = [
  "futures",
  "hyper 1.6.0",
