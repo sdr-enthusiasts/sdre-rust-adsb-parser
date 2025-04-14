@@ -35,6 +35,7 @@ impl IdentityCode {
         let c = (c4 << 2) | (c2 << 1) | c1;
         let d = (d4 << 2) | (d2 << 1) | d1;
 
+        #[allow(clippy::cast_possible_truncation)]
         let num: u16 = ((a << 12) | (b << 8) | (c << 4) | d) as u16;
         Ok(num)
     }

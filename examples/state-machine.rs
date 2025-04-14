@@ -283,6 +283,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     tokio::spawn(async move {
         rocket(rocket_print_mutex_context, rocket_message_count_context).await;
         // stop the program if the rocket server stops
+        info!("Rocket server stopped");
         exit(0);
     });
 

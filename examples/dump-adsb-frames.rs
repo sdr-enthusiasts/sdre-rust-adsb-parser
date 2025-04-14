@@ -32,7 +32,6 @@
 /// ```
 ///
 /// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
-
 #[macro_use]
 extern crate log;
 use generic_async_http_client::{Request, Response};

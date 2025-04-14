@@ -42,6 +42,7 @@ impl AC13Field {
         } else {
             // TODO 11 bit gillham coded altitude
             if let Ok(n) = mode_a_to_mode_c(decode_id13_field(u32::from(num))) {
+                #[allow(clippy::cast_possible_truncation)]
                 Ok((100 * n) as u16)
             } else {
                 Ok(0)
