@@ -6,6 +6,7 @@
 
 use crate::MessageResult;
 //use deku::bitvec::{BitSlice, Msb0};
+use deku::no_std_io::Cursor;
 use deku::prelude::*;
 use hex;
 use serde::{Deserialize, Serialize};
@@ -51,8 +52,8 @@ pub trait NewAdsbBeastMessage {
 impl NewAdsbBeastMessage for String {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         let bytes: Vec<u8> = hex::decode(self)?;
-        match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbBeastMessage::from_bytes(&bytes) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -69,8 +70,8 @@ impl NewAdsbBeastMessage for String {
 impl NewAdsbBeastMessage for str {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
         let bytes: Vec<u8> = hex::decode(self)?;
-        match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbBeastMessage::from_bytes(&bytes) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -87,8 +88,8 @@ impl NewAdsbBeastMessage for str {
 /// Both of those are handled by `helpers::encode_adsb_beast_input::format`_* methods.
 impl NewAdsbBeastMessage for &Vec<u8> {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
-        match AdsbBeastMessage::from_bytes((self, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbBeastMessage::from_bytes(self) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -105,8 +106,8 @@ impl NewAdsbBeastMessage for &Vec<u8> {
 /// Both of those are handled by `helpers::encode_adsb_beast_input::format`_* methods.
 impl NewAdsbBeastMessage for &[u8] {
     fn to_adsb_beast(&self) -> MessageResult<AdsbBeastMessage> {
-        match AdsbBeastMessage::from_bytes((self, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbBeastMessage::from_bytes(self) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -144,6 +145,14 @@ pub struct AdsbBeastMessage {
 }
 
 impl AdsbBeastMessage {
+    pub fn from_bytes(buf: &[u8]) -> Result<Self, DekuError> {
+        let mut cursor = Cursor::new(buf);
+        match Self::from_reader((&mut cursor, 0)) {
+            Ok((_, message)) => Ok(message),
+            Err(e) => Err(e),
+        }
+    }
+
     /// Converts `AdsbBeastMessage` to `String`.
     /// # Errors
     /// If the conversion to a `String` fails, the error is returned.

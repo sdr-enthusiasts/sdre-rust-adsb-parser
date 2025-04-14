@@ -68,7 +68,7 @@ use decoders::aircraftjson::AircraftJSON;
 use decoders::json::JSONMessage;
 #[cfg(feature = "raw")]
 use decoders::raw::AdsbRawMessage;
-use deku::prelude::*;
+use deku::{no_std_io, prelude::*};
 use serde::{Deserialize, Serialize};
 pub mod decoders {
     pub mod rawtojson;
@@ -259,13 +259,13 @@ impl DecodeMessage for String {
             }
         };
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes(&bytes) {
+            Ok(body) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes(&bytes) {
+            Ok(body) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
@@ -309,13 +309,13 @@ impl DecodeMessage for str {
             }
         };
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes(&bytes) {
+            Ok(body) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&bytes, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes(&bytes) {
+            Ok(body) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
@@ -342,14 +342,14 @@ impl DecodeMessage for str {
 /// This does not consume the `&[u8]`.
 impl DecodeMessage for &[u8] {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes(self) {
+            Ok(body) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes(self) {
+            Ok(body) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
@@ -378,14 +378,14 @@ impl DecodeMessage for &[u8] {
 
 impl DecodeMessage for Vec<u8> {
     fn decode_message(&self) -> MessageResult<ADSBMessage> {
-        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
+        let error_beast: DeserializationError = match AdsbBeastMessage::from_bytes(self) {
+            Ok(body) => return Ok(ADSBMessage::AdsbBeastMessage(body)),
             Err(e) => e.into(),
         };
 
         // try to decode it as a raw frame
-        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes((&self, 0)) {
-            Ok((_, body)) => return Ok(ADSBMessage::AdsbRawMessage(body)),
+        let error_raw: DeserializationError = match AdsbRawMessage::from_bytes(self) {
+            Ok(body) => return Ok(ADSBMessage::AdsbRawMessage(body)),
             Err(e) => e.into(),
         };
 
@@ -532,4 +532,47 @@ impl Default for ADSBMessage {
     fn default() -> Self {
         ADSBMessage::JSONMessage(JSONMessage::default())
     }
+}
+
+pub trait DekuContainerRead<'a>: DekuReader<'a, ()> {
+    /// Construct type from Reader implementing [`no_std_io::Read`].
+    /// * **input** - Input given as "Reader" and bit offset
+    ///
+    /// # Returns
+    /// (amount of total bits read, Self)
+    ///
+    /// [BufRead]: std::io::BufRead
+    ///
+    /// # Example
+    /// ```rust, no_run
+    /// # use std::io::{Seek, SeekFrom, Read};
+    /// # use std::fs::File;
+    /// # use deku::prelude::*;
+    /// #[derive(Debug, DekuRead, DekuWrite, PartialEq, Eq, Clone)]
+    /// #[deku(endian = "big")]
+    /// struct EcHdr {
+    ///     magic: [u8; 4],
+    ///     version: u8,
+    /// }
+    /// let mut file = File::options().read(true).open("file").unwrap();
+    /// file.seek(SeekFrom::Start(0)).unwrap();
+    /// let ec = EcHdr::from_reader((&mut file, 0)).unwrap();
+    /// ```
+    /// # Errors
+    /// This function will return an error if the input is not valid.
+    fn from_reader<R: no_std_io::Read + no_std_io::Seek>(
+        input: (&'a mut R, usize),
+    ) -> Result<(usize, Self), DekuError>
+    where
+        Self: Sized;
+
+    /// Read bytes and construct type
+    /// * **input** - Input given as data and bit offset
+    ///
+    /// Returns the remaining bytes and bit offset after parsing in addition to Self.
+    /// # Errors
+    /// This function will return an error if the input is not valid.
+    fn from_bytes(input: (&'a [u8], usize)) -> Result<((&'a [u8], usize), Self), DekuError>
+    where
+        Self: Sized;
 }

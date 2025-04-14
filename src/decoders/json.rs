@@ -634,7 +634,7 @@ pub struct JSONMessage {
     /// The transponder hex identifier of the aircraft.
     #[serde(rename = "hex")]
     pub transponder_hex: TransponderHex,
-    /// {lat, lon, nic, rc, seen_pos} when the regular lat and lon are older than 60 seconds they are no longer considered valid,
+    /// {lat, lon, nic, rc, `seen_pos`} when the regular lat and lon are older than 60 seconds they are no longer considered valid,
     /// this will provide the last position and show the age for the last position. aircraft will only be in the aircraft json
     /// if a position has been received in the last 60 seconds or if any message has been received in the last 30 seconds.
     #[serde(skip_serializing_if = "Option::is_none", rename = "lastPosition")]
@@ -840,7 +840,7 @@ mod tests {
                                 );
                                 let json_message = final_message_to_process.to_json();
 
-                                info!("JSONMessage: {:?}", json_message,);
+                                info!("JSONMessage: {json_message:?}",);
 
                                 assert!(
                                     json_message.is_ok(),
@@ -888,7 +888,7 @@ mod tests {
                                     "Line {line_number} in file does not end with a curly bracket"
                                 );
                                 let json_message = final_message_to_process.decode_message();
-                                info!("JSONMessage: {:?}", json_message,);
+                                info!("JSONMessage: {json_message:?}",);
 
                                 assert!(
                                     json_message.is_ok(),

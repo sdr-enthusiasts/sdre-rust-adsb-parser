@@ -7,7 +7,7 @@
 // With MASSIVE thanks to https://github.com/rsadsb/adsb_deku
 
 use crate::MessageResult;
-use deku::bitvec::{BitSlice, Msb0};
+use deku::no_std_io::{Cursor, Read, Seek};
 use deku::prelude::*;
 use hex;
 use serde::{Deserialize, Serialize};
@@ -38,8 +38,8 @@ pub trait NewAdsbRawMessage {
 impl NewAdsbRawMessage for String {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
-        match AdsbRawMessage::from_bytes((&bytes, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbRawMessage::from_bytes(&bytes) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -55,8 +55,8 @@ impl NewAdsbRawMessage for String {
 impl NewAdsbRawMessage for str {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
         let bytes = hex::decode(self)?;
-        match AdsbRawMessage::from_bytes((&bytes, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbRawMessage::from_bytes(&bytes) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -70,8 +70,8 @@ impl NewAdsbRawMessage for str {
 /// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for &Vec<u8> {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
-        match AdsbRawMessage::from_bytes((self, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbRawMessage::from_bytes(self) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
     }
@@ -85,10 +85,38 @@ impl NewAdsbRawMessage for &Vec<u8> {
 /// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl NewAdsbRawMessage for &[u8] {
     fn to_adsb_raw(&self) -> MessageResult<AdsbRawMessage> {
-        match AdsbRawMessage::from_bytes((self, 0)) {
-            Ok((_, v)) => Ok(v),
+        match AdsbRawMessage::from_bytes(self) {
+            Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
         }
+    }
+}
+
+/// Every read to this struct will be saved into an internal cache. This is to keep the cache
+/// around for the crc without reading from the buffer twice!
+struct ReaderCrc<R: Read + Seek> {
+    reader: R,
+    cache: Vec<u8>,
+    just_seeked: bool,
+}
+
+impl<R: Read + Seek> Read for ReaderCrc<R> {
+    fn read(&mut self, buf: &mut [u8]) -> deku::no_std_io::Result<usize> {
+        let n = self.reader.read(buf);
+        if !self.just_seeked {
+            if let Ok(n) = n {
+                self.cache.extend_from_slice(&buf[..n]);
+            }
+        }
+        self.just_seeked = false;
+        n
+    }
+}
+
+impl<R: Read + Seek> Seek for ReaderCrc<R> {
+    fn seek(&mut self, pos: deku::no_std_io::SeekFrom) -> deku::no_std_io::Result<u64> {
+        self.just_seeked = true;
+        self.reader.seek(pos)
     }
 }
 
@@ -97,8 +125,6 @@ impl NewAdsbRawMessage for &[u8] {
 pub struct AdsbRawMessage {
     /// Starting with 5 bit identifier, decode packet
     pub df: DF,
-    /// Calculated from all bits, used as ICAO for Response packets
-    #[deku(reader = "Self::read_crc(df, deku::input_bits)")]
     pub crc: u32,
 }
 
@@ -187,11 +213,27 @@ impl fmt::Display for AdsbRawMessage {
 /// The input used for deserializing in to this struct should not contain the adsb raw control characters `*` or `;` or `\n`
 /// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl AdsbRawMessage {
+    pub fn from_bytes(buf: &[u8]) -> Result<Self, DekuError> {
+        let cursor = Cursor::new(buf);
+        Self::from_reader(cursor)
+    }
+
+    pub fn from_reader<R: Read + Seek>(r: R) -> Result<Self, DekuError> {
+        let mut reader_crc = ReaderCrc {
+            reader: r,
+            cache: vec![],
+            just_seeked: false,
+        };
+        let mut reader = Reader::new(&mut reader_crc);
+        let df = DF::from_reader_with_ctx(&mut reader, ())?;
+
+        let crc = Self::read_crc(&df, &mut reader_crc)?;
+
+        Ok(Self { df, crc })
+    }
+
     /// Read rest as CRC bits
-    fn read_crc<'b>(
-        df: &DF,
-        rest: &'b BitSlice<u8, Msb0>,
-    ) -> Result<(&'b BitSlice<u8, Msb0>, u32), DekuError> {
+    fn read_crc<R: Read + Seek>(df: &DF, reader: &mut ReaderCrc<R>) -> Result<u32, DekuError> {
         const MODES_LONG_MSG_BYTES: usize = 14;
         const MODES_SHORT_MSG_BYTES: usize = 7;
 
@@ -206,9 +248,14 @@ impl AdsbRawMessage {
             MODES_LONG_MSG_BYTES * 8
         };
 
-        let (_, remaining_bytes, _) = rest.domain().region().unwrap();
-        let crc = modes_checksum(remaining_bytes, bit_len)?;
-        Ok((rest, crc))
+        if bit_len > reader.cache.len() * 8 {
+            let mut buf = vec![];
+            reader.read_to_end(&mut buf).unwrap();
+            reader.cache.append(&mut buf);
+        }
+
+        let crc = modes_checksum(&reader.cache, bit_len)?;
+        Ok(crc)
     }
 
     #[must_use]
@@ -280,12 +327,12 @@ mod tests {
         let input = "8DA0CA2DEA57F866C15C088DEF6F";
 
         let result = input.to_adsb_raw();
-        info!("Result: {:?}", result);
+        info!("Result: {result:?}");
         assert!(result.is_ok(), "Failed to decode message: {result:?}");
 
         let input = "8DAE54CAF8050002004AB867A40E";
         let result = input.to_adsb_raw();
-        info!("Result: {:?}", result);
+        info!("Result: {result:?}");
         assert!(result.is_ok(), "Failed to decode message: {result:?}");
     }
 }

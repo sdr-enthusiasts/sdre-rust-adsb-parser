@@ -4,12 +4,12 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use deku::bitvec::{BitSlice, Msb0};
+use crate::decoders::common_types::surveillancestatus::SurveillanceStatus;
+use deku::ctx::{BitSize, Endian};
+use deku::no_std_io::{Read, Seek};
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
-
-use crate::decoders::common_types::surveillancestatus::SurveillanceStatus;
 
 use super::cprheaders::CPRFormat;
 use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
@@ -25,7 +25,7 @@ pub struct Altitude {
     #[deku(bits = "1")]
     /// nic supplement b
     pub saf_or_imf: u8,
-    #[deku(reader = "Self::read(deku::rest)")]
+    #[deku(reader = "Self::read(deku::reader)")]
     pub alt: Option<u16>,
     /// UTC sync or not
     #[deku(bits = "1")]
@@ -55,34 +55,32 @@ impl fmt::Display for Altitude {
 
 impl Altitude {
     /// `decodeAC12Field`
-    fn read(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb0>, Option<u16>), DekuError> {
-        let (rest, num) = u32::read(rest, (deku::ctx::Endian::Big, deku::ctx::BitSize(12)))?;
-
-        let q: u32 = num & 0x10;
+    fn read<R: Read + Seek>(reader: &mut Reader<R>) -> Result<Option<u16>, DekuError> {
+        let num = u32::from_reader_with_ctx(reader, (Endian::Big, BitSize(12)))?;
+        let q = num & 0x10;
 
         if q > 0 {
-            let n: u32 = ((num & 0x0fe0) >> 1) | (num & 0x000f);
-            let n: u32 = n * 25;
+            let n = ((num & 0x0fe0) >> 1) | (num & 0x000f);
+            let n = n * 25;
             if n > 1000 {
                 // TODO: maybe replace with Result->Option
-                Ok((rest, u16::try_from(n - 1000).ok()))
+                Ok(u16::try_from(n - 1000).ok())
             } else {
-                Ok((rest, None))
+                Ok(None)
             }
         } else {
-            let mut n: u32 = ((num & 0x0fc0) << 1) | (num & 0x003f);
+            let mut n = ((num & 0x0fc0) << 1) | (num & 0x003f);
             n = decode_id13_field(n);
             if let Ok(n) = mode_a_to_mode_c(n) {
-                Ok((rest, u16::try_from(n * 100).ok()))
+                Ok(u16::try_from(n * 100).ok())
             } else {
-                Ok((rest, None))
+                Ok(None)
             }
         }
     }
 }
 
 #[cfg(test)]
-
 pub mod test {
     use sdre_rust_logging::SetupLogging;
 

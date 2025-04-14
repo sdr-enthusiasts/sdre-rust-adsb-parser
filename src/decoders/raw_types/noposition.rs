@@ -4,10 +4,9 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use deku::{
-    bitvec::{BitSlice, Msb0},
-    prelude::*,
-};
+use deku::ctx::{BitSize, Endian};
+use deku::no_std_io::{Read, Seek};
+use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
@@ -16,32 +15,31 @@ use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
 pub struct NoPosition {
     #[deku(bits = "3")]
     pub st: u8,
-    #[deku(reader = "Self::read(deku::rest)")]
+    #[deku(reader = "Self::read(deku::reader)")]
     pub altitude: Option<u16>,
 }
 
 impl NoPosition {
-    fn read(rest: &BitSlice<u8, Msb0>) -> Result<(&BitSlice<u8, Msb0>, Option<u16>), DekuError> {
-        let (rest, num) = u32::read(rest, (deku::ctx::Endian::Big, deku::ctx::BitSize(12)))?;
-
-        let q: u32 = num & 0x10;
+    fn read<R: Read + Seek>(reader: &mut Reader<R>) -> Result<Option<u16>, DekuError> {
+        let num = u32::from_reader_with_ctx(reader, (Endian::Big, BitSize(12)))?;
+        let q = num & 0x10;
 
         if q > 0 {
-            let n: u32 = ((num & 0x0fe0) >> 1) | (num & 0x000f);
-            let n: u32 = n * 25;
+            let n = ((num & 0x0fe0) >> 1) | (num & 0x000f);
+            let n = n * 25;
             if n > 1000 {
                 // TODO: maybe replace with Result->Option
-                Ok((rest, u16::try_from(n - 1000).ok()))
+                Ok(u16::try_from(n - 1000).ok())
             } else {
-                Ok((rest, None))
+                Ok(None)
             }
         } else {
-            let mut n: u32 = ((num & 0x0fc0) << 1) | (num & 0x003f);
+            let mut n = ((num & 0x0fc0) << 1) | (num & 0x003f);
             n = decode_id13_field(n);
             if let Ok(n) = mode_a_to_mode_c(n) {
-                Ok((rest, u16::try_from(n * 100).ok()))
+                Ok(u16::try_from(n * 100).ok())
             } else {
-                Ok((rest, None))
+                Ok(None)
             }
         }
     }
@@ -64,7 +62,7 @@ mod tests {
             st: 0,
             altitude: Some(8000),
         };
-        info!("{:?}", decoded);
+        info!("{decoded:?}");
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {
@@ -86,7 +84,7 @@ mod tests {
             st: 0,
             altitude: Some(8000),
         };
-        info!("{:?}", decoded);
+        info!("{decoded:?}");
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {
@@ -108,7 +106,7 @@ mod tests {
             st: 0,
             altitude: Some(7975),
         };
-        info!("{:?}", decoded);
+        info!("{decoded:?}");
         match decoded.df {
             crate::decoders::raw_types::df::DF::ADSB(adsb) => match adsb.me {
                 crate::decoders::raw_types::me::ME::NoPosition(status) => {

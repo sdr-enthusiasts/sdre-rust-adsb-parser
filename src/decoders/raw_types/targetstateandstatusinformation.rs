@@ -84,7 +84,7 @@ mod test {
 
         let message = "8DABEBE0EA36C866DD5C082732C5";
         let decoded = message.to_adsb_raw().unwrap();
-        info!("Decoded {:?}", decoded);
+        info!("Decoded {decoded:?}");
 
         let expected = TargetStateAndStatusInformation {
             subtype: 1,

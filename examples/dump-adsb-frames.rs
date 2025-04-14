@@ -125,13 +125,13 @@ impl Args {
         while let Some(arg) = arg_it.next() {
             match arg.as_str() {
                 "--url" => {
-                    url = arg_it.next().map(Into::into);
+                    url = arg_it.next();
                 }
                 "--log-verbosity" => {
-                    log_verbosity_temp = arg_it.next().map(Into::into);
+                    log_verbosity_temp = arg_it.next();
                 }
                 "--mode" => {
-                    mode = arg_it.next().map(Into::into);
+                    mode = arg_it.next();
                 }
                 "--help" => {
                     println!("{}", Args::help());

@@ -25,7 +25,7 @@ pub enum BDS {
 
     /// (2, 0) Table A-2-32
     #[deku(id = "0x20")]
-    AircraftIdentification(#[deku(reader = "aircraft_identification_read(deku::rest)")] String),
+    AircraftIdentification(#[deku(reader = "aircraft_identification_read(deku::reader)")] String),
 
     #[deku(id_pat = "_")]
     Unknown([u8; 6]),

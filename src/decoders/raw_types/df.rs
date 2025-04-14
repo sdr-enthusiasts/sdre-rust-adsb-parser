@@ -72,11 +72,11 @@ pub enum DF {
     SurveillanceAltitudeReply {
         /// FS: Flight Status
         fs: FlightStatus,
-        /// DR: DownlinkRequest
+        /// DR: `DownlinkRequest`
         dr: DownlinkRequest,
         /// UM: Utility Message
         um: UtilityMessage,
-        /// AC: AltitudeCode
+        /// AC: `AltitudeCode`
         ac: AC13Field,
         /// AP: Address/Parity
         ap: ICAO,
@@ -89,7 +89,7 @@ pub enum DF {
         fs: FlightStatus,
         /// DR: Downlink Request
         dr: DownlinkRequest,
-        /// UM: UtilityMessage
+        /// UM: `UtilityMessage`
         um: UtilityMessage,
         /// ID: Identity
         id: IdentityCode,

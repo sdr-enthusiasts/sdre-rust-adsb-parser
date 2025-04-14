@@ -5,31 +5,30 @@
 // https://opensource.org/licenses/MIT.
 
 use std::fmt;
+use std::fmt::Write;
 
 /// Pretty print a field if it is present.
 /// If the field is not present, do nothing.
-
 pub fn pretty_print_field_from_option<T: fmt::Display>(
     field_name: &str,
     field: &Option<T>,
     output: &mut String,
 ) {
-    match field {
-        Some(value) => {
-            pretty_print_field(field_name, value, output);
-        }
-        None => (),
+    if let Some(value) = field {
+        pretty_print_field(field_name, value, output);
     }
 }
 
 /// Pretty print a field.
 pub fn pretty_print_field<T: fmt::Display>(field_name: &str, field: &T, output: &mut String) {
-    output.push_str(&format!(
-        "{}{}{}\n",
+    writeln!(
+        output,
+        "{}{}{}",
         field_name,
         if field_name.is_empty() { "" } else { ": " },
         field
-    ));
+    )
+    .unwrap();
 }
 
 /// Pretty print a label. The label will be centered in a 70 character line
@@ -49,5 +48,5 @@ pub fn pretty_print_label(label: &str, output: &mut String) {
         buffer.push('=');
     }
 
-    output.push_str(&format!("{buffer}{label}{buffer}{extra}\n"));
+    writeln!(output, "{buffer}{label}{buffer}{extra}").unwrap();
 }

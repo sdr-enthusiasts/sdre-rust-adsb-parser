@@ -4,7 +4,8 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use deku::bitvec::{BitSlice, Msb0};
+use deku::ctx::BitSize;
+use deku::no_std_io::{Read, Seek};
 use deku::prelude::*;
 use deku::{DekuError, error::NeedSize};
 
@@ -407,23 +408,20 @@ pub(crate) fn modes_checksum(message: &[u8], bits: usize) -> Result<u32, DekuErr
     Ok(rem)
 }
 
-pub(crate) fn aircraft_identification_read(
-    rest: &BitSlice<u8, Msb0>,
-) -> Result<(&BitSlice<u8, Msb0>, String), DekuError> {
-    let mut inside_rest: &BitSlice<u8, Msb0> = rest;
-
+pub(crate) fn aircraft_identification_read<R: Read + Seek>(
+    reader: &mut Reader<R>,
+) -> Result<String, DekuError> {
     let mut chars = vec![];
     for _ in 0..=6 {
-        let (for_rest, c) = <u8>::read(inside_rest, deku::ctx::BitSize(6))?;
+        let c = <u8>::from_reader_with_ctx(reader, BitSize(6))?;
         if c != 32 {
             chars.push(c);
         }
-        inside_rest = for_rest;
     }
-    let encoded: String = chars
+    let encoded = chars
         .into_iter()
         .map(|b| CHAR_LOOKUP[b as usize] as char)
         .collect::<String>();
 
-    Ok((inside_rest, encoded))
+    Ok(encoded)
 }

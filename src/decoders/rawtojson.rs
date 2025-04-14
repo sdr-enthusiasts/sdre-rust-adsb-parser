@@ -429,7 +429,7 @@ fn calculate_position_from_last_known_position(
                 &json.last_cpr_even_update_time_surface
             } {
                 oldest_timestamp = last_cpr_even_update_time.get_time();
-            };
+            }
 
             if let Some(last_cpr_odd_update_time) = if *position_type == PositionType::Airborne {
                 &json.last_cpr_odd_update_time_airborne

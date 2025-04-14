@@ -14,6 +14,8 @@ reference: ICAO 9871 (D.2.4.7)
 
 // FIXME: surface position decoding needs verification, especially in southern hemisphere
 
+use serde::{Deserialize, Serialize};
+
 use crate::decoders::raw_types::cprheaders::CPRFormat;
 
 const NZ: f64 = 15.0;
@@ -26,8 +28,7 @@ const D_LAT_ODD_SURFACE: f64 = 90.0 / (4.0 * NZ - 1.0);
 const CPR_MAX: f64 = 131_072.0;
 
 /// Post-processing of CPR into Latitude/Longitude
-#[derive(Debug, PartialEq, Clone, Copy, Default)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Debug, PartialEq, Clone, Copy, Default, Serialize, Deserialize)]
 pub struct Position {
     pub latitude: f64,
     pub longitude: f64,
@@ -59,7 +60,7 @@ fn cpr_nl_less_than_twenty_nine(lat: f64) -> f64 {
     52.0
 }
 
-fn cpr_nl_less_than_fourty_four(lat: f64) -> f64 {
+fn cpr_nl_less_than_forty_four(lat: f64) -> f64 {
     if lat < 31.772_097_08 {
         return 51.0;
     }
@@ -231,7 +232,7 @@ pub(crate) fn cpr_nl(lat: f64) -> f64 {
     }
 
     if lat < 44.194_549_51 {
-        return cpr_nl_less_than_fourty_four(lat);
+        return cpr_nl_less_than_forty_four(lat);
     }
 
     if lat < 59.954_592_77 {
@@ -352,7 +353,6 @@ pub fn get_position_from_locally_unabiguous_airborne(
 /// Using both an Odd and Even `Altitude`, calculate the latitude/longitude
 ///
 /// reference: ICAO 9871 (D.2.4.7.7)
-
 #[must_use]
 pub fn get_position_from_even_odd_cpr_positions_airborne(
     even_frame: &Position,
@@ -639,7 +639,7 @@ mod tests {
         .unwrap();
         let expected_lat = 52.320_607_072_215_964;
         let expected_lon = 4.730_472_564_697_266;
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -670,7 +670,7 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -702,7 +702,7 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -734,7 +734,7 @@ mod tests {
         let position =
             get_position_from_locally_unabiguous_surface(&aircraft_frame, &local, CPRFormat::Odd);
 
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -778,7 +778,7 @@ mod tests {
 
             match adsb.me {
                 crate::decoders::raw_types::me::ME::SurfacePosition(surface_position) => {
-                    info!("Surface position: {:?}", surface_position);
+                    info!("Surface position: {surface_position:?}");
                     //assert_eq!(surface_position.mov.calculate(), Some(17.0));
                     //assert_eq!(surface_position.get_heading(), Some(14.1));
                     let local = Position {
@@ -799,7 +799,7 @@ mod tests {
                         &local,
                         CPRFormat::Even,
                     );
-                    info!("Calculated position: {:?}", position);
+                    info!("Calculated position: {position:?}");
                     info!(
                         "Expected position: {:?}",
                         Position {
@@ -835,7 +835,7 @@ mod tests {
         let expected_lon = 3.919_372_558_593_75;
         let position =
             get_position_from_locally_unabiguous_airborne(&aircraft_frame, &local, CPRFormat::Even);
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -864,7 +864,7 @@ mod tests {
                 .unwrap();
         let expected_lat = 52.257_202_148_437_5;
         let expected_lon = 3.919_372_558_593_75;
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -891,7 +891,7 @@ mod tests {
             get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = 88.917_474_261_784_96;
         let expected_lon = 101.011_047_363_281_25;
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {
@@ -926,7 +926,7 @@ mod tests {
             get_position_from_even_odd_cpr_positions_airborne(&even, &odd, CPRFormat::Odd).unwrap();
         let expected_lat = -35.840_195_478_019_1;
         let expected_lon = 150.283_852_435_172_9;
-        info!("Calculated position: {:?}", position);
+        info!("Calculated position: {position:?}");
         info!(
             "Expected position: {:?}",
             Position {

@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use deku::bitvec::{BitSlice, Msb0};
+use deku::no_std_io::{Read, Seek};
 use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -15,26 +15,26 @@ use super::direction_nsew::{DirectionEW, DirectionNS};
 #[deku(ctx = "t: AirborneVelocityType")]
 pub struct AirborneVelocitySubFields {
     pub dew: DirectionEW,
-    #[deku(reader = "Self::read_v(deku::rest, t)")]
+    #[deku(reader = "Self::read_v(deku::reader, t)")]
     pub vew: u16,
     pub dns: DirectionNS,
-    #[deku(reader = "Self::read_v(deku::rest, t)")]
+    #[deku(reader = "Self::read_v(deku::reader, t)")]
     pub vns: u16,
 }
 
 impl AirborneVelocitySubFields {
-    fn read_v(
-        rest: &BitSlice<u8, Msb0>,
+    fn read_v<R: Read + Seek>(
+        reader: &mut Reader<R>,
         t: AirborneVelocityType,
-    ) -> Result<(&BitSlice<u8, Msb0>, u16), DekuError> {
+    ) -> Result<u16, DekuError> {
         match t {
             AirborneVelocityType::Subsonic => {
-                u16::read(rest, (deku::ctx::Endian::Big, deku::ctx::BitSize(10)))
-                    .map(|(rest, value)| (rest, value - 1))
+                u16::from_reader_with_ctx(reader, (deku::ctx::Endian::Big, deku::ctx::BitSize(10)))
+                    .map(|value| value - 1)
             }
             AirborneVelocityType::Supersonic => {
-                u16::read(rest, (deku::ctx::Endian::Big, deku::ctx::BitSize(10)))
-                    .map(|(rest, value)| (rest, 4 * (value - 1)))
+                u16::from_reader_with_ctx(reader, (deku::ctx::Endian::Big, deku::ctx::BitSize(10)))
+                    .map(|value| 4 * (value - 1))
             }
         }
     }

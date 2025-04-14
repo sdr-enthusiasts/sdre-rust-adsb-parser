@@ -11,16 +11,16 @@ use std::fmt;
 #[serde(try_from = "String")]
 pub enum MessageType {
     /// messages from a Mode S or ADS-B transponder, using a 24-bit ICAO address
-    /// Original json "adsb_icao"
+    /// Original json "`adsb_icao`"
     ADSBICAO,
     /// messages from an ADS-B equipped "non-transponder" emitter e.g. a ground vehicle, using a 24-bit ICAO address
-    /// Original json "adsb_icao_nt"
+    /// Original json "`adsb_icao_nt`"
     ADSBICAONONTRANSPONDER,
     /// rebroadcast of ADS-B messages originally sent via another data link e.g. UAT, using a 24-bit ICAO address
-    /// Original json "adsr_icao"
+    /// Original json "`adsr_icao`"
     ADSBICAOREBROADCAST,
     /// traffic information about a non-ADS-B target identified by a 24-bit ICAO address, e.g. a Mode S target tracked by secondary radar
-    /// Original json "tisb_icao"
+    /// Original json "`tisb_icao`"
     ADSBICAOSECONDARYSURVEILLANCE,
     /// (received by monitoring satellite downlinks)
     /// Original json "adsc"
@@ -31,20 +31,20 @@ pub enum MessageType {
     /// miscellaneous data received via Basestation / SBS format, quality / source is unknown.
     /// Original json "other"
     OTHER,
-    /// ModeS data from the planes transponder (no position transmitted)
-    /// Original json "mode_s"
+    /// `ModeS` data from the planes transponder (no position transmitted)
+    /// Original json "`mode_s`"
     MODES,
     /// messages from an ADS-B transponder using a non-ICAO address, e.g. anonymized address
-    /// Original json "adsb_other"
+    /// Original json "`adsb_other`"
     ADSBOTHER,
     /// rebroadcast of ADS-B messages originally sent via another data link e.g. UAT, using a non-ICAO address
-    /// Original json "adsbr_other"
+    /// Original json "`adsbr_other`"
     ADSBOTHERREBROADCAST,
     /// traffic information about a non-ADS-B target using a non-ICAO address
-    /// Original json "tisb_other"
+    /// Original json "`tisb_other`"
     ADSBOTHERSECONDARYSURVEILLANCE,
     /// traffic information about a non-ADS-B target using a track/file identifier, typically from primary or Mode A/C radar
-    /// Original json "tisb_trackfile"
+    /// Original json "`tisb_trackfile`"
     ADSBTRACKFILE,
     #[default]
     /// Unknown

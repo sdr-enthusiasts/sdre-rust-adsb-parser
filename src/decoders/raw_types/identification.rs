@@ -17,7 +17,7 @@ pub struct Identification {
     pub ca: u8,
 
     /// N-Number / Tail Number
-    #[deku(reader = "aircraft_identification_read(deku::rest)")]
+    #[deku(reader = "aircraft_identification_read(deku::reader)")]
     pub cn: String,
 }
 
@@ -38,7 +38,7 @@ pub mod test {
         let message = "8DA69B9C223B5CB5082820C97A87";
         let decoded = message.to_adsb_raw().unwrap();
 
-        info!("{:?}", decoded);
+        info!("{decoded:?}");
 
         let expected = Identification {
             tc: TypeCoding::A,

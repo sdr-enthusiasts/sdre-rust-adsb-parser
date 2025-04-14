@@ -212,7 +212,7 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
             frame_bytes.insert(0, ADSB_BEAST_START_CHARACTER);
         } else {
             error!("Frame bytes is not empty, but the first byte is not a start character");
-            error!("The frame bytes are: {:02X?}", frame_bytes);
+            error!("The frame bytes are: {frame_bytes:02X?}");
         }
 
         // now walk the frame and replace any 1a with 1a 1a if it's not a 1a 31 or 1a 32 or 1a 33 sequence
@@ -329,7 +329,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in &frames.frames {
-            info!("Frame: {:02X?}", frame);
+            info!("Frame: {frame:02X?}");
         }
         assert!(
             frames.frames.len() == 38,
@@ -418,7 +418,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in &frames.frames {
-            info!("Frame: {:02X?}", frame);
+            info!("Frame: {frame:02X?}");
         }
         assert!(
             frames.frames.len() == 38,
@@ -508,7 +508,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frames);
         for frame in &frames.frames {
-            info!("Frame: {:02X?}", frame);
+            info!("Frame: {frame:02X?}");
         }
         assert!(
             frames.frames.len() == 38,
@@ -591,10 +591,10 @@ mod tests {
 
         // grab the leftover bytes and prepend them to the next buffer
         let raw_frame = [frames.left_over, raw_frames.to_vec()].concat();
-        info!("using this frame: {:02X?}", raw_frame);
+        info!("using this frame: {raw_frame:02X?}");
         let frames = format_adsb_beast_frames_from_bytes(&raw_frame);
         for frame in &frames.frames {
-            info!("Frame: {:02X?}", frame);
+            info!("Frame: {frame:02X?}");
         }
         assert!(
             frames.frames.len() == 22,
@@ -650,7 +650,7 @@ mod tests {
 
         let frames = format_adsb_beast_frames_from_bytes(&raw_frame);
         for frame in &frames.frames {
-            info!("Frame: {:02X?}", frame);
+            info!("Frame: {frame:02X?}");
         }
 
         assert!(

@@ -95,7 +95,7 @@ pub fn format_adsb_raw_frames_from_bytes(bytes: &[u8]) -> ADSBRawFrames {
 
     // current frame should be clear, but just in case, we will log it
     if !current_frame.is_empty() {
-        debug!("Left over frame: {:?}", current_frame);
+        debug!("Left over frame: {current_frame:?}");
     }
 
     ADSBRawFrames {

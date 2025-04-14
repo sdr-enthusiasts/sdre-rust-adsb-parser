@@ -195,7 +195,7 @@ mod test {
 
         let message = "8DABBD47F8230006004AB87B5E9E";
         let decoded = message.to_adsb_raw().unwrap();
-        info!("Decoded {:?}", decoded);
+        info!("Decoded {decoded:?}");
 
         let expected = OperationStatus::Airborne(OperationStatusAirborne {
             capability_class: CapabilityClassAirborne {
@@ -278,7 +278,7 @@ mod test {
             reserved1: 0,
         });
 
-        info!("Decoded {:?}", decoded);
+        info!("Decoded {decoded:?}");
 
         match decoded.df {
             DF::ADSB(adsb) => match adsb.me {
