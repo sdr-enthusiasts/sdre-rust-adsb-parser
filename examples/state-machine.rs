@@ -481,32 +481,74 @@ async fn process_as_aircraft_json(
         let req: Request = Request::get(url);
 
         let mut resp: Response = req.exec().await?;
+        let mut success = 0;
+        let mut failure = 0;
         if resp.status_code() == 200 {
             let body: String = resp.text().await?;
-            // for now we'll bust apart the response before parsing
-            for line in body.lines() {
-                if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
-                    let final_message_to_process: &str = line.trim().trim_end_matches(',');
-                    debug!("Decoding: {}", final_message_to_process);
+            // iterate through the lines. If the line starts with "{ "now", "messages", or "aircraft", we'll skip
+            let mut to_process = String::new();
+            let mut begin_processing = false;
 
-                    let message: Result<ADSBMessage, DeserializationError> =
-                        final_message_to_process.decode_message();
-                    if let Ok(message) = message {
-                        sender_channel
-                            .send(ProcessMessageType::ADSBMessage(message))
-                            .await
-                            .unwrap();
-                    } else {
-                        error!("Error decoding: {}", message.unwrap_err());
-                        error!("Message input: {}", final_message_to_process);
-                    }
+            for line in body.lines() {
+                if !begin_processing && line.contains("aircraft") {
+                    begin_processing = true;
+                    continue;
                 }
+
+                if begin_processing && line != "}" {
+                    // if the line starts with a {, we've hit the start of a new JSON object
+                    if line.starts_with('{') {
+                        // if we have a left over string, prepend it to the json_string
+
+                        if !to_process.is_empty() {
+                            let final_to_process = to_process.trim().trim_end_matches(',');
+                            let message: Result<ADSBMessage, DeserializationError> =
+                                final_to_process.decode_message();
+                            if let Ok(message) = message {
+                                sender_channel
+                                    .send(ProcessMessageType::ADSBMessage(message))
+                                    .await
+                                    .unwrap();
+                                success += 1;
+                            } else {
+                                error!("Error decoding: {}", message.unwrap_err());
+                                error!("Message input: {}", final_to_process);
+                                failure += 1;
+                            }
+
+                            to_process.clear();
+                        }
+                    }
+
+                    to_process.push_str(line);
+                }
+
+                // for now we'll bust apart the response before parsing
+                // for line in body.lines() {
+                //     if line.starts_with('{') && !line.is_empty() && !line.starts_with("{ \"now\" : ") {
+                //         let final_message_to_process: &str = line.trim().trim_end_matches(',');
+                //         debug!("Decoding: {}", final_message_to_process);
+
+                //         let message: Result<ADSBMessage, DeserializationError> =
+                //             final_message_to_process.decode_message();
+                //         if let Ok(message) = message {
+                //             sender_channel
+                //                 .send(ProcessMessageType::ADSBMessage(message))
+                //                 .await
+                //                 .unwrap();
+                //         } else {
+                //             error!("Error decoding: {}", message.unwrap_err());
+                //             error!("Message input: {}", final_message_to_process);
+                //         }
+                //     }
             }
         } else {
             error!("Response status error: {}", resp.status());
             sleep(Duration::from_secs(10)).await;
             continue;
         }
+
+        info!("Success: {}, Failure: {}", success, failure);
 
         sleep(Duration::from_secs(10)).await;
     }

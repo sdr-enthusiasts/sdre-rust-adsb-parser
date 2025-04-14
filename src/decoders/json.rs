@@ -713,6 +713,10 @@ pub struct JSONMessage {
     /// Mode A code (Squawk), encoded as 4 octal digits
     #[serde(skip_serializing_if = "Option::is_none", rename = "squawk")]
     pub transponder_squawk_code: Option<Squawk>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "ownOp")]
+    pub owner_operator: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    year: Option<String>,
     /// wiedehopf's aircraft.json aircraft type pulled from database
     #[serde(skip_serializing_if = "Option::is_none", rename = "t")]
     pub aircraft_type_from_database: Option<String>,
