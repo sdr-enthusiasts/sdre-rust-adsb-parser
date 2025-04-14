@@ -97,25 +97,25 @@ impl NewAdsbRawMessage for &[u8] {
 struct ReaderCrc<R: Read + Seek> {
     reader: R,
     cache: Vec<u8>,
-    just_seeked: bool,
+    just_sought: bool,
 }
 
 impl<R: Read + Seek> Read for ReaderCrc<R> {
     fn read(&mut self, buf: &mut [u8]) -> deku::no_std_io::Result<usize> {
         let n = self.reader.read(buf);
-        if !self.just_seeked {
+        if !self.just_sought {
             if let Ok(n) = n {
                 self.cache.extend_from_slice(&buf[..n]);
             }
         }
-        self.just_seeked = false;
+        self.just_sought = false;
         n
     }
 }
 
 impl<R: Read + Seek> Seek for ReaderCrc<R> {
     fn seek(&mut self, pos: deku::no_std_io::SeekFrom) -> deku::no_std_io::Result<u64> {
-        self.just_seeked = true;
+        self.just_sought = true;
         self.reader.seek(pos)
     }
 }
@@ -213,16 +213,20 @@ impl fmt::Display for AdsbRawMessage {
 /// The input used for deserializing in to this struct should not contain the adsb raw control characters `*` or `;` or `\n`
 /// This is handled by the `helpers::encode_adsb_raw_input::format`_* functions
 impl AdsbRawMessage {
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn from_bytes(buf: &[u8]) -> Result<Self, DekuError> {
         let cursor = Cursor::new(buf);
         Self::from_reader(cursor)
     }
 
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn from_reader<R: Read + Seek>(r: R) -> Result<Self, DekuError> {
         let mut reader_crc = ReaderCrc {
             reader: r,
             cache: vec![],
-            just_seeked: false,
+            just_sought: false,
         };
         let mut reader = Reader::new(&mut reader_crc);
         let df = DF::from_reader_with_ctx(&mut reader, ())?;

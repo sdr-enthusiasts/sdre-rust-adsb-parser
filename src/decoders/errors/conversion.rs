@@ -15,7 +15,7 @@ custom_error! {pub ConversionError
     LatitudeIsNone = "Calculated latitude is None",
     UnknownMessageType{message_me: String, me_type: String} = "Unknown message type {message_me} for {me_type}",
     UnknownADSBVersion = "Unknown ADSB version",
-    UknownCapabilityClass = "Unknown capability class",
+    UnknownCapabilityClass = "Unknown capability class",
     UnknownOperationalMode = "Unknown operational mode",
     LatitudeOrLongitudeIsZero{lat: f64, lon: f64} = "Latitude or longitude is 0.0. Latitude: {lat}, Longitude: {lon}. Unable to calculate position",
     UnableToCalculatePosition = "Unable to calculate position from Even/Odd CPR, supplied reference position, and/or previous aircraft position used as reference position",

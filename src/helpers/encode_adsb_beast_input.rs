@@ -43,7 +43,6 @@ enum FrameType {
 /// Expected input is a &Vec<Vec<u8>>of the beast frame(s), including the control characters to start and end the frame.
 /// Does not consume the input.
 /// Returns a vector of bytes, with each element of the array being a frame that can be passed in to the ADSB Beast parser.
-
 #[must_use]
 // FIXME: Can/should this be refactored in to less lines?
 #[allow(clippy::too_many_lines)]
@@ -146,7 +145,6 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
         match frame_type {
             FrameType::None => {
                 errors.push(ADSBBeastError::FrameTypeNone);
-                continue;
             }
             _ => match *byte {
                 ADSB_BEAST_START_CHARACTER => {
@@ -160,7 +158,6 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                         message: format!("{byte:02X?}"),
                     });
                     frame_type = FrameType::None;
-                    continue;
                 }
                 _ => {
                     frame_bytes.push(*byte);

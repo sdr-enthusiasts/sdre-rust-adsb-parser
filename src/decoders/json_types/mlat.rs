@@ -9,7 +9,6 @@ use std::fmt;
 
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd, Default)]
 #[serde(try_from = "String")]
-
 pub enum MLATFields {
     Altitude,
     GroundSpeed,

@@ -86,7 +86,6 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
 /// Expected input is a &Vec<Vec<u8>>of the JSON frame(s), including the control characters to start and end the frame.
 /// Does not consume the input.
 /// Returns a vector of strings, with each element of the array being a frame that can be passed in to the ADSB JSON parser.
-
 #[must_use]
 pub fn format_adsb_json_frames_from_bytes(bytes: &[u8]) -> ADSBJSONFrames {
     format_adsb_json_frames_from_string(String::from_utf8_lossy(bytes).as_ref())

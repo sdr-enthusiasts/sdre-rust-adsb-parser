@@ -22,7 +22,6 @@ pub struct Identification {
 }
 
 #[cfg(test)]
-
 pub mod test {
     use sdre_rust_logging::SetupLogging;
 

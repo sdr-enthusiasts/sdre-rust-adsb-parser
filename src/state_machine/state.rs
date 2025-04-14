@@ -77,12 +77,12 @@
 /// can send messages to the state machine for processing concurrently. The state machine ensures thread-safety
 /// by using mutexes to protect shared data structures.
 // Copyright (c) 2024 Frederick Clausen II
-
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 use core::fmt;
 use std::collections::{HashMap, hash_map::Entry};
+use std::fmt::Write;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::sync::mpsc::{Receiver, Sender};
@@ -150,7 +150,7 @@ impl fmt::Display for ProcessMessageType {
             ProcessMessageType::AsVecU8(vec_u8) => {
                 let mut output = String::new();
                 for byte in vec_u8 {
-                    output.push_str(&format!("{byte:02X?}"));
+                    write!(&mut output, "{byte:02X?}").unwrap();
                 }
                 write!(f, "{output}")
             }

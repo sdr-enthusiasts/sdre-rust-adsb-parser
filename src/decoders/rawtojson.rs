@@ -129,7 +129,7 @@ pub fn update_operational_status(
             json.nic_supplement_b = None;
         }
         CapabilityClass::Unknown => {
-            return Err(ConversionError::UknownCapabilityClass);
+            return Err(ConversionError::UnknownCapabilityClass);
         }
     }
 
@@ -270,8 +270,8 @@ pub fn update_target_state_and_status_information(
 
 fn calculate_position_from_even_odd(
     json: &mut JSONMessage,
-    even_frame: &Option<Position>,
-    odd_frame: &Option<Position>,
+    even_frame: Option<&Position>,
+    odd_frame: Option<&Position>,
     reference_position: &Position,
     cpr_flag: CPRFormat,
     position_type: &PositionType,
@@ -507,8 +507,8 @@ fn calculate_position_from_last_known_position(
 
 fn update_position(
     json: &mut JSONMessage,
-    even_frame: &Option<Position>,
-    odd_frame: &Option<Position>,
+    even_frame: Option<&Position>,
+    odd_frame: Option<&Position>,
     reference_position: &Position,
     cpr_flag: CPRFormat,
     current_time: f64,
@@ -857,8 +857,8 @@ pub fn update_aircraft_position_surface(
 
     update_position(
         json,
-        &even_frame,
-        &odd_frame,
+        even_frame.as_ref(),
+        odd_frame.as_ref(),
         reference_position,
         surface_position.f,
         current_time,
@@ -960,8 +960,8 @@ pub fn update_aircraft_position_airborne(
 
     update_position(
         json,
-        &even_frame,
-        &odd_frame,
+        even_frame.as_ref(),
+        odd_frame.as_ref(),
         reference_position,
         altitude.odd_flag,
         current_time,

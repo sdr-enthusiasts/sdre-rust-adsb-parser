@@ -82,13 +82,10 @@ impl AirborneVelocity {
         let heading: f32 = if h < 0.0 { h + 360.0 } else { h };
 
         // TODO: We should handle sub types 2-4 here
-        let Some(vrate) = self
+        let vrate = self
             .vrate_value
             .checked_sub(1)
-            .and_then(|v: u16| v.checked_mul(64))
-        else {
-            return None;
-        };
+            .and_then(|v: u16| v.checked_mul(64))?;
 
         let vrate = match i16::try_from(vrate) {
             Ok(success) => success * self.vrate_sign.value(),

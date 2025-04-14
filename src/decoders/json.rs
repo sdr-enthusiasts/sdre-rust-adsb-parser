@@ -102,7 +102,6 @@ impl NewJSONMessage for str {
 /// Supporting `.to_json()` for the type `[u8]`.
 ///
 /// This does not consume the `[u8]`.
-
 impl NewJSONMessage for [u8] {
     fn to_json(&self) -> MessageResult<JSONMessage> {
         match serde_json::from_slice(self) {
@@ -115,7 +114,6 @@ impl NewJSONMessage for [u8] {
 /// Supporting `.to_json()` for the type `Vec<u8>`.
 ///
 /// This does not consume the `Vec<u8>`.
-
 impl NewJSONMessage for Vec<u8> {
     fn to_json(&self) -> MessageResult<JSONMessage> {
         match serde_json::from_slice(self) {

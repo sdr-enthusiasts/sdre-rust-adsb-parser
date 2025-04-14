@@ -145,6 +145,8 @@ pub struct AdsbBeastMessage {
 }
 
 impl AdsbBeastMessage {
+    /// # Errors
+    /// If the conversion to a `String` fails, the error is returned.
     pub fn from_bytes(buf: &[u8]) -> Result<Self, DekuError> {
         let mut cursor = Cursor::new(buf);
         match Self::from_reader((&mut cursor, 0)) {

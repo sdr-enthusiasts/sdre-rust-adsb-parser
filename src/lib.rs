@@ -491,7 +491,6 @@ impl ADSBMessage {
     /// Returns the number of aircraft in the message.
     ///
     /// the output is a `usize`.
-
     #[must_use]
     pub fn len(&self) -> usize {
         match self {
