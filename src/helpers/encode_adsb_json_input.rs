@@ -31,12 +31,12 @@ impl ADSBJSONFrames {
 #[must_use]
 pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
     // Split the string into a vector of strings, delimited by '\n' with each element being a frame.
-    let frames: Vec<&str> = string.split('\n').collect();
+    let frames: Vec<&str> = string.split("}\n").collect();
     let mut output: Vec<String> = Vec::new();
     let mut errors: Vec<ADSBJSONError> = Vec::new();
 
     for (index, frame) in frames.iter().enumerate() {
-        let frame = frame.trim(); // remove the trailing '\n' from the frame
+        let mut frame = frame.replace('\n', ""); // remove the trailing '\n' from the frame
         // If the frame is empty, skip it.
         if frame.is_empty() {
             continue;
@@ -53,7 +53,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
             }
         }
 
-        if !frame.ends_with('}') {
+        if !frame.ends_with('}') && frames.len() != 1 {
             // if this is the last frame, return the frame as the left_over.
             if index == frames.len() - 1 {
                 return ADSBJSONFrames {
@@ -64,13 +64,20 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
             }
         }
 
+        frame.push('}'); // add the closing '}' to the frame
+
         // If the frame starts with '{' and ends with '}', push it to the output vector.
-        if frame.starts_with('{') && frame.ends_with('}') {
+        if frame.starts_with('{') && (frame.ends_with('}') || frame.ends_with("},")) {
             output.push(frame.to_string());
         } else {
             // we should never end up here but if we do, error out
+            let first_character = frame.chars().next().unwrap_or('\0');
+            let last_character = frame.chars().last().unwrap_or('\0');
+            error!("Frame: {frame}");
             errors.push(ADSBJSONError::InvalidJSON {
-                message: "Frame does not start with '{' and end with '}'".to_string(),
+                message: format!(
+                    "Frame does not start with '{{' (Found: {first_character}) and end with '}}' (Found: {last_character})"
+                ),
             });
         }
     }
