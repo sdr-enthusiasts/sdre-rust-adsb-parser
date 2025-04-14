@@ -624,6 +624,10 @@ pub struct JSONMessage {
     /// Ground speed in knots.
     #[serde(skip_serializing_if = "Option::is_none", rename = "gs")]
     pub ground_speed: Option<Speed>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "oat")]
+    pub outside_air_temperature: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none", rename = "tat")]
+    pub total_air_temperature: Option<u32>,
     /// Indicated Air speed.
     #[serde(skip_serializing_if = "Option::is_none", rename = "ias")]
     pub indicated_air_speed: Option<Speed>,
