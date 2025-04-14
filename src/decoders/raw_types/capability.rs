@@ -13,7 +13,7 @@ use std::fmt::{self, Formatter};
     Serialize, Deserialize, DekuRead, DekuWrite, Debug, Clone, Copy, Eq, PartialEq, Default,
 )]
 #[allow(non_camel_case_types)]
-#[deku(type = "u8", bits = "3")]
+#[deku(id_type = "u8", bits = "3")]
 pub enum Capability {
     /// Level 1 transponder (surveillance only), and either airborne or on the ground
     #[default]

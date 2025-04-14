@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Message Type
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "2")]
+#[deku(id_type = "u8", bits = "2")]
 pub enum UtilityMessageType {
     NoInformation = 0b00,
     CommB = 0b01,

@@ -12,7 +12,7 @@ use std::fmt::{self, Formatter};
 #[derive(
     Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
 )]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum CPRFormat {
     #[default]
     Even = 0,

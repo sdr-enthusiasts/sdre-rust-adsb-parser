@@ -8,7 +8,7 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "3")]
+#[deku(id_type = "u8", bits = "3")]
 pub enum AirborneVelocityType {
     Subsonic = 1,
     Supersonic = 3,

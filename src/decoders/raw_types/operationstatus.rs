@@ -16,7 +16,7 @@ use super::{
 
 /// Aircraft Operational Status Subtype
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "3")]
+#[deku(id_type = "u8", bits = "3")]
 pub enum OperationStatus {
     #[deku(id = "0")]
     Airborne(OperationStatusAirborne),

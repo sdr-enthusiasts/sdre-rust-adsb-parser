@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
-#[deku(type = "u8", bits = "8")]
+#[deku(id_type = "u8", bits = "8")]
 pub enum MessageType {
     #[deku(id = "49")]
     ModeAC,

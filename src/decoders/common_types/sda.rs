@@ -11,7 +11,7 @@ use std::fmt::{self, Formatter};
 /// [`ME::AircraftOperationStatus`]
 #[derive(Deserialize, DekuRead, Default, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
 #[serde(try_from = "u8")]
-#[deku(type = "u8", bits = "2")]
+#[deku(id_type = "u8", bits = "2")]
 pub enum SystemDesignAssurance {
     #[default]
     #[deku(id = "0")]

@@ -13,7 +13,7 @@ use super::{
 };
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq)]
-#[deku(type = "u8", bits = "8")]
+#[deku(id_type = "u8", bits = "8")]
 pub enum BDS {
     /// (1, 0) Table A-2-16
     #[deku(id = "0x00")]

@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum VerticalRateSource {
     BarometricPressureAltitude = 0,
     GeometricAltitude = 1,

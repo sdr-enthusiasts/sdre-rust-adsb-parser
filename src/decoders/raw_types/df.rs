@@ -18,7 +18,7 @@ use super::{
 ///
 /// Starting with 5 bits, decode the rest of the message as the correct data packets
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
-#[deku(type = "u8", bits = "5")]
+#[deku(id_type = "u8", bits = "5")]
 pub enum DF {
     /// 17: Extended Squitter, Downlink Format 17 (3.1.2.8.6)
     ///

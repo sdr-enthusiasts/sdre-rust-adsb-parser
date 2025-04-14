@@ -82,25 +82,25 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 use core::fmt;
-use std::collections::{hash_map::Entry, HashMap};
+use std::collections::{HashMap, hash_map::Entry};
 use std::sync::Arc;
-use tokio::sync::mpsc::{Receiver, Sender};
 use tokio::sync::Mutex;
+use tokio::sync::mpsc::{Receiver, Sender};
 
+use crate::DecodeMessage;
 use crate::decoders::errors::conversion::ConversionError;
 use crate::decoders::helpers::cpr_calculators::Position;
 use crate::decoders::helpers::time::get_time_as_f64;
 use crate::decoders::json_types::lastknownposition::LastKnownPosition;
 use crate::decoders::json_types::timestamp::TimeStamp;
 use crate::decoders::raw_types::df::DF;
-use crate::DecodeMessage;
 use crate::{
+    ADSBMessage,
     data_structures::airplane::Airplane,
     decoders::{
         aircraftjson::AircraftJSON, beast::AdsbBeastMessage, json::JSONMessage,
         json_types::messagetype::MessageType::ADSC, raw::AdsbRawMessage,
     },
-    ADSBMessage,
 };
 
 #[derive(Debug, Clone)]
@@ -270,7 +270,9 @@ impl Machine {
 
     pub async fn process_adsb_message(&mut self) {
         if self.verify_position_is_not_default().is_err() {
-            warn!("Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received.");
+            warn!(
+                "Position is not set. ADSB Surface Position messages will not decode positions, and airborne aircraft positions will not be decoded if the aircraft position cannot be derived from the available messages received."
+            );
         }
 
         while let Some(message) = self.channels.output_channel.recv().await {

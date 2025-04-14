@@ -24,7 +24,7 @@ use super::{
         airbornevelocity::AirborneVelocity,
         airbornevelocitysubtype::AirborneVelocitySubType,
         aircraftstatus::AircraftStatus,
-        autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+        autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, LNAV, TCAS, VNAVEngaged},
         emergencystate::EmergencyState,
         fms::IsFMS,
         heading::SelectedHeadingStatus,
@@ -463,14 +463,14 @@ fn calculate_position_from_last_known_position(
             if speed != 0.0 && distance_traveled != 0.0 {
                 if distance_traveled <= distance * 1.1 && distance_traveled >= distance * 0.9 {
                     error!(
-                    "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
-                    json.transponder_hex, distance_traveled, distance
-                );
+                        "{} Distance traveled {} is within 10% of distance between reference position and calculated position {}",
+                        json.transponder_hex, distance_traveled, distance
+                    );
                 } else {
                     error!(
-                    "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
-                    json.transponder_hex, distance_traveled, distance
-                );
+                        "{} Distance traveled {} is NOT within 10% of distance between reference position and calculated position {}",
+                        json.transponder_hex, distance_traveled, distance
+                    );
 
                     update = false;
                 }
@@ -818,7 +818,11 @@ pub fn update_aircraft_position_surface(
                 // get the f64 value of the timestamp
                 if last_cpr_odd_update_time.add_time(10.0) < current_time {
                     json.cpr_odd_surface = None;
-                    debug!("{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.", json.transponder_hex, current_time - last_cpr_odd_update_time.add_time(10.0));
+                    debug!(
+                        "{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.",
+                        json.transponder_hex,
+                        current_time - last_cpr_odd_update_time.add_time(10.0)
+                    );
                 }
             }
         }
@@ -831,7 +835,11 @@ pub fn update_aircraft_position_surface(
             if let Some(last_cpr_even_update_time) = &json.last_cpr_even_update_time_surface {
                 if last_cpr_even_update_time.add_time(10.0) < current_time {
                     json.cpr_even_surface = None;
-                    debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", json.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));
+                    debug!(
+                        "{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.",
+                        json.transponder_hex,
+                        current_time - last_cpr_even_update_time.add_time(10.0)
+                    );
                 }
             }
         }
@@ -913,7 +921,11 @@ pub fn update_aircraft_position_airborne(
                 // get the f64 value of the timestamp
                 if last_cpr_odd_update_time.add_time(10.0) < current_time {
                     json.cpr_odd_airborne = None;
-                    debug!("{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.", json.transponder_hex, current_time - last_cpr_odd_update_time.add_time(10.0));
+                    debug!(
+                        "{}: Received Even CPR packet, but odd is too old ({} seconds past 10 second valid window) Not updating.",
+                        json.transponder_hex,
+                        current_time - last_cpr_odd_update_time.add_time(10.0)
+                    );
                 }
             }
         }
@@ -926,7 +938,11 @@ pub fn update_aircraft_position_airborne(
             if let Some(last_cpr_even_update_time) = &json.last_cpr_even_update_time_airborne {
                 if last_cpr_even_update_time.add_time(10.0) < current_time {
                     json.cpr_even_airborne = None;
-                    debug!("{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.", json.transponder_hex, current_time - last_cpr_even_update_time.add_time(10.0));
+                    debug!(
+                        "{}: Received Odd CPR packet, but even is too old ({} seconds past 10 second valid window). Not updating.",
+                        json.transponder_hex,
+                        current_time - last_cpr_even_update_time.add_time(10.0)
+                    );
                 }
             }
         }

@@ -37,7 +37,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
 
     for (index, frame) in frames.iter().enumerate() {
         let frame = frame.trim(); // remove the trailing '\n' from the frame
-                                  // If the frame is empty, skip it.
+        // If the frame is empty, skip it.
         if frame.is_empty() {
             continue;
         }

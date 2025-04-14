@@ -37,6 +37,7 @@
 extern crate log;
 use generic_async_http_client::{Request, Response};
 use sdre_rust_adsb_parser::{
+    ADSBMessage, DecodeMessage,
     decoders::{
         aircraftjson::{AircraftJSON, NewAircraftJSONMessage},
         beast::{AdsbBeastMessage, NewAdsbBeastMessage},
@@ -45,14 +46,13 @@ use sdre_rust_adsb_parser::{
     },
     error_handling::deserialization_error::DeserializationError,
     helpers::{
-        encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
+        encode_adsb_beast_input::{ADSBBeastFrames, format_adsb_beast_frames_from_bytes},
         encode_adsb_json_input::format_adsb_json_frames_from_string,
-        encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
+        encode_adsb_raw_input::{ADSBRawFrames, format_adsb_raw_frames_from_bytes},
     },
-    ADSBMessage, DecodeMessage,
 };
 use sdre_rust_logging::SetupLogging;
-use sdre_stubborn_io::{config::DurationIterator, ReconnectOptions, StubbornTcpStream};
+use sdre_stubborn_io::{ReconnectOptions, StubbornTcpStream, config::DurationIterator};
 use std::fmt;
 use std::net::SocketAddr;
 use std::process::exit;
@@ -171,7 +171,9 @@ impl Args {
                 Ok(v) => v,
                 Err(e) => {
                     println!("Invalid mode: {e:?}");
-                    println!("Valid modes are: jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast");
+                    println!(
+                        "Valid modes are: jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast"
+                    );
                     exit(1);
                 }
             }

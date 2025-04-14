@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Uplink / Downlink
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum KE {
     DownlinkELMTx = 0,
     UplinkELMAck = 1,

@@ -8,7 +8,7 @@ use deku::prelude::*;
 use serde::{Deserialize, Serialize};
 
 use super::{
-    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, LNAV, TCAS, VNAVEngaged},
     fms::IsFMS,
     heading::SelectedHeadingStatus,
     modevalidity::IsValidMode,

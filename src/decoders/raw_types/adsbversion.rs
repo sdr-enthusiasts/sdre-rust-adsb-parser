@@ -12,7 +12,7 @@ use std::fmt::{self, Formatter};
 ///
 /// reference: ICAO 9871 (5.3.2.3)
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "3")]
+#[deku(id_type = "u8", bits = "3")]
 pub enum ADSBVersion {
     #[deku(id = "0")]
     ADSBVersion0,

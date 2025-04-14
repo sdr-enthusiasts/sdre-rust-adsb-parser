@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum IsFMS {
     #[deku(id = "1")]
     FMS,

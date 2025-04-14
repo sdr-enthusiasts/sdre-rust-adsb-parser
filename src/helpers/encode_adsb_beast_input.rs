@@ -228,7 +228,9 @@ pub fn format_adsb_beast_frames_from_bytes(bytes: &[u8]) -> ADSBBeastFrames {
                     // TODO: does this pattern make sense? Can we combine this with the logic check
                     // above or destructure in to a match?
                     let Some(next_byte) = next_byte else {
-                        error!("You should never see this!! Next byte is none but is_some returned true?");
+                        error!(
+                            "You should never see this!! Next byte is none but is_some returned true?"
+                        );
                         break;
                     };
 

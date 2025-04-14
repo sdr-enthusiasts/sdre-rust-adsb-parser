@@ -13,7 +13,7 @@ use std::fmt::{self, Formatter};
     Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
 )]
 #[serde(from = "u8")]
-#[deku(type = "u8", bits = "2")]
+#[deku(id_type = "u8", bits = "2")]
 pub enum SurveillanceStatus {
     #[default]
     NoCondition = 0,

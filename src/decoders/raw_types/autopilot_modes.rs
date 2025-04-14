@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum AutopilotEngaged {
     #[deku(id = "1")]
     Engaged,
@@ -27,7 +27,7 @@ impl fmt::Display for AutopilotEngaged {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum VNAVEngaged {
     #[deku(id = "1")]
     Engaged,
@@ -45,7 +45,7 @@ impl fmt::Display for VNAVEngaged {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum AltitudeHold {
     #[deku(id = "1")]
     Engaged,
@@ -63,7 +63,7 @@ impl fmt::Display for AltitudeHold {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum ApproachMode {
     #[deku(id = "1")]
     Engaged,
@@ -81,7 +81,7 @@ impl fmt::Display for ApproachMode {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum TCAS {
     #[deku(id = "1")]
     Engaged,
@@ -99,7 +99,7 @@ impl fmt::Display for TCAS {
 }
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq, Copy)]
-#[deku(type = "u8", bits = "1")]
+#[deku(id_type = "u8", bits = "1")]
 pub enum LNAV {
     #[deku(id = "1")]
     Engaged,

@@ -13,7 +13,7 @@ use super::{
     airbornevelocitysubtype::AirborneVelocitySubType,
     aircraftstatus::AircraftStatus,
     altitude::Altitude,
-    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, VNAVEngaged, LNAV, TCAS},
+    autopilot_modes::{AltitudeHold, ApproachMode, AutopilotEngaged, LNAV, TCAS, VNAVEngaged},
     capability::Capability,
     emergencystate::EmergencyState,
     heading::SelectedHeadingStatus,
@@ -30,7 +30,7 @@ use super::{
 ///
 /// reference: ICAO 9871 (A.2.3.1)
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
-#[deku(type = "u8", bits = "5")]
+#[deku(id_type = "u8", bits = "5")]
 pub enum ME {
     #[deku(id_pat = "9..=18")]
     AirbornePositionBaroAltitude(Altitude), // Done

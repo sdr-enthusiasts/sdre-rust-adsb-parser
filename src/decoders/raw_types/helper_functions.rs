@@ -6,7 +6,7 @@
 
 use deku::bitvec::{BitSlice, Msb0};
 use deku::prelude::*;
-use deku::{error::NeedSize, DekuError};
+use deku::{DekuError, error::NeedSize};
 
 pub(crate) fn decode_id13_field(id13_field: u32) -> u32 {
     let mut hex_gillham: u32 = 0;
@@ -29,7 +29,7 @@ pub(crate) fn decode_id13_field(id13_field: u32) -> u32 {
     if id13_field & 0x0080 != 0 {
         hex_gillham |= 0x4000;
     } // Bit  7 = A4
-      //if id13_field & 0x0040 != 0 {hex_gillham |= 0x0800;} // Bit  6 = X  or M
+    //if id13_field & 0x0040 != 0 {hex_gillham |= 0x0800;} // Bit  6 = X  or M
     if id13_field & 0x0020 != 0 {
         hex_gillham |= 0x0100;
     } // Bit  5 = B1

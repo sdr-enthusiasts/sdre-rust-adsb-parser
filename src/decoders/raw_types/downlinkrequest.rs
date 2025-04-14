@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 /// Type of `DownlinkRequest`
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
-#[deku(type = "u8", bits = "5")]
+#[deku(id_type = "u8", bits = "5")]
 pub enum DownlinkRequest {
     None = 0b00000,
     RequestSendCommB = 0b00001,

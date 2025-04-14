@@ -4,7 +4,7 @@
 // license that can be found in the LICENSE file or at
 // https://opensource.org/licenses/MIT.
 
-use crate::{decoders::helpers::cpr_calculators::Position, MessageResult};
+use crate::{MessageResult, decoders::helpers::cpr_calculators::Position};
 
 use serde::{Deserialize, Serialize};
 use std::fmt;
@@ -526,7 +526,7 @@ impl JSONMessage {
                 ME::Reserved0(_) => {
                     return Err(ConversionError::NotImplemented {
                         source_name: "Reserved0".into(),
-                    })
+                    });
                 }
                 ME::SurfaceSystemStatus(_) => {
                     return Err(ConversionError::NotImplemented {
@@ -536,7 +536,7 @@ impl JSONMessage {
                 ME::Reserved1(_) => {
                     return Err(ConversionError::NotImplemented {
                         source_name: "Reserved1".into(),
-                    })
+                    });
                 }
                 ME::AircraftStatus(status) => {
                     if *use_strict_mode && !status.is_reserved_zero() {
@@ -803,7 +803,7 @@ mod tests {
 
     use super::*;
     use crate::DecodeMessage;
-    use std::fs::{read_dir, File};
+    use std::fs::{File, read_dir};
     use std::io::BufRead;
 
     #[test]

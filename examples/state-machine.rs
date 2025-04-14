@@ -29,32 +29,32 @@
 ///
 /// The program by default will print out the decoded messages to stdout. With each change in log level, more information will be printed out.
 use log::{debug, error, info, trace};
-use rocket::{get, routes, State};
+use rocket::{State, get, routes};
 
 use generic_async_http_client::{Request, Response};
 use rocket::serde::json::Json;
 use sdre_rust_adsb_parser::{
+    ADSBMessage, DecodeMessage,
     decoders::{aircraftjson::AircraftJSON, helpers::cpr_calculators::Position, json::JSONMessage},
     error_handling::deserialization_error::DeserializationError,
     helpers::{
-        encode_adsb_beast_input::{format_adsb_beast_frames_from_bytes, ADSBBeastFrames},
+        encode_adsb_beast_input::{ADSBBeastFrames, format_adsb_beast_frames_from_bytes},
         encode_adsb_json_input::format_adsb_json_frames_from_string,
-        encode_adsb_raw_input::{format_adsb_raw_frames_from_bytes, ADSBRawFrames},
+        encode_adsb_raw_input::{ADSBRawFrames, format_adsb_raw_frames_from_bytes},
     },
     state_machine::state::{
-        expire_planes, generate_aircraft_json, Machine, MachineBuilder, ProcessMessageType,
+        Machine, MachineBuilder, ProcessMessageType, expire_planes, generate_aircraft_json,
     },
-    ADSBMessage, DecodeMessage,
 };
 use sdre_rust_logging::SetupLogging;
-use sdre_stubborn_io::{config::DurationIterator, ReconnectOptions, StubbornTcpStream};
+use sdre_stubborn_io::{ReconnectOptions, StubbornTcpStream, config::DurationIterator};
 use std::str::FromStr;
 use std::{collections::HashMap, net::SocketAddr};
 use std::{fmt, time::Duration};
 use std::{process::exit, sync::Arc};
 use tokio::{
     io::AsyncReadExt,
-    sync::{mpsc::Sender, Mutex},
+    sync::{Mutex, mpsc::Sender},
     time::sleep,
 };
 
@@ -179,7 +179,9 @@ impl Args {
                 Ok(v) => v,
                 Err(e) => {
                     println!("Invalid mode: {e:?}");
-                    println!("Valid modes are: jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast");
+                    println!(
+                        "Valid modes are: jsonfromurlindividual, jsonfromurlbulk, jsonfromtcp, raw, beast"
+                    );
                     exit(1);
                 }
             }
