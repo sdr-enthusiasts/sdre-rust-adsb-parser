@@ -4,3 +4,4 @@ perf.data
 flamegraph.svg
 perf.data.old
 .DS_Store
+.direnv
