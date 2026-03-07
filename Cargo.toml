@@ -31,7 +31,7 @@ anyhow = "1.0.102"
 
 [dev-dependencies]
 generic-async-http-client = { version = "0.7.0", features = ["use_hyper"] }
-sdre-stubborn-io = "0.6.15"
+sdre-stubborn-io = "0.6.17"
 rocket = { version = "0.5.1", features = ["json"] }
 
 [features]
