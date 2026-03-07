@@ -19,7 +19,7 @@ hex = { version = "0.4.3", optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 log = "0.4.29"
-tokio = { version = "1.49.0", features = ["full"] }
+tokio = { version = "1.50.0", features = ["full"] }
 sdre-rust-logging = "0.3.24"
 deku = { version = "0.20.3", optional = true }
 custom_error = "1.9.2"
