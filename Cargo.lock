@@ -988,9 +988,9 @@ dependencies = [
 
 [[package]]
 name = "log"
-version = "0.4.29"
+version = "0.4.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e5032e24019045c762d3c0f28f5b6b8bbf38563a65908389bf7978758920897"
+checksum = "953f07c43838f8e6f9758cab68bf5bed85465e7587ebe0b823f1bcd81978ad3a"
 
 [[package]]
 name = "loom"
@@ -1536,9 +1536,9 @@ dependencies = [
 
 [[package]]
 name = "sdre-stubborn-io"
-version = "0.6.19"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38cdbcb397b780d75405b636b3d86f89faed85af30adc4039e51cb75101521d5"
+checksum = "e890316930e6a6dc0d3cbaf1cd4988cd3037b5a853d996798bd6c343834c8a60"
 dependencies = [
  "log",
  "rand 0.10.1",
