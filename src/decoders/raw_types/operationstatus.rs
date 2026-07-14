@@ -25,7 +25,14 @@ pub enum OperationStatus {
     Surface(OperationStatusSurface),
 
     #[deku(id_pat = "2..=7")]
-    Reserved(#[deku(bits = "5")] u8, [u8; 5]),
+    Reserved(
+        // The raw 3-bit subtype value (2..=7), captured here because deku
+        // requires the first field of an `id_pat` variant with no top-level
+        // `id` to store the matched id.
+        u8,
+        #[deku(bits = "5")] u8,
+        [u8; 5],
+    ),
 }
 
 impl CapabilityClass {
@@ -58,13 +65,13 @@ impl OperationStatus {
 
     #[must_use]
     pub fn is_reserved(&self) -> bool {
-        matches!(self, OperationStatus::Reserved(_, _))
+        matches!(self, OperationStatus::Reserved(..))
     }
 
     #[must_use]
     pub const fn is_reserved_zero(&self) -> bool {
         match self {
-            OperationStatus::Reserved(_reserved0, _reserved1) => false,
+            OperationStatus::Reserved(..) => false,
 
             OperationStatus::Airborne(airborne) => airborne.is_reserved_zero(),
 
@@ -77,7 +84,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => airborne.version_number,
             OperationStatus::Surface(surface) => surface.version_number,
-            OperationStatus::Reserved(_, _) => ADSBVersion::Unknown,
+            OperationStatus::Reserved(..) => ADSBVersion::Unknown,
         }
     }
 
@@ -88,7 +95,7 @@ impl OperationStatus {
                 CapabilityClass::Airborne(airborne.capability_class)
             }
             OperationStatus::Surface(surface) => CapabilityClass::Surface(surface.capability_class),
-            OperationStatus::Reserved(_, _) => CapabilityClass::Unknown,
+            OperationStatus::Reserved(..) => CapabilityClass::Unknown,
         }
     }
 
@@ -97,7 +104,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.operational_mode),
             OperationStatus::Surface(surface) => Some(surface.operational_mode),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -106,7 +113,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.nic_supplement_a),
             OperationStatus::Surface(surface) => Some(surface.nic_supplement_a),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -115,7 +122,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.navigational_accuracy_category),
             OperationStatus::Surface(surface) => Some(surface.navigational_accuracy_category),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -124,7 +131,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.geometric_vertical_accuracy),
             OperationStatus::Surface(_surface) => None,
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -133,7 +140,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.source_integrity_level),
             OperationStatus::Surface(surface) => Some(surface.source_integrity_level),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -142,7 +149,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.barometric_altitude_integrity),
             OperationStatus::Surface(_surface) => None,
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -151,7 +158,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(_airborne) => None,
             OperationStatus::Surface(surface) => Some(surface.track_heading),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -160,7 +167,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.horizontal_reference_direction),
             OperationStatus::Surface(surface) => Some(surface.horizontal_reference_direction),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 
@@ -169,7 +176,7 @@ impl OperationStatus {
         match self {
             OperationStatus::Airborne(airborne) => Some(airborne.sil_supplement),
             OperationStatus::Surface(surface) => Some(surface.sil_supplement),
-            OperationStatus::Reserved(_, _) => None,
+            OperationStatus::Reserved(..) => None,
         }
     }
 }

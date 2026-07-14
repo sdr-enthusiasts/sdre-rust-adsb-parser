@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "1")]
+#[repr(u8)]
 pub enum DirectionEW {
     WestToEast = 0,
     EastToWest = 1,
@@ -16,6 +17,7 @@ pub enum DirectionEW {
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "1")]
+#[repr(u8)]
 pub enum DirectionNS {
     SouthToNorth = 0,
     NorthToSouth = 1,

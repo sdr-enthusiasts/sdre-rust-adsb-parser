@@ -13,6 +13,7 @@ use std::fmt::{self, Formatter};
     Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
 )]
 #[deku(id_type = "u8", bits = "1")]
+#[repr(u8)]
 pub enum CPRFormat {
     #[default]
     Even = 0,

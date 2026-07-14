@@ -11,6 +11,7 @@ use std::fmt::{self, Formatter};
 /// Airborne / Ground and SPI
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "3")]
+#[repr(u8)]
 pub enum FlightStatus {
     NoAlertNoSPIAirborne = 0b000,
     NoAlertNoSPIOnGround = 0b001,

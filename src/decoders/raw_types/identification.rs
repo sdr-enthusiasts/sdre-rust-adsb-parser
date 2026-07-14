@@ -9,8 +9,15 @@ use serde::{Deserialize, Serialize};
 
 use super::{helper_functions::aircraft_identification_read, typecoding::TypeCoding};
 
+/// `tc` (the ADS-B Type Code) is not read from the wire by this struct: the
+/// enclosing [`ME`](super::me::ME) enum already has to consume those 5 bits
+/// to pick the `AircraftIdentification` variant, so it forwards the
+/// already-read value in via `ctx` instead of letting it be read (and thus
+/// the bitstream position advanced) a second time here.
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Eq, PartialEq)]
+#[deku(ctx = "tc: u8")]
 pub struct Identification {
+    #[deku(skip, default = "TypeCoding::from(tc)")]
     pub tc: TypeCoding,
 
     #[deku(bits = "3")]
@@ -47,7 +54,7 @@ pub mod test {
 
         match decoded.df {
             DF::ADSB(adsb) => match adsb.me {
-                crate::decoders::raw_types::me::ME::AircraftIdentification(id) => {
+                crate::decoders::raw_types::me::ME::AircraftIdentification(_, id) => {
                     assert_eq!(id, expected);
                 }
                 _ => panic!("Wrong ME"),

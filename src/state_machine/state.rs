@@ -252,7 +252,7 @@ impl Machine {
     pub async fn print_airplanes(&self) {
         let airplanes = self.airplanes.lock().await;
 
-        for (_, airplane) in airplanes.iter() {
+        for airplane in airplanes.values() {
             info!("{airplane}");
         }
     }
@@ -261,7 +261,7 @@ impl Machine {
         let mut airplanes = self.airplanes.lock().await;
         let mut airplanes_vec = Vec::new();
 
-        for (_, airplane) in airplanes.iter_mut() {
+        for airplane in airplanes.values_mut() {
             airplanes_vec.push(airplane.clone());
         }
 

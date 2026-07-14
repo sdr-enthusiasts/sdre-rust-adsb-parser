@@ -777,7 +777,7 @@ mod tests {
             // make sure it's decoded as a surface position
 
             match adsb.me {
-                crate::decoders::raw_types::me::ME::SurfacePosition(surface_position) => {
+                crate::decoders::raw_types::me::ME::SurfacePosition(_, surface_position) => {
                     info!("Surface position: {surface_position:?}");
                     //assert_eq!(surface_position.mov.calculate(), Some(17.0));
                     //assert_eq!(surface_position.get_heading(), Some(14.1));

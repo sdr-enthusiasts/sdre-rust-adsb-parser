@@ -27,8 +27,11 @@ pub enum BDS {
     #[deku(id = "0x20")]
     AircraftIdentification(#[deku(reader = "aircraft_identification_read(deku::reader)")] String),
 
+    // The leading `u8` captures the matched (unrecognized) BDS id, because
+    // deku requires the first field of an `id_pat` variant to store the
+    // matched id when the enum has no top-level `id`.
     #[deku(id_pat = "_")]
-    Unknown([u8; 6]),
+    Unknown(u8, [u8; 6]),
 }
 
 impl fmt::Display for BDS {
@@ -44,7 +47,7 @@ impl fmt::Display for BDS {
             Self::DataLinkCapability(_) => {
                 writeln!(f, "Comm-B format: BDS1,0 Datalink capabilities")?;
             }
-            Self::Unknown(_) => {
+            Self::Unknown(..) => {
                 writeln!(f, "Comm-B format: unknown format")?;
             }
         }

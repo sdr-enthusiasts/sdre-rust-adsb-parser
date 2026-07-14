@@ -15,11 +15,19 @@ use super::cprheaders::CPRFormat;
 use super::helper_functions::{decode_id13_field, mode_a_to_mode_c};
 
 /// Latitude, Longitude and Altitude information
+///
+/// `tc` (the ADS-B Type Code) is not read from the wire by this struct: the
+/// enclosing [`ME`](super::me::ME) enum already has to consume those 5 bits
+/// to pick the `AirbornePositionBaroAltitude`/`AirbornePositionGNSSAltitude`
+/// variant, so it forwards the already-read value in via `ctx` instead of
+/// letting it be read (and thus the bitstream position advanced) a second
+/// time here.
 #[derive(
     Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd, Default,
 )]
+#[deku(ctx = "tc: u8")]
 pub struct Altitude {
-    #[deku(bits = "5")]
+    #[deku(skip, default = "tc")]
     pub tc: u8,
     pub ss: SurveillanceStatus,
     #[deku(bits = "1")]
@@ -110,7 +118,7 @@ pub mod test {
 
         if let DF::ADSB(adsb) = decoded.df {
             match adsb.me {
-                crate::decoders::raw_types::me::ME::AirbornePositionBaroAltitude(altitude) => {
+                crate::decoders::raw_types::me::ME::AirbornePositionBaroAltitude(_, altitude) => {
                     assert_eq!(altitude, expected);
                 }
                 _ => panic!("Wrong ME type"),

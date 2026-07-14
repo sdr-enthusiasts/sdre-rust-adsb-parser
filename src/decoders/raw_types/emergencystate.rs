@@ -10,6 +10,7 @@ use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "3")]
+#[repr(u8)]
 pub enum EmergencyState {
     None = 0,
     General = 1,

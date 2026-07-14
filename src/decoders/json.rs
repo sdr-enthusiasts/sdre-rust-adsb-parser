@@ -506,15 +506,15 @@ impl JSONMessage {
                 ME::NoPosition(no_position) => {
                     update_from_no_position(self, no_position);
                 }
-                ME::AircraftIdentification(id) => {
+                ME::AircraftIdentification(_, id) => {
                     update_aircraft_identification(self, id);
                 }
-                ME::SurfacePosition(surfaceposition) => {
+                ME::SurfacePosition(_, surfaceposition) => {
                     return self.handle_surface_position(surfaceposition, reference_position);
                 }
-                ME::AirbornePositionGNSSAltitude(altitude)
-                | ME::AirbornePositionBaroAltitude(altitude) => {
-                    let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(_));
+                ME::AirbornePositionGNSSAltitude(_, altitude)
+                | ME::AirbornePositionBaroAltitude(_, altitude) => {
+                    let baro_altitude = matches!(adsb.me, ME::AirbornePositionBaroAltitude(..));
                     return self.handle_airborne_position(
                         altitude,
                         reference_position,
@@ -526,12 +526,12 @@ impl JSONMessage {
                         source_name: "Reserved0".into(),
                     });
                 }
-                ME::SurfaceSystemStatus(_) => {
+                ME::SurfaceSystemStatus(..) => {
                     return Err(ConversionError::NotImplemented {
                         source_name: "Surface System Status".into(),
                     });
                 }
-                ME::Reserved1(_) => {
+                ME::Reserved1(..) => {
                     return Err(ConversionError::NotImplemented {
                         source_name: "Reserved1".into(),
                     });

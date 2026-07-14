@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "1")]
+#[repr(u8)]
 pub enum SourceBitVerticalRate {
     GNSS = 0,
     Barometer = 1,
