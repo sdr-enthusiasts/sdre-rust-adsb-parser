@@ -103,10 +103,10 @@ struct ReaderCrc<R: Read + Seek> {
 impl<R: Read + Seek> Read for ReaderCrc<R> {
     fn read(&mut self, buf: &mut [u8]) -> deku::no_std_io::Result<usize> {
         let n = self.reader.read(buf);
-        if !self.just_sought {
-            if let Ok(n) = n {
-                self.cache.extend_from_slice(&buf[..n]);
-            }
+        if !self.just_sought
+            && let Ok(n) = n
+        {
+            self.cache.extend_from_slice(&buf[..n]);
         }
         self.just_sought = false;
         n

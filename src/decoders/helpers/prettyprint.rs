@@ -38,10 +38,10 @@ pub fn pretty_print_label(label: &str, output: &mut String) {
     // 80 - 2 for the ':' - the length of the label
     let spaces: usize = (70 - label.len()) / 2;
     // see if we need to add an extra '=' to the end
-    let extra = if (70 - label.len()) % 2 != 0 {
-        '='
-    } else {
+    let extra = if (70 - label.len()).is_multiple_of(2) {
         ' '
+    } else {
+        '='
     };
     let mut buffer: String = String::new();
     for _i in 0..spaces {
