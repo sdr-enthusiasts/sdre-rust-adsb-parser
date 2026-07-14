@@ -431,7 +431,7 @@ impl ADSBMessage {
     /// # Errors
     /// This function will return an error if the conversion to a string fails.
     pub fn to_string(&self) -> MessageResult<String> {
-        trace!("Converting {:?} to a string", &self);
+        trace!("Converting {self:?} to a string");
         match serde_json::to_string(self) {
             Ok(v) => Ok(v),
             Err(e) => Err(e.into()),
@@ -442,7 +442,7 @@ impl ADSBMessage {
     /// # Errors
     /// This function will return an error if the conversion to a string fails.
     pub fn to_string_newline(&self) -> MessageResult<String> {
-        trace!("Converting {:?} to a string and appending a newline", &self);
+        trace!("Converting {self:?} to a string and appending a newline");
         match serde_json::to_string(self) {
             Err(to_string_error) => Err(to_string_error.into()),
             Ok(string) => Ok(format!("{string}\n")),
@@ -455,7 +455,7 @@ impl ADSBMessage {
     /// # Errors
     /// This function will return an error if the conversion to a string fails.
     pub fn to_bytes(&self) -> MessageResult<Vec<u8>> {
-        trace!("Converting {:?} into a string and encoding as bytes", &self);
+        trace!("Converting {self:?} into a string and encoding as bytes");
         match self.to_string() {
             Err(conversion_failed) => Err(conversion_failed),
             Ok(string) => Ok(string.into_bytes()),
@@ -468,10 +468,7 @@ impl ADSBMessage {
     /// # Errors
     /// This function will return an error if the conversion to a string fails.
     pub fn to_bytes_newline(&self) -> MessageResult<Vec<u8>> {
-        trace!(
-            "Converting {:?} into a string, appending a newline and encoding as bytes",
-            &self
-        );
+        trace!("Converting {self:?} into a string, appending a newline and encoding as bytes");
         match self.to_string_newline() {
             Err(conversion_failed) => Err(conversion_failed),
             Ok(string) => Ok(string.into_bytes()),

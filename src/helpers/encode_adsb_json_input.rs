@@ -47,7 +47,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
             if index == 0 && frames.len() == 1 {
                 return ADSBJSONFrames {
                     frames: output,
-                    left_over: frame.to_string(),
+                    left_over: frame.clone(),
                     errors,
                 };
             }
@@ -58,7 +58,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
             if index == frames.len() - 1 {
                 return ADSBJSONFrames {
                     frames: output,
-                    left_over: frame.to_string(),
+                    left_over: frame.clone(),
                     errors,
                 };
             }
@@ -68,7 +68,7 @@ pub fn format_adsb_json_frames_from_string(string: &str) -> ADSBJSONFrames {
 
         // If the frame starts with '{' and ends with '}', push it to the output vector.
         if frame.starts_with('{') && (frame.ends_with('}') || frame.ends_with("},")) {
-            output.push(frame.to_string());
+            output.push(frame.clone());
         } else {
             // we should never end up here but if we do, error out
             let first_character = frame.chars().next().unwrap_or('\0');

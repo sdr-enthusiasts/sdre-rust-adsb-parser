@@ -9,8 +9,10 @@ use std::fmt;
 
 #[derive(Deserialize, Debug, Clone, PartialEq, PartialOrd)]
 #[serde(from = "String")]
+#[derive(Default)]
 pub enum TransponderHex {
     TransponderHexAsString(String),
+    #[default]
     None,
 }
 
@@ -25,12 +27,6 @@ impl Serialize for TransponderHex {
             }
             Self::None => serializer.serialize_none(),
         }
-    }
-}
-
-impl Default for TransponderHex {
-    fn default() -> Self {
-        Self::None
     }
 }
 
