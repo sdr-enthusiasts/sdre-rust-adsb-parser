@@ -5,3 +5,4 @@ flamegraph.svg
 perf.data.old
 .DS_Store
 .direnv
+.pre-commit-config.yaml
