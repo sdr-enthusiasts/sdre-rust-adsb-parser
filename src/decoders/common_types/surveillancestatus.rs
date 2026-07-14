@@ -14,6 +14,7 @@ use std::fmt::{self, Formatter};
 )]
 #[serde(from = "u8")]
 #[deku(id_type = "u8", bits = "2")]
+#[repr(u8)]
 pub enum SurveillanceStatus {
     #[default]
     NoCondition = 0,

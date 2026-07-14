@@ -11,9 +11,15 @@ use super::{
     cprheaders::CPRFormat, groundspeed::GroundSpeed, statusforgroundtrack::StatusForGroundTrack,
 };
 
+/// `type_code` (the ADS-B Type Code) is not read from the wire by this
+/// struct: the enclosing [`ME`](super::me::ME) enum already has to consume
+/// those 5 bits to pick the `SurfacePosition` variant, so it forwards the
+/// already-read value in via `ctx` instead of letting it be read (and thus
+/// the bitstream position advanced) a second time here.
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq, PartialOrd)]
+#[deku(ctx = "type_code: u8")]
 pub struct SurfacePosition {
-    #[deku(bits = "5")]
+    #[deku(skip, default = "type_code")]
     pub type_code: u8,
     #[deku(bits = "7")]
     pub mov: u8,

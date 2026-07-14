@@ -10,6 +10,7 @@ use std::fmt::{self, Formatter};
 
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, Copy, Eq, PartialEq)]
 #[deku(id_type = "u8", bits = "1")]
+#[repr(u8)]
 pub enum VerticalRateSource {
     BarometricPressureAltitude = 0,
     GeometricAltitude = 1,

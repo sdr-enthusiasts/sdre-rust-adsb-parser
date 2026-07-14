@@ -183,6 +183,10 @@ pub enum DF {
     /// 24..=31: Comm-D(ELM), Downlink Format 24 (3.1.2.7.3)
     #[deku(id_pat = "24..=31")]
     CommDExtendedLengthMessage {
+        /// The raw 5-bit downlink format value (24..=31), captured here because
+        /// deku requires the first field of an `id_pat` variant with no
+        /// top-level `id` to store the matched id.
+        df_id: u8,
         /// Spare - 1 bit
         #[deku(bits = "1")]
         spare: u8,

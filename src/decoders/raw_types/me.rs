@@ -32,8 +32,14 @@ use super::{
 #[derive(Serialize, Deserialize, DekuRead, Debug, Clone, PartialEq)]
 #[deku(id_type = "u8", bits = "5")]
 pub enum ME {
+    // NOTE: the leading `u8` on each `id_pat` variant below captures the
+    // matched Type Code value. deku requires the first field of an `id_pat`
+    // variant to store the matched id when the enum has no top-level `id`.
+    // It's then forwarded via `ctx` to the second field, since that inner
+    // type's own leading field represents the very same Type Code bits and
+    // must not read (and thus consume) them a second time.
     #[deku(id_pat = "9..=18")]
-    AirbornePositionBaroAltitude(Altitude), // Done
+    AirbornePositionBaroAltitude(u8, #[deku(ctx = "*field_0")] Altitude), // Done
 
     #[deku(id = "19")]
     AirborneVelocity(AirborneVelocity), // Done
@@ -43,22 +49,22 @@ pub enum ME {
     NoPosition(NoPosition), // Done
 
     #[deku(id_pat = "1..=4")]
-    AircraftIdentification(Identification), // Done
+    AircraftIdentification(u8, #[deku(ctx = "*field_0")] Identification), // Done
 
     #[deku(id_pat = "5..=8")]
-    SurfacePosition(SurfacePosition), // Done
+    SurfacePosition(u8, #[deku(ctx = "*field_0")] SurfacePosition), // Done
 
     #[deku(id_pat = "20..=22")]
-    AirbornePositionGNSSAltitude(Altitude), // Done
+    AirbornePositionGNSSAltitude(u8, #[deku(ctx = "*field_0")] Altitude), // Done
 
     #[deku(id = "23")]
     Reserved0([u8; 6]),
 
     #[deku(id_pat = "24")]
-    SurfaceSystemStatus([u8; 6]),
+    SurfaceSystemStatus(u8, [u8; 6]),
 
     #[deku(id_pat = "25..=27")]
-    Reserved1([u8; 6]),
+    Reserved1(u8, [u8; 6]),
 
     #[deku(id = "28")]
     AircraftStatus(AircraftStatus), // Done
@@ -97,7 +103,7 @@ impl ME {
                 writeln!(f, "  Address:       {icao} {address_type}")?;
                 writeln!(f, "  Air/Ground:    {capability}")?;
             }
-            ME::AircraftIdentification(Identification { tc, ca, cn }) => {
+            ME::AircraftIdentification(_, Identification { tc, ca, cn }) => {
                 writeln!(
                     f,
                     " Extended Squitter{transponder}Aircraft identification and category"
@@ -111,7 +117,7 @@ impl ME {
                 writeln!(f, " Extended Squitter{transponder}Surface position")?;
                 writeln!(f, "  Address:       {icao} {address_type}")?;
             }
-            ME::AirbornePositionBaroAltitude(altitude) => {
+            ME::AirbornePositionBaroAltitude(_, altitude) => {
                 writeln!(
                     f,
                     " Extended Squitter{transponder}Airborne position (barometric altitude)"
@@ -179,7 +185,7 @@ impl ME {
                     writeln!(f, "  Address:       {icao} {address_type}")?;
                 }
             },
-            ME::AirbornePositionGNSSAltitude(altitude) => {
+            ME::AirbornePositionGNSSAltitude(_, altitude) => {
                 writeln!(
                     f,
                     " Extended Squitter{transponder}Airborne position (GNSS altitude)",
@@ -187,12 +193,12 @@ impl ME {
                 writeln!(f, "  Address:      {icao} {address_type}")?;
                 write!(f, "{altitude}")?;
             }
-            ME::Reserved0(_) | ME::Reserved1(_) => {
+            ME::Reserved0(_) | ME::Reserved1(..) => {
                 writeln!(f, " Extended Squitter{transponder}Unknown")?;
                 writeln!(f, "  Address:       {icao} {address_type}")?;
                 writeln!(f, "  Air/Ground:    {capability}")?;
             }
-            ME::SurfaceSystemStatus(_) => {
+            ME::SurfaceSystemStatus(..) => {
                 writeln!(
                     f,
                     " Extended Squitter{transponder}Reserved for surface system status",
