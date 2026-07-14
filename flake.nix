@@ -3,31 +3,50 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay.url = "github:oxalica/rust-overlay";
+    precommit.url = "github:FredSystems/pre-commit-checks";
   };
 
-  outputs = { self, nixpkgs, flake-utils, rust-overlay }:
+  outputs = { self, nixpkgs, flake-utils, precommit }:
     flake-utils.lib.eachDefaultSystem
       (system:
         let
-          overlays = [ (import rust-overlay) ];
           pkgs = import nixpkgs {
-            inherit system overlays;
+            inherit system;
           };
-          libPath = with pkgs; lib.makeLibraryPath [
-          ];
-          rustToolchain = pkgs.rust-bin.stable.latest.default;
-          # new! 👇
-          nativeBuildInputs = with pkgs; [ rustToolchain ];
+          chk = precommit.lib.mkCheck {
+            inherit system;
+            src = ./.;
 
-          RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
-          LD_LIBRARY_PATH = libPath;
+            # ── Feature toggles ─────────────────────────────
+            check_rust = true;
+            check_docker = false;
+            check_python = false;
+
+            # Rust-specific knobs (safe to leave here)
+            enableXtask = false;
+
+            # Python-specific knobs (safe to leave here)
+            python = {
+              enableBlack = true;
+              enableFlake8 = true;
+            };
+          };
+          extraDev = chk.passthru.devPackages or [ ];
+          corePkgs = chk.enabledPackages or [ ];
         in
         with pkgs;
         {
+          checks.pre-commit = chk;
+
           devShells.default = mkShell {
             # 👇 and now we can just inherit them
-            inherit nativeBuildInputs RUST_SRC_PATH LD_LIBRARY_PATH;
+            buildInputs = extraDev ++ corePkgs;
+
+            shellHook = ''
+              ${chk.shellHook}
+
+              alias pre-commit="pre-commit run --all-files"
+            '';
           };
         }
       );
