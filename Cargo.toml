@@ -30,9 +30,9 @@ easy-cast = "0.5.4"
 anyhow = "1.0.102"
 
 [dev-dependencies]
-generic-async-http-client = { version = "0.7.0", features = ["use_hyper"] }
-sdre-stubborn-io = "0.7.1"
-rocket = { version = "0.5.1", features = ["json"] }
+generic-async-http-client = { version = "=0.7.0", features = ["use_hyper"] }
+sdre-stubborn-io = "=0.7.2"
+rocket = { version = "=0.5.1", features = ["json"] }
 
 [features]
 default = ["json", "raw", "beast"]
