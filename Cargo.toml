@@ -26,7 +26,7 @@ custom_error = "1.9.2"
 libm = { version = "0.2.16", optional = true }
 radix_fmt = "1.0.0"
 chrono = "0.4.45"
-easy-cast = "0.5.4"
+easy-cast = "0.6.0"
 anyhow = "1.0.102"
 
 [dev-dependencies]
